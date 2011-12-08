@@ -2,10 +2,10 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>au.org.ala</groupId>
-    <artifactId>bie-hbase</artifactId>
+    <artifactId>bie-profile</artifactId>
     <packaging>jar</packaging>
-    <version>1.1-SNAPSHOT</version><!-- NC  temporarily change the version so existing build processes won't be effected until I change name -->
-    <name>bie-hbase</name>
+    <version>1.0-SNAPSHOT</version>
+    <name>bie-profile</name>
     <url>http://www.ala.org.au</url>
     <description>
      This is prototype quality code for loading and testing HBase with RDF data.
@@ -359,7 +359,7 @@
         </repository>
     </repositories>
     <build>
-        <finalName>bie-hbase</finalName>
+        <finalName>bie-profile</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
