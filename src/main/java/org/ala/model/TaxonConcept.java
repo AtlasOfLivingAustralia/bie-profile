@@ -27,6 +27,8 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	/** internal identifier for the parent concept */
 	protected String parentId;
 	protected String parentGuid;
+	protected String parentSrc;
+	protected Integer parentSrcId;
 	protected String acceptedConceptGuid;
 	protected String nameGuid; //one to many
 	protected String nameString;
@@ -34,10 +36,17 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	protected String authorYear;
 	protected String publishedInCitation;
 	protected String publishedIn;
+	protected String referencedInGuid;
+	protected String referencedIn;
 	protected Integer rankID;
 	protected String rankString;
 	protected Integer left;
 	protected Integer right;
+	/** Indicates that this is the preferred concept.  Ie the guid for the concept matches the unique id for the record **/
+	protected boolean isPreferred=false;//stores whether or not the concept is preferred
+	protected boolean isDraft=false;
+	protected boolean isProtologue=false;
+	
 
 	/**
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -45,7 +54,12 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	@Override
 	public int compareTo(TaxonConcept o) {
 		//check the infosources
-		if(o.getNameString()!=null && nameString!=null){
+	    if(o.isPreferred != isPreferred){
+	        if(isPreferred)
+	            return -1;
+	        else return 1;
+	    }
+	    else if(o.getNameString()!=null && nameString!=null){
 			return nameString.compareTo(o.getNameString());
 		}
 		return -1;
@@ -261,6 +275,107 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	}
 	
 	/**
+     * @return the parentSrc
+     */
+    public String getParentSrc() {
+        return parentSrc;
+    }
+
+    /**
+     * @param parentSrc the parentSrc to set
+     */
+    public void setParentSrc(String parentSrc) {
+        this.parentSrc = parentSrc;
+    }
+
+    /**
+     * @return the parentSrcId
+     */
+    public Integer getParentSrcId() {
+        return parentSrcId;
+    }
+
+    /**
+     * @param parentSrcId the parentSrcId to set
+     */
+    public void setParentSrcId(Integer parentSrcId) {
+        this.parentSrcId = parentSrcId;
+    }
+    
+    
+
+    /**
+     * @return the isPreferred
+     */
+    public boolean getIsPreferred() {
+        return isPreferred;
+    }
+
+    /**
+     * @param isPreferred the isPreferred to set
+     */
+    public void setIsPreferred(boolean isPreferred) {
+        this.isPreferred = isPreferred;
+    }
+    
+
+    /**
+     * @return the isDraft
+     */
+    public boolean getIsDraft() {
+        return isDraft;
+    }
+
+    /**
+     * @param isDraft the isDraft to set
+     */
+    public void setIsDraft(boolean isDraft) {
+        this.isDraft = isDraft;
+    }
+
+    /**
+     * @return the isProtologue
+     */
+    public boolean getIsProtologue() {
+        return isProtologue;
+    }
+
+    /**
+     * @param isProtologue the isProtologue to set
+     */
+    public void setIsProtologue(boolean isProtologue) {
+        this.isProtologue = isProtologue;
+    }
+
+    /**
+     * @return the referencedInGuid
+     */
+    public String getReferencedInGuid() {
+        return referencedInGuid;
+    }
+
+    /**
+     * @param referencedInGuid the referencedInGuid to set
+     */
+    public void setReferencedInGuid(String referencedInGuid) {
+        this.referencedInGuid = referencedInGuid;
+    }
+
+    /**
+     * @return the referencedIn
+     */
+    public String getReferencedIn() {
+        return referencedIn;
+    }
+
+    /**
+     * @param referencedIn the referencedIn to set
+     */
+    public void setReferencedIn(String referencedIn) {
+        this.referencedIn = referencedIn;
+    }
+
+    /**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -290,6 +405,16 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 		builder.append(this.publishedInCitation);
 		builder.append(", rankString=");
 		builder.append(this.rankString);
+		builder.append(", isPreferred=");
+		builder.append(this.isPreferred);
+		builder.append(", isDraft=");
+		builder.append(this.isDraft);
+		builder.append(", isProtologue=");
+		builder.append(this.isProtologue);
+		builder.append(", referencedIn=");
+		builder.append(this.referencedIn);
+		builder.append(", referencedInGuid=");
+		builder.append(this.referencedInGuid);
 		builder.append(", documentId=");
 		builder.append(this.documentId);
 		builder.append(", infoSourceId=");

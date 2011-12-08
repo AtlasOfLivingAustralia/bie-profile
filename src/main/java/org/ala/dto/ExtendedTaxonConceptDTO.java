@@ -27,6 +27,7 @@ import org.ala.model.PestStatus;
 import org.ala.model.Reference;
 import org.ala.model.SimpleProperty;
 import org.ala.model.SpecimenHolding;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 /**
@@ -41,7 +42,7 @@ public class ExtendedTaxonConceptDTO {
 	protected TaxonName taxonName;
     protected Classification classification;
     protected List<String> identifiers;
-    protected List<TaxonConcept> synonyms;
+    protected List<SynonymConcept> synonyms;
 	protected List<CommonName> commonNames;
 	protected List<TaxonConcept> childConcepts;
 	protected List<TaxonConcept> parentConcepts;
@@ -120,13 +121,13 @@ public class ExtendedTaxonConceptDTO {
 	/**
 	 * @return the synonyms
 	 */
-	public List<TaxonConcept> getSynonyms() {
+	public List<SynonymConcept> getSynonyms() {
 		return synonyms;
 	}
 	/**
 	 * @param synonyms the synonyms to set
 	 */
-	public void setSynonyms(List<TaxonConcept> synonyms) {
+	public void setSynonyms(List<SynonymConcept> synonyms) {
 		this.synonyms = synonyms;
 	}
 	/**

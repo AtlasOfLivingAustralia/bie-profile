@@ -37,10 +37,17 @@ import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.type.TypeFactory;
-import org.wyki.cassandra.pelops.Mutator;
-import org.wyki.cassandra.pelops.Pelops;
-import org.wyki.cassandra.pelops.Policy;
-import org.wyki.cassandra.pelops.Selector;
+import org.scale7.cassandra.pelops.Bytes;
+import org.scale7.cassandra.pelops.Cluster;
+import org.scale7.cassandra.pelops.OperandPolicy;
+import org.scale7.cassandra.pelops.Pelops;//Selector, Bytes
+import org.scale7.cassandra.pelops.Selector;
+import org.scale7.cassandra.pelops.Mutator;
+//import org.wyki.cassandra.pelops.Mutator;
+//import org.wyki.cassandra.pelops.Pelops;
+//import org.wyki.cassandra.pelops.Policy;
+//import org.wyki.cassandra.pelops.Selector;
+import org.scale7.cassandra.pelops.pool.CommonsBackedPool;
 
 /**
  * A StoreHelper implementation for Cassandra that uses Pelops over the
@@ -72,15 +79,23 @@ public class CassandraPelopsHelper implements StoreHelper  {
 
 	@Override
 	public void init() throws Exception {
+	    CommonsBackedPool.Policy policy = new CommonsBackedPool.Policy();
+	    policy.setMaxActivePerNode(maxPool);	    
+	    OperandPolicy operandPolicy = new OperandPolicy();
 		//set up the connection pool
+
+	    logger.info(host);
+		Pelops.addPool(pool, new Cluster(host,port), keySpace,policy, operandPolicy);
+
 	    logger.info("Initialising Pelops connection pool to " +host + " with min connections " + minPool + " target connections: " + targetConnections + " max connections " + maxPool);
 	    
-	    Policy policy = new Policy();
-	    policy.setMinCachedConnectionsPerNode(minPool);
-	    policy.setMaxConnectionsPerNode(maxPool);
-	    policy.setTargetConnectionsPerNode(targetConnections);
-	    
-		Pelops.addPool(pool, new String[]{host}, port, false, keySpace, policy);
+//	    Policy policy = new Policy();
+//	    policy.setMinCachedConnectionsPerNode(minPool);
+//	    policy.setMaxConnectionsPerNode(maxPool);
+//	    policy.setTargetConnectionsPerNode(targetConnections);
+//	    
+//		Pelops.addPool(pool, new String[]{host}, port, false, keySpace, policy);
+
 	}
 	
 	public void shutdown(){
@@ -90,24 +105,23 @@ public class CassandraPelopsHelper implements StoreHelper  {
 	/**
 	 * Retrieves a map of subcolumns
 	 */
-    public Map<String, Object> getSubColumnsByGuid(String columnFamily, String superColName,String guid) throws Exception {
+    public Map<String, Object> getSubColumnsByGuid(String columnFamily,String guid) throws Exception {
     	Map<String, Object> map = new HashMap<String, Object>();
     	
         logger.debug("Pelops get guid: " + guid);
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
         List<Column> cols = null;
         try{
             //initialise the object mapper
     		ObjectMapper mapper = new ObjectMapper();
     		mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-            cols = selector.getSubColumnsFromRow(guid, columnFamily,
-            		superColName,
+            cols = selector.getColumnsFromRow(columnFamily,guid,            		
             		Selector.newColumnsPredicateAll(true, 10000), ConsistencyLevel.ONE);
             // convert json string to Java object and add into Map object.
             for(Column col : cols){
-            	String name = new String(col.name, charsetEncoding);
-            	String value = new String(col.value, charsetEncoding);
+            	String name = new String(col.getName(), charsetEncoding);
+            	String value = new String(col.getValue(), charsetEncoding);
             	ColumnType type = ColumnType.getColumnType(name);
             	Object o = null;
             	try{
@@ -159,10 +173,10 @@ public class CassandraPelopsHelper implements StoreHelper  {
     @Override
     public Comparable get(String table, String columnFamily, String columnName, String guid, Class theClass) throws Exception {
         logger.debug("Pelops get table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
         Column col = null;
         try{
-            col = selector.getSubColumnFromRow(guid, columnFamily, columnFamily, columnName, ConsistencyLevel.ONE);
+            col = selector.getColumnFromRow(columnFamily, guid, columnName, ConsistencyLevel.ONE);
         }
         catch(Exception e){
             //expected behaviour. current thrift API doesnt seem
@@ -178,7 +192,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 
 		//read the existing value
 		if(col!=null){
-			String value = new String(col.value,charsetEncoding);
+			String value = new String(col.getValue(),charsetEncoding);
 //			logger.info(value);
 			return (Comparable) mapper.readValue(value, theClass);
 		} else {
@@ -192,20 +206,20 @@ public class CassandraPelopsHelper implements StoreHelper  {
     @Override
     public String getStringValue(String table, String columnFamily, String columnName, String guid) throws Exception {
         logger.debug("Pelops get table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
         Column col = null;
         try{
-            col = selector.getSubColumnFromRow(guid, columnFamily, columnFamily, columnName, ConsistencyLevel.ONE);
+            col = selector.getColumnFromRow(columnFamily, guid, columnName, ConsistencyLevel.ONE);
         }
         catch(Exception e){
             //expected behaviour. current thrift API doesnt seem
             //to support a retrieve null getter
-        	logger.error(e.getMessage(), e);
+        	//logger.error(e.getMessage() + " POTENTIAL NULL VALUE");
         }
 
 		//read the existing value
 		if(col!=null){
-			String value = new String(col.value,charsetEncoding);
+			String value = new String(col.getValue(),charsetEncoding);
 			return value;
 		} else {
 			return null;
@@ -214,7 +228,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
  
     @Override
     public boolean updateStringValue(String table, String columnFamily, String columnName, String guid, String value) throws Exception {
-		Mutator mutator = Pelops.createMutator(pool, keySpace);
+		Mutator mutator = Pelops.createMutator(pool);
 		try{
 			if(value != null && !value.isEmpty()){
 //				String value1 = getStringValue(table, columnFamily, columnName, guid);
@@ -223,7 +237,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 //			    	mutator.deleteSubColumn(guid, columnFamily, "tc", columnName);
 //			    	mutator.execute(ConsistencyLevel.ONE);
 //				}
-				mutator.writeSubColumn(guid, columnFamily, columnFamily, mutator.newColumn(columnName, value));
+				mutator.writeColumn(columnFamily, guid, mutator.newColumn(columnName, value));
 				mutator.execute(ConsistencyLevel.ONE);
 				return true;
 			}
@@ -241,10 +255,10 @@ public class CassandraPelopsHelper implements StoreHelper  {
     @Override
     public List<Comparable> getList(String table, String columnFamily, String columnName, String guid, Class theClass) throws Exception {
         logger.debug("Pelops getList table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
         Column col = null;
         try{ 
-            col=selector.getSubColumnFromRow(guid, columnFamily, columnFamily, columnName, ConsistencyLevel.ONE);
+            col=selector.getColumnFromRow(columnFamily, guid, columnName, ConsistencyLevel.ONE);
         }
         catch(Exception e){
             //expected behaviour. current thrift API doesnt seem
@@ -261,7 +275,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		//read the existing value
 		List<Comparable> objectList = null;
 		if(col!=null){
-			String value = new String(col.value, charsetEncoding);
+			String value = new String(col.getValue(), charsetEncoding);
 //			logger.info(value);
 			objectList = mapper.readValue(value, TypeFactory.collectionType(ArrayList.class, theClass));
 		} else {
@@ -277,7 +291,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
     @Override
     public boolean putSingle(String table, String columnFamily, String columnName, String guid, Comparable object) throws Exception {
     	logger.debug("Pelops putSingle table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-    	Mutator mutator = Pelops.createMutator(pool, keySpace);
+    	Mutator mutator = Pelops.createMutator(pool);
     	
 		guid =  StringUtils.trimToNull(guid);
 		if(guid==null){
@@ -294,7 +308,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		
 		//insert into table
 		try{
-			mutator.writeSubColumn(guid, columnFamily, columnFamily, mutator.newColumn(columnName, json));
+			mutator.writeColumn(columnFamily, guid, mutator.newColumn(columnName, json));
 			mutator.execute(ConsistencyLevel.ONE);
 			logger.debug("Pelops putSingle returning");
 			return true;
@@ -308,11 +322,11 @@ public class CassandraPelopsHelper implements StoreHelper  {
 	 * @see org.ala.dao.StoreHelper#put(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Comparable)
 	 */
 	@Override
-	public boolean put(String table, String columnFamily, String superColumn,
+	public boolean put(String table, String columnFamily, 
 			String columnName, String guid, Comparable object) throws Exception {
 		logger.debug("Pelops put table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-    	Mutator mutator = Pelops.createMutator(pool, keySpace);
-    	Selector selector = Pelops.createSelector(pool, keySpace);
+    	Mutator mutator = Pelops.createMutator(pool);
+    	Selector selector = Pelops.createSelector(pool);
     	
 		guid =  StringUtils.trimToNull(guid);
 		if(guid==null || object==null){
@@ -322,7 +336,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		
 		Column col = null;
 		try{
-			col = selector.getSubColumnFromRow(guid, columnFamily, superColumn, columnName, ConsistencyLevel.ONE);
+			col = selector.getColumnFromRow(columnFamily, guid, columnName, ConsistencyLevel.ONE);
 		}catch (Exception e){
         	//expected behaviour. current thrift API doesnt seem
         	//to support a retrieve null getter
@@ -338,7 +352,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		//read the existing value
 		List<Comparable> objectList = null;
 		if(col!=null){
-			String value = new String(col.value, charsetEncoding);
+			String value = new String(col.getValue(), charsetEncoding);
 			objectList = mapper.readValue(value, TypeFactory.collectionType(ArrayList.class, object.getClass()));
 		} else {
 			objectList = new ArrayList<Comparable>();
@@ -366,7 +380,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		
 		//insert into table
 		try{
-			mutator. writeSubColumn(guid, columnFamily, superColumn, mutator.newColumn(columnName, json));
+			mutator. writeColumn(columnFamily, guid, mutator.newColumn(columnName, json));
 			mutator.execute(ConsistencyLevel.ONE);
 			logger.debug("Pelops put returning");
 			return true;
@@ -379,11 +393,11 @@ public class CassandraPelopsHelper implements StoreHelper  {
 	/**
 	 * @see org.ala.dao.StoreHelper#put(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Comparable)
 	 */
-    @Override
-    public boolean put(String table, String columnFamily, String columnName, String guid, Comparable object) throws Exception {
-        logger.debug("Pelops put table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-		return put(table, columnFamily, columnFamily, columnName, guid, object);
-    }
+//    @Override
+//    public boolean put(String table, String columnFamily, String columnName, String guid, Comparable object) throws Exception {
+//        logger.debug("Pelops put table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
+//		return put(table, columnFamily, columnFamily, columnName, guid, object);
+//    }
 
     /**
      * FIXME Note - this currently doesnt preserve rankings.
@@ -393,8 +407,8 @@ public class CassandraPelopsHelper implements StoreHelper  {
     @Override
     public boolean putList(String table, String columnFamily, String columnName, String guid, List<Comparable> objects, boolean append) throws Exception {
     	logger.debug("Pelops putList table: " + table + " colFamily: " +columnFamily + " guid: " + guid);
-    	Mutator mutator = Pelops.createMutator(pool, keySpace);
-    	Selector selector = Pelops.createSelector(pool, keySpace);
+    	Mutator mutator = Pelops.createMutator(pool);
+    	Selector selector = Pelops.createSelector(pool);
     	
 		guid =  StringUtils.trimToNull(guid);
 		if(guid==null){
@@ -404,7 +418,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 
 		Column col = null;
 		try {
-			col = selector.getSubColumnFromRow(guid, columnFamily, columnFamily, columnName, ConsistencyLevel.ONE);
+			col = selector.getColumnFromRow(columnFamily, guid, columnName, ConsistencyLevel.ONE);
 		} catch (Exception e){
         	//expected behaviour. current thrift API doesnt seem
         	//to support a retrieve null getter
@@ -423,7 +437,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 			//read the existing value
 			List<Comparable> objectList = null;
 			if(col!=null){
-				String value = new String(col.value, charsetEncoding);
+				String value = new String(col.getValue(), charsetEncoding);
 				if(!objects.isEmpty()){
 					Object first = objects.get(0);
 					objectList = mapper.readValue(value, TypeFactory.collectionType(ArrayList.class, first.getClass()));
@@ -444,7 +458,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		}
 		//insert into table
 		try{
-			mutator. writeSubColumn(guid, columnFamily, columnFamily, mutator.newColumn(columnName, json));
+			mutator. writeColumn( columnFamily,guid, mutator.newColumn(columnName, json));
 			mutator.execute(ConsistencyLevel.ONE);
 			logger.debug("Pelops putList returning");
 			return true;
@@ -462,8 +476,8 @@ public class CassandraPelopsHelper implements StoreHelper  {
      * @param pageSize the number of objects to return
      * @return
      */
-    public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, String startGuid, int pageSize) {
-    	return getPageOfSubColumns(columnFamily, superColName, null, startGuid, pageSize);
+    public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily,  String startGuid, int pageSize) {
+    	return getPageOfSubColumns(columnFamily,  null, startGuid, pageSize);
     }
 
     /**
@@ -473,8 +487,8 @@ public class CassandraPelopsHelper implements StoreHelper  {
      * @param guids
      * @return
      */
-    public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, List<String> guids) {
-        return getPageOfSubColumns(columnFamily, superColName, null, guids);
+    public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily,  List<String> guids) {
+        return getPageOfSubColumns(columnFamily,  null, guids);
     }
 
     /**
@@ -486,10 +500,10 @@ public class CassandraPelopsHelper implements StoreHelper  {
      * @param guids
      * @return
      */
-	public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, ColumnType[] columns, List<String> guids) {
+	public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, ColumnType[] columns, List<String> guids) {
 
         logger.debug("Pelops getting page with using a list of guids");
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
 
         try{
             //initialise the object mapper
@@ -500,7 +514,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
             SlicePredicate slicePredicate = getSlicePredicateForAll(columns);
 
     		//retrieve a list of columns for each of the rows
-    		Map<String, List<Column>> colListMap = selector.getSubColumnsFromRows(guids, columnFamily, superColName, slicePredicate, ConsistencyLevel.ONE);
+    		Map<String, List<Column>> colListMap = selector.getColumnsFromRowsUtf8Keys(columnFamily, guids, slicePredicate, ConsistencyLevel.ONE);
             return processColumnMap(colListMap);
         } catch(Exception e){
             //expected behaviour. current thrift API doesnt seem
@@ -516,37 +530,47 @@ public class CassandraPelopsHelper implements StoreHelper  {
         if(columns==null || columns.length==0){
             return Selector.newColumnsPredicateAll(true, 10000);
         } else {
-            SlicePredicate slicePredicate = new SlicePredicate();
-            for(ColumnType ct: columns) {
-                slicePredicate.addToColumn_names(ct.getColumnName().getBytes());
+            String[] names = new String[columns.length];
+            for(int i =0;i<columns.length;i++){
+                names[i] = columns[i].getColumnName();
             }
+            SlicePredicate slicePredicate =  Selector.newColumnsPredicate(names);//new SlicePredicate();
+//            for(ColumnType ct: columns) {
+//                slicePredicate.addToColumn_names(ct.getColumnName().getBytes());
+//            }
             return slicePredicate;
         }
     }
 
     @Override
-	public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, ColumnType[] columns, String startGuid, int pageSize) {
+	public Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily,  ColumnType[] columns, String startGuid, int pageSize) {
     	
         logger.debug("Pelops getting page with start guid: " + startGuid);
-        Selector selector = Pelops.createSelector(pool, keySpace);
+        Selector selector = Pelops.createSelector(pool);
         
         try{
-    		KeyRange kr = new KeyRange();
-    		if(StringUtils.isNotEmpty(startGuid)){
-    			kr.start_key = startGuid;
-    			kr.end_key = "";
-    		} else {
-    			kr.start_key = "";
-    			kr.end_key = "";
-    		}
+            String startKey = StringUtils.isNotEmpty(startGuid)?startGuid:"";
+            String endKey = "";
+            
+            
+            KeyRange kr = Selector.newKeyRange(startKey, endKey, pageSize+1);
+
+//    		KeyRange kr = new KeyRange();
+//    		if(StringUtils.isNotEmpty(startGuid)){
+//    			kr.start_key = Bytes.fromByteArray(startGuid.getBytes());
+//    			kr.end_key = new Bytes("");
+//    		} else {
+//    			kr.start_key = "";
+//    			kr.end_key = "";
+//    		}
     		
-    		kr.setCount(pageSize);
+    		//kr.setCount(pageSize);
     		
     		//create the column slice
             SlicePredicate slicePredicate = getSlicePredicateForAll(columns);
 
     		//retrieve a list of columns for each of the rows
-    		Map<String, List<Column>> colListMap = selector.getSubColumnsFromRows(kr, columnFamily, superColName, slicePredicate, ConsistencyLevel.ONE);
+    		Map<String, List<Column>> colListMap = selector.getColumnsFromRowsUtf8Keys( columnFamily, kr, slicePredicate, ConsistencyLevel.ONE);
     		//remove the matching key to enable paging without duplication
     		colListMap.remove(startGuid);
 
@@ -578,8 +602,8 @@ public class CassandraPelopsHelper implements StoreHelper  {
             Map<String, Object> map = new HashMap<String,Object>();
 
             for(Column col : cols){
-                String name = new String(col.name, charsetEncoding);
-                String value = new String(col.value, charsetEncoding);
+                String name = new String(col.getName(), charsetEncoding);
+                String value = new String(col.getValue(), charsetEncoding);
                 ColumnType type = ColumnType.getColumnType(name);
                 Object o = null;
                 try{
@@ -612,8 +636,9 @@ public class CassandraPelopsHelper implements StoreHelper  {
      * @see org.ala.dao.StoreHelper#getScanner(java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Scanner getScanner(String table, String columnFamily, String column) throws Exception {
-    	return new CassandraScanner(Pelops.getDbConnPool(pool).getConnection().getAPI(), keySpace, columnFamily, column);
+    public Scanner getScanner(String table, String columnFamily, String... column) throws Exception {
+        return new CassandraScanner(pool, table,columnFamily,column);
+    	//return new CassandraScanner(Pelops.getDbConnPool(pool).getConnection().getAPI(), keySpace, columnFamily, column);
     }
 
 	public Scanner getScanner(String table, String columnFamily) throws Exception {
@@ -622,22 +647,22 @@ public class CassandraPelopsHelper implements StoreHelper  {
 	
     public List<String> getSuperColumnsByGuid(String guid, String columnFamily) throws Exception {
 		List<String> al = new ArrayList<String>();
-		Selector selector = Pelops.createSelector(pool, keySpace);
-		List<SuperColumn> l = selector.getSuperColumnsFromRow(guid, columnFamily, Selector.newColumnsPredicateAll(true, 10000), ConsistencyLevel.ONE);
+		Selector selector = Pelops.createSelector(pool);
+		List<Column> l = selector.getColumnsFromRow( columnFamily,guid, Selector.newColumnsPredicateAll(true, 10000), ConsistencyLevel.ONE);
 		for(int i = 0; i < l.size(); i++){
-			SuperColumn s = l.get(i);
+			Column s = l.get(i);
 			al.add(new String(s.getName(), "UTF-8"));			
 		}		
 		return al;		    	
     }
     
-    public Map<String, List<Comparable>> getColumnList(String columnFamily, String superColumnName, String guid, Class theClass) throws Exception {
-        Selector selector = Pelops.createSelector(pool, keySpace);
+    public Map<String, List<Comparable>> getColumnList(String columnFamily, String guid, Class theClass) throws Exception {
+        Selector selector = Pelops.createSelector(pool);
         List<Column> cl = null;
         Map<String, List<Comparable>> al = new HashMap<String, List<Comparable>>();
         
         try{ 
-        	cl = selector.getSubColumnsFromRow(guid, columnFamily, superColumnName, Selector.newColumnsPredicateAll(true, 10000), ConsistencyLevel.ONE);            
+        	cl = selector.getColumnsFromRow( columnFamily, guid, Selector.newColumnsPredicateAll(true, 10000), ConsistencyLevel.ONE);            
         }
         catch(Exception e){
             //expected behaviour. current thrift API doesnt seem
@@ -669,7 +694,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
     	CassandraPelopsHelper helper = new CassandraPelopsHelper();
     	helper.init();
 
-    	Map<String, Object> map = helper.getSubColumnsByGuid("tc","tc", "103067807");
+    	Map<String, Object> map = helper.getSubColumnsByGuid("tc", "103067807");
     	Set<String> keys = map.keySet();
     	Iterator<String> it = keys.iterator();
     	while(it.hasNext()){

@@ -36,6 +36,7 @@ import org.ala.model.Reference;
 import org.ala.model.SensitiveStatus;
 import org.ala.model.SimpleProperty;
 import org.ala.model.SpecimenHolding;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.ala.model.Triple;
@@ -63,7 +64,7 @@ public interface TaxonConceptDao {
 	 * @return
 	 * @throws Exception
 	 */
-	List<TaxonConcept> getSynonymsFor(String guid) throws Exception;
+	List<SynonymConcept> getSynonymsFor(String guid) throws Exception;
 
 	/**
 	 * Add an alternative identifier (GUID) for this taxon concept or 
@@ -285,6 +286,8 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	boolean addTaxonName(String guid, TaxonName tn) throws Exception;
+	
+	boolean addSameAsTaxonConcept(String guid, TaxonConcept tc) throws Exception;
 
 	/**
 	 * Add this common name to the Taxon Concept.
@@ -383,7 +386,7 @@ public interface TaxonConceptDao {
 	 * @param synonym
 	 * @throws Exception
 	 */
-	boolean addSynonym(String guid, TaxonConcept synonym) throws Exception;
+	boolean addSynonym(String guid, SynonymConcept synonym) throws Exception;
 
 	/**
 	 * Add a congruent concept.
@@ -844,7 +847,7 @@ public interface TaxonConceptDao {
 	
 	public boolean setRanking(String guid, ColumnType columnType, BaseRanking ir)throws Exception;
 	public boolean setRanking(String guid, ColumnType columnType, BaseRanking baseRanking, boolean reindex)throws Exception;
-	List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception;
+	List<SolrInputDocument> indexTaxonConcept(String guid,Scanner scanner) throws Exception;
 	
 	public void resetRanking(String guid, ColumnType columnType, Integer value)throws Exception;
 }

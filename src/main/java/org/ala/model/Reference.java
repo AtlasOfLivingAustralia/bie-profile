@@ -22,11 +22,13 @@ import java.util.List;
  * 
  * This is primarily aimed at modelling the artefacts coming out of 
  * BHL.
+ * 
+ * It also stores the references that come from the NSL
  *
  * @author Dave Martin (David.Martin@csiro.au)
  */
 public class Reference extends AttributableObject implements Comparable<Reference>{
-
+    protected String guid;
 	protected String title;
 	protected String authorship;
 	protected String identifier;
@@ -150,6 +152,20 @@ public class Reference extends AttributableObject implements Comparable<Referenc
 	}
 	
 	/**
+     * @return the guid
+     */
+    public String getGuid() {
+        return guid;
+    }
+
+    /**
+     * @param guid the guid to set
+     */
+    public void setGuid(String guid) {
+        this.guid = guid;
+    }
+
+    /**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

@@ -25,6 +25,12 @@ public class Publication extends AttributableObject implements Comparable<Public
 	protected String author;
 	protected String datePublished;
 	protected String publicationType;
+	protected String citation;
+	protected String containedInGuid;
+	//new as of 2011-12
+	protected String edition;
+	protected String publisher;
+	protected String year;
 	
 	/**
 	 * @see org.ala.model.AttributableObject#equals(java.lang.Object)
@@ -46,7 +52,7 @@ public class Publication extends AttributableObject implements Comparable<Public
 	@Override
 	public int compareTo(Publication o) {
 		if(o.getTitle()!=null){
-			o.getTitle().compareTo(o.getTitle());
+			o.getTitle().compareTo(getTitle());
 		}
 		return 0;
 	}
@@ -113,6 +119,76 @@ public class Publication extends AttributableObject implements Comparable<Public
 	}
 
 	/**
+     * @return the citation
+     */
+    public String getCitation() {
+        return citation;
+    }
+
+    /**
+     * @param citation the citation to set
+     */
+    public void setCitation(String citation) {
+        this.citation = citation;
+    }
+
+    /**
+     * @return the containedInGuid
+     */
+    public String getContainedInGuid() {
+        return containedInGuid;
+    }
+
+    /**
+     * @param containedInGuid the containedInGuid to set
+     */
+    public void setContainedInGuid(String containedInGuid) {
+        this.containedInGuid = containedInGuid;
+    }
+
+    /**
+     * @return the edition
+     */
+    public String getEdition() {
+        return edition;
+    }
+
+    /**
+     * @param edition the edition to set
+     */
+    public void setEdition(String edition) {
+        this.edition = edition;
+    }
+
+    /**
+     * @return the publisher
+     */
+    public String getPublisher() {
+        return publisher;
+    }
+
+    /**
+     * @param publisher the publisher to set
+     */
+    public void setPublisher(String publisher) {
+        this.publisher = publisher;
+    }
+
+    /**
+     * @return the year
+     */
+    public String getYear() {
+        return year;
+    }
+
+    /**
+     * @param year the year to set
+     */
+    public void setYear(String year) {
+        this.year = year;
+    }
+
+    /**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

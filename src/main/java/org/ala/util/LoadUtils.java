@@ -23,8 +23,11 @@ import java.util.regex.Pattern;
 import org.ala.dao.SolrUtils;
 import org.ala.lucene.LuceneUtils;
 import org.ala.model.Publication;
+import org.ala.model.Reference;
 import org.ala.model.TaxonConcept;
+import org.ala.model.TaxonName;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -61,15 +64,23 @@ public class LoadUtils {
 	public static final String BIE_STAGING_DIR = "/data/bie-staging/";
 	public static final String BASE_DIR = "/data/lucene/loading/";
 	public static final String TC_INDEX_DIR = BASE_DIR+"taxonConcept";
+	public static final String TN_INDEX_DIR = BASE_DIR+"taxonName";
 	public static final String REL_INDEX_DIR = BASE_DIR+"relationship";
 	public static final String ACC_INDEX_DIR = BASE_DIR+"accepted";
 	public static final String PUB_INDEX_DIR = BASE_DIR+"publication";
+	public static final String REF_INDEX_DIR = BASE_DIR+"reference";
+	public static final String ID_INDEX_DIR = "/data/lucene/alanames/id";
+	public static final String ALA_NAMES_INDEX_DIR = "/data/lucene/alanames/tc";
 	static Pattern p = Pattern.compile("\t");
 	
 	private IndexSearcher tcIdxSearcher;
+	private IndexSearcher tnIdxSearcher;
 	private IndexSearcher relIdxSearcher;
 	private IndexSearcher accIdxSearcher;
 	private IndexSearcher pubIdxSearcher;
+	private IndexSearcher refIdxSearcher;
+	private IndexSearcher idIdxSearcher;
+	private IndexSearcher alaNameIdxSearcher;
 	
 	public LoadUtils() throws Exception {}
 	
@@ -83,7 +94,17 @@ public class LoadUtils {
 	 */
 	public List<TaxonConcept> getByNameGuid(String nameGuid, int limit) throws Exception {
 		return searchTaxonConceptIndexBy("nameGuid", nameGuid, limit); 
-	}	
+	}
+	
+	public TaxonName getNameByGuid(String guid) throws Exception {
+	    Query query = new TermQuery(new Term("guid", guid));
+	    TopDocs topDocs = getTnIdxSearcher().search(query, 1);
+	    if(topDocs.totalHits>0){
+	        return createTaxonNameFromIndex(getTnIdxSearcher().doc(topDocs.scoreDocs[0].doc));
+	    }
+	    else
+	        return null;
+	}
 
 	/**
 	 * Retrieve guids for concepts associated with this publication id.
@@ -133,7 +154,7 @@ public class LoadUtils {
 		Query query = new TermQuery(new Term("guid", guid));
 		TopDocs topDocs = getPubIdxSearcher().search(query, 1);
 		for(ScoreDoc scoreDoc: topDocs.scoreDocs){
-			Document doc = getTcIdxSearcher().doc(scoreDoc.doc);
+			Document doc = getPubIdxSearcher().doc(scoreDoc.doc);
 			Publication p = new Publication();
 			p.setGuid(doc.get("guid"));
 			p.setTitle(doc.get("title"));
@@ -143,6 +164,22 @@ public class LoadUtils {
 			return p;
 		}
 		return null;
+	}
+	
+	public Reference getReferenceByGuid(String guid) throws Exception {
+	    if(guid == null)
+	        return null;
+	    Query query = new TermQuery(new Term("guid", guid));
+        TopDocs topDocs = getRefIdxSearcher().search(query, 1);
+        for(ScoreDoc scoreDoc: topDocs.scoreDocs){
+            Document doc = getRefIdxSearcher().doc(scoreDoc.doc);
+            Reference r = new Reference();
+            r.setGuid(doc.get("guid"));
+            r.setTitle(doc.get("title"));
+            return r;
+        }
+	    
+	    return null;
 	}
 	
 	/**
@@ -181,6 +218,30 @@ public class LoadUtils {
 		taxonConcept.setPublishedIn(doc.get("publishedIn"));
 		taxonConcept.setPublishedInCitation(doc.get("publishedInCitation"));
 		return taxonConcept;
+	}
+	
+	private TaxonName createTaxonNameFromIndex(Document doc){
+	    TaxonName tn = new TaxonName();
+	    tn.setGuid(doc.get("guid"));
+	    tn.setAuthorship(doc.get("author"));
+	    tn.setNameComplete(doc.get("name"));
+	    tn.setNomenclaturalCode(doc.get("nomenCode"));
+	    tn.setPublishedInCitation(doc.get("publishedInCitation"));
+	    tn.setRankString(doc.get("rank"));
+	    tn.setTypificationString(doc.get("typification"));
+	    /*
+	     * doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+                doc.add(new Field("name", keyValue[2], Store.YES, Index.NO));
+                
+                addToDocSafely(doc,"rank", keyValue[4], Store.YES, Index.NO);
+                addToDocSafely(doc,"author", keyValue[5], Store.YES, Index.NO);
+                addToDocSafely(doc,"year", keyValue[7], Store.YES, Index.NO);
+                addToDocSafely(doc, "publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED);
+                addToDocSafely(doc,"microReference", keyValue[9], Store.YES, Index.NO);
+                addToDocSafely(doc,"nomenCode", keyValue[10], Store.YES, Index.NO);
+                addToDocSafely(doc,"typification", keyValue[19], Store.YES, Index.NO);
+	     */
+	    return tn;
 	}
 	
 	/**
@@ -225,7 +286,7 @@ public class LoadUtils {
 		return guids;
 	}
 
-	private Searcher getRelIdxSearcher() throws Exception {
+	private IndexSearcher getRelIdxSearcher() throws Exception {
 		//FIXME move to dependency injection
 		if(this.relIdxSearcher==null){
 			File file = new File(REL_INDEX_DIR);
@@ -237,7 +298,7 @@ public class LoadUtils {
 		return this.relIdxSearcher;
 	}
 	
-	private Searcher getAccIdxSearcher() throws Exception {
+	private IndexSearcher getAccIdxSearcher() throws Exception {
 		if(this.accIdxSearcher==null){
 			File file = new File(ACC_INDEX_DIR);
 			if (file.exists()) {
@@ -248,7 +309,7 @@ public class LoadUtils {
 		return this.accIdxSearcher;
 	}	
 
-	private Searcher getTcIdxSearcher() throws Exception {
+	private IndexSearcher getTcIdxSearcher() throws Exception {
 		if(this.tcIdxSearcher==null){
 			File file = new File(TC_INDEX_DIR);
 			if (file.exists()) {
@@ -259,7 +320,18 @@ public class LoadUtils {
 		return this.tcIdxSearcher;
 	}
 	
-	private Searcher getPubIdxSearcher() throws Exception {
+	   private IndexSearcher getTnIdxSearcher() throws Exception {
+	        if(this.tnIdxSearcher==null){
+	            File file = new File(TN_INDEX_DIR);
+	            if (file.exists()) {
+	                Directory dir = FSDirectory.open(file); 
+	                this.tnIdxSearcher = new IndexSearcher(dir);
+	            }
+	        }
+	        return this.tnIdxSearcher;
+	    }
+	
+	private IndexSearcher getPubIdxSearcher() throws Exception {
 		if(this.pubIdxSearcher==null){
 			File file = new File(PUB_INDEX_DIR);
 			if (file.exists()) {
@@ -268,6 +340,75 @@ public class LoadUtils {
 			}			
 		}
 		return this.pubIdxSearcher;
+	}
+	
+    private IndexSearcher getRefIdxSearcher() throws Exception {
+        if(this.refIdxSearcher==null){
+            File file = new File(REF_INDEX_DIR);
+            if (file.exists()) {
+                Directory dir = FSDirectory.open(file); 
+                this.refIdxSearcher = new IndexSearcher(dir);
+            }           
+        }
+        return this.refIdxSearcher;
+    }	
+	
+	private IndexSearcher getIdIdxSearcher() throws Exception {
+	    if(this.idIdxSearcher==null){
+            File file = new File(ID_INDEX_DIR);
+            if (file.exists()) {
+                Directory dir = FSDirectory.open(file); 
+                this.idIdxSearcher = new IndexSearcher(dir);
+            }           
+        }
+        return this.idIdxSearcher;
+	}
+	
+    private IndexSearcher getAlaNameIdxSearcher() throws Exception {
+        if (this.alaNameIdxSearcher == null) {
+            File file = new File(ALA_NAMES_INDEX_DIR);
+            if (file.exists()) {
+                Directory dir = FSDirectory.open(file);
+                this.alaNameIdxSearcher = new IndexSearcher(dir);
+            }
+        }
+        return this.alaNameIdxSearcher;
+    }
+
+	/**
+	 * Returns the preferred lsid for the supplied lsid
+	 * 
+	 * An lsid is preferred if it does not appear in the id index
+	 * 
+	 * @param lsid
+	 * @return
+	 */
+	public String getPreferredGuid(String guid) throws Exception{
+	    TermQuery tq = new TermQuery(new Term("guid",guid ));
+	    TopDocs topDocs = getIdIdxSearcher().search(tq, 1);	    
+        if(topDocs.scoreDocs.length>0){
+            
+            Document doc = idIdxSearcher.doc(topDocs.scoreDocs[0].doc);
+            return doc.get("preferredGuid");
+        } else {
+            return guid;
+        }
+	}
+	/**
+	 * Returns the accepted concepts guid when the supplied guid is a synonym otherwise null
+	 * @param guid
+	 * @return
+	 * @throws Exception
+	 */
+	public String getAlaAcceptedConcept(String guid) throws Exception{
+	    TermQuery tq = new TermQuery(new Term("guid", guid));
+	    TopDocs topDocs = getAlaNameIdxSearcher().search(tq, 1);
+	    if(topDocs.scoreDocs.length>0){
+            Document doc = alaNameIdxSearcher.doc(topDocs.scoreDocs[0].doc);
+            return doc.get("acceptedGuid");
+        } else {
+            return null;
+        }
 	}
 	
 	/**
@@ -327,6 +468,8 @@ public class LoadUtils {
 		return topDocs.scoreDocs.length>0;
 	}
 	
+	
+	
 	/**
 	 * Load the accepted concepts 
 	 * 
@@ -348,7 +491,7 @@ public class LoadUtils {
 		try {
 	    	long start = System.currentTimeMillis();
 	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/acceptedConcepts.txt");
+	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/acceptedConcepts.txt",false);
 	    	String[] keyValue = null;
 	    	
 	    	while((keyValue=tr.readNext())!=null){
@@ -389,17 +532,24 @@ public class LoadUtils {
 		try {
 	    	long start = System.currentTimeMillis();
 	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/relationships.txt");
+	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/relationships.txt",false);
 	    	String[] keyValue = null;
 	    	
 	    	while((keyValue=tr.readNext())!=null){
-	    		if(keyValue.length==3){
+	    		if(keyValue.length==6 && keyValue[2] != null && keyValue[1] != null){
 	    			i++;
 			    	Document doc = new Document();
-			    	doc.add(new Field("fromTaxon", keyValue[0], Store.YES, Index.ANALYZED));
+			    	doc.add(new Field("fromTaxon", keyValue[2], Store.YES, Index.ANALYZED));
+			    	
 			    	doc.add(new Field("toTaxon", keyValue[1], Store.YES, Index.ANALYZED));
-			    	doc.add(new Field("relationship", keyValue[2], Store.YES, Index.ANALYZED));
+			    	
+			    	addToDocSafely(doc,"relationship", keyValue[3], Store.YES, Index.ANALYZED);
+			    	addToDocSafely(doc,"description",keyValue[5], Store.YES, Index.ANALYZED);
 			    	iw.addDocument(doc);
+	    		}
+	    		else{
+	    		    //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+	    		    logger.info("Unable to index: " + StringUtils.join(keyValue,","));
 	    		}
 			}
 	    	tr.close();
@@ -408,6 +558,68 @@ public class LoadUtils {
 		} finally {
 			iw.close();
 		}
+	}
+	
+	public void loadTaxonNames() throws Exception{
+	    long start = System.currentTimeMillis();
+        
+        //create a name index
+        File file = new File(TN_INDEX_DIR);
+        if(file.exists()){
+            FileUtils.forceDelete(file);
+        }
+        FileUtils.forceMkdir(file);
+        KeywordAnalyzer analyzer = new KeywordAnalyzer();
+        //initialise lucene
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
+        IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
+        int i = 0;
+        
+        //names files to index
+        TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonNames.txt",false);
+        String[] keyValue = null;
+        while((keyValue=tr.readNext())!=null){
+            
+            if(keyValue.length>19 && keyValue[2] != null){
+
+                Document doc = new Document();
+                doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+                doc.add(new Field("name", keyValue[2], Store.YES, Index.NO));
+                
+                addToDocSafely(doc,"rank", keyValue[4], Store.YES, Index.NO);
+                addToDocSafely(doc,"author", keyValue[5], Store.YES, Index.NO);
+                addToDocSafely(doc,"year", keyValue[7], Store.YES, Index.NO);
+                addToDocSafely(doc, "publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED);
+                addToDocSafely(doc,"microReference", keyValue[9], Store.YES, Index.NO);
+                addToDocSafely(doc,"nomenCode", keyValue[10], Store.YES, Index.NO);
+                addToDocSafely(doc,"typification", keyValue[19], Store.YES, Index.NO);
+//              if(keyValue[6]!=null){
+//                  doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
+//              }
+                //LuceneUtils.addScientificNameToIndex(doc, keyValue[3], keyValue[2]);
+                
+                //add relationships between concepts
+//              addRels(is,keyValue[0], doc);
+                
+                //add to index
+                iw.addDocument(doc, analyzer);
+            }
+            else{
+                logger.info("Unable to index: " + StringUtils.join(keyValue,","));
+            }
+            i++;
+        }
+        tr.close();
+        iw.close();
+        
+        long finish = System.currentTimeMillis();
+        logger.info(i+" indexed taxon names in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+
+	}
+	private void addToDocSafely(Document doc, String field, String value, Store store, Index index){
+	    if(StringUtils.isNotEmpty(value)){
+	        doc.add(new Field(field, value, store, index));
+	    }
 	}
 
 	/**
@@ -437,7 +649,7 @@ public class LoadUtils {
     	int i = 0;
     	
     	//names files to index
-    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonConcepts.txt");
+    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonConcepts.txt",false);
     	String[] keyValue = null;
     	while((keyValue=tr.readNext())!=null){
     		
@@ -445,14 +657,17 @@ public class LoadUtils {
 
     			Document doc = new Document();
 		    	doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-		    	doc.add(new Field("nameGuid", keyValue[1], Store.YES, Index.ANALYZED));
-		    	if(keyValue[5]!=null){
-		    		doc.add(new Field("publishedInCitation", keyValue[5], Store.YES, Index.ANALYZED));
+		    	
+		    	addToDocSafely(doc,"nameGuid", keyValue[4], Store.YES, Index.ANALYZED);
+		    	
+		    	
+		    	if(keyValue[8]!=null){
+		    		doc.add(new Field("publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED));
 		    	}
-		    	if(keyValue[6]!=null){
-		    		doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
-		    	}
-		    	LuceneUtils.addScientificNameToIndex(doc, keyValue[2], null);
+//		    	if(keyValue[6]!=null){
+//		    		doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
+//		    	}
+		    	//LuceneUtils.addScientificNameToIndex(doc, keyValue[3], keyValue[2]);
 		    	
 		    	//add relationships between concepts
 //		    	addRels(is,keyValue[0], doc);
@@ -469,6 +684,45 @@ public class LoadUtils {
     	
     	long finish = System.currentTimeMillis();
     	logger.info(i+" indexed taxon concepts in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+	}
+	
+	public void loadReferences() throws Exception {
+	    File file = new File(REF_INDEX_DIR);
+        if(file.exists()){
+            FileUtils.forceDelete(file);
+        }
+        FileUtils.forceMkdir(file);
+        int i=0;
+        KeywordAnalyzer analyzer = new KeywordAnalyzer();
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
+        IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig);
+        try {
+            long start = System.currentTimeMillis();
+            //add the relationships
+            TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/references.txt",false);
+            String[] keyValue = null;
+            
+            while((keyValue=tr.readNext())!=null){
+                if(keyValue.length==4 && keyValue[2] != null){
+                    i++;
+                    Document doc = new Document();
+                    doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+                    doc.add(new Field("title", keyValue[2], Store.YES, Index.NO));
+                    if(keyValue[3] != null) doc.add(new Field("containedIn", keyValue[3], Store.YES, Index.NO));
+                    
+                    iw.addDocument(doc);
+                }
+                else{
+                    //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+                    logger.info("Unable to index: " + StringUtils.join(keyValue,","));
+                }
+            }
+            tr.close();
+            long finish = System.currentTimeMillis();
+            logger.info(i+" loaded relationships, Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+        } finally {
+            iw.close();
+        }
 	}
 
 	/**
@@ -490,18 +744,23 @@ public class LoadUtils {
 		try {
 	    	long start = System.currentTimeMillis();
 	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/publications.txt");
+	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/publications.txt",false);
 	    	String[] keyValue = null;
 	    	
 	    	while((keyValue=tr.readNext())!=null){
-	    		if(keyValue.length==5){
+	    		if(keyValue.length==10){
 	    			i++;
 			    	Document doc = new Document();
 			    	doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-			    	if(keyValue[1]!=null) doc.add(new Field("title", keyValue[1], Store.YES, Index.NO));
-			    	if(keyValue[2]!=null) doc.add(new Field("authorship", keyValue[2], Store.YES, Index.NO));
-			    	if(keyValue[3]!=null) doc.add(new Field("datePublished", keyValue[3], Store.YES, Index.NO));
-			    	if(keyValue[4]!=null) doc.add(new Field("publicationType", keyValue[4], Store.YES, Index.NO));
+			    	if(keyValue[2]!=null) doc.add(new Field("title", keyValue[1], Store.YES, Index.NO));
+			    	//missing in new dumps as of 20111205
+			    	//if(keyValue[2]!=null) doc.add(new Field("authorship", keyValue[2], Store.YES, Index.NO));
+			    	if(keyValue[3]!=null) doc.add(new Field("year", keyValue[3], Store.YES, Index.NO));
+			    	if(keyValue[4]!=null) doc.add(new Field("datePublished", keyValue[4], Store.YES, Index.NO));
+			    	if(keyValue[5]!=null) doc.add(new Field("citation", keyValue[5], Store.YES, Index.NO));
+			    	if(keyValue[6]!=null) doc.add(new Field("containedIn", keyValue[6], Store.YES, Index.ANALYZED));
+			    	//missing in new dumps
+			    	//if(keyValue[4]!=null) doc.add(new Field("publicationType", keyValue[4], Store.YES, Index.NO));
 			    	iw.addDocument(doc);
 	    		}
 			}

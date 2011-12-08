@@ -47,6 +47,11 @@ public class CreateLoadingIndex {
 		l.loadAccepted();
 		logger.info("Loading publications...");
 		l.loadPublications();
+		logger.info("Loading taxon names...");
+		l.loadTaxonNames();
+		logger.info("Loading References...");
+		l.loadReferences();
 		logger.info("Loading complete.");
+		
 	}
 }

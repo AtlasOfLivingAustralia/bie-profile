@@ -1,7 +1,11 @@
 package org.ala.dao;
 
+
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.io.File;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -11,6 +15,7 @@ import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
 import org.apache.solr.client.solrj.util.ClientUtils;
+import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.core.CoreContainer;
 import org.springframework.stereotype.Component;
 /**
@@ -21,11 +26,16 @@ import org.springframework.stereotype.Component;
 @Component("solrUtils")
 public class SolrUtils {
 	public static final Version BIE_LUCENE_VERSION = Version.LUCENE_34;
-	
+	static Logger logger = Logger.getLogger(SolrUtils.class);
 	private String solrHome = "/data/solr/bie";
 	
     /** SOLR server instance */
     private EmbeddedSolrServer server = null;
+    
+    private AddDocThread[] threads = null;
+    ArrayBlockingQueue<List<SolrInputDocument>> queue = null;
+    
+    private int numThreads =4; 
 	
 	/**
      * Initialise the SOLR server instance
@@ -91,5 +101,88 @@ public class SolrUtils {
     	}
     	return cleanQuery;
     }
+	/**
+	 * Stops the threads for indexing. Allows the program to exit gracefully.
+	 * @throws Exception
+	 */
+	public void stopIndexing() throws Exception {
+	    //wait until the queue is empty then stop all the threads
+	    while(queue.size()>0){
+	        Thread.currentThread().sleep(100);
+	    }
+	    for(AddDocThread thread :threads){
+	        thread.stopRunning();
+	    }
+	    //issue the last commit
+	    server.commit();
+	    threads = null;
+	    queue = null;
+	}
+	/**
+	 * Adds a list of documents to the SOLR server in a threaded manner.
+	 * @param docs
+	 * @throws Exception
+	 */
+	public void addDocs(List<SolrInputDocument> docs) throws Exception{
+	    if(threads == null){
+	        queue = new ArrayBlockingQueue<List<SolrInputDocument>>(10);	        
+	        //ArrayBlockingQueue<List<SolrInputDocument>> queue = new ArrayBlockingQueue<List<SolrInputDocument>>(5);
+	        threads = new AddDocThread[numThreads];
+	        for(int i =0;i<numThreads;i++){
+    	        AddDocThread thread = new AddDocThread(i,queue);	        
+    	        thread.start();
+    	        threads[i] = thread;
+	        }
+	    }
+	    queue.put(docs);
+
+	}
+	/**
+	 * A thread that adds solr documents to the index. 
+	 *
+	 */
+	private class AddDocThread extends Thread{
+	    private static final int MAX_BATCH = 10;
+	    ArrayBlockingQueue<List<SolrInputDocument>> queue = new ArrayBlockingQueue<List<SolrInputDocument>>(MAX_BATCH);
+	    int id =-1;
+	    boolean shouldRun = true;
+	    AddDocThread(int id, ArrayBlockingQueue<List<SolrInputDocument>> queue){
+	        this.queue = queue;
+	        this.id = id;
+	    }
+	    void stopRunning(){
+	        shouldRun = false;
+	    }
+	    
+	    public void run(){
+	        while(shouldRun){
+	            if(queue.size()>0){
+	                
+	                List<SolrInputDocument> docs = queue.poll();
+	                //add and commit the docs
+	                if (docs != null && !docs.isEmpty()) {
+	                    try{
+	                    logger.info("Thread " + id + " is adding " + docs.size() + " documents to the index.");
+                        server.add(docs);
+                        //only the first thread should commit
+                        if(id == 0)
+                            server.commit();
+                        docs =null;
+	                    }
+	                    catch(Exception e){
+	                        
+	                    }
+                        
+                    }
+	            }
+	            else{
+	                try{
+	                Thread.sleep(250);
+	                }
+	                catch(Exception e){}
+	            }
+	        }
+	    }
+	}
 	
 }

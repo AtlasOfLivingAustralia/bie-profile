@@ -16,6 +16,7 @@ import org.ala.model.Image;
 import org.ala.model.PestStatus;
 import org.ala.model.OccurrencesInGeoregion;
 import org.ala.model.SimpleProperty;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.ala.util.SpringUtils;
@@ -53,18 +54,18 @@ public class TaxonConceptDaoTest extends TestCase {
 
 		TaxonConceptDao tcDao = initTaxonConceptDao();
 
-		TaxonConcept synonym1 = new TaxonConcept();
+		SynonymConcept synonym1 = new SynonymConcept();
 		synonym1.setGuid("urn:lsid:afd:taxon:124");
 		synonym1.setNameString("Sarcophilus satanius");
 		tcDao.addSynonym(TEST_TCDAO_GUID, synonym1);
 
-		List<TaxonConcept> synonyms = tcDao.getSynonymsFor(TEST_TCDAO_GUID);
+		List<SynonymConcept> synonyms = tcDao.getSynonymsFor(TEST_TCDAO_GUID);
 
 		assertEquals(synonyms.size(), 1);
 		assertEquals(synonyms.get(0).getGuid(), "urn:lsid:afd:taxon:124");
 		assertEquals(synonyms.get(0).getNameString(), "Sarcophilus satanius");
 
-		TaxonConcept synonym2 = new TaxonConcept();
+		SynonymConcept synonym2 = new SynonymConcept();
 		synonym2.setGuid("urn:lsid:afd:taxon:125");
 		synonym2.setNameString("Sarcophilus laniarius");
 		tcDao.addSynonym(TEST_TCDAO_GUID, synonym2);		
@@ -364,7 +365,7 @@ public class TaxonConceptDaoTest extends TestCase {
 		
 		tcDao.addParentTaxon(TEST_TCDAO_GUID, parentTaxon);
 		
-		TaxonConcept synonym1 = new TaxonConcept();
+		SynonymConcept synonym1 = new SynonymConcept();
 		synonym1.setGuid("urn:lsid:afd:taxon:124");
 		synonym1.setNameString("Sarcophilus satanius");
 		

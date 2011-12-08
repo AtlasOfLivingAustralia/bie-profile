@@ -37,8 +37,10 @@ public class BiocacheDynamicLoader {
     protected SolrUtils solrUtils;
     private long start = System.currentTimeMillis();
     protected static Logger logger  = Logger.getLogger(BiocacheDynamicLoader.class);
+    //http://biocache.ala.org.au/occurrences/search?q=!rank:species%20!rank:genus%20!rank:family%20!rank:order%20!rank:class%20!rank:phylum%20!rank:kingdom&facets=rank
     private String suffix = "http://biocache.ala.org.au/ws/occurrences/facets/download?q=lat_long:%5B*+TO+*%5D&count=true&facets=";     
-    private String[] geoLoads = new String[]{"species_guid", "genus_guid","family","order","class","phylum","kingdom"};
+    private String[] geoLoads = new String[]{"taxon_concept_lsid","species_guid", "genus_guid","family","order","class","phylum","kingdom"};
+    private String minorTaxonRanksUrlSuffix = "http://biocache.ala.org.au/ws/occurrences/facets/download?q=lat_long:%5B*+TO+*%5D%20!rank:species%20!rank:genus%20!rank:family%20!rank:order%20!rank:class%20!rank:phylum%20!rank:kingdom&count=true&facets=";
     public static void main(String[] args) throws Exception {
         ApplicationContext context = SpringUtils.getContext();
         BiocacheDynamicLoader l = context.getBean(BiocacheDynamicLoader.class);
@@ -48,7 +50,7 @@ public class BiocacheDynamicLoader {
     public void load(int workers){
         //so we need to load all the information from WS's
         HttpClient httpClient = new HttpClient();
-        ArrayBlockingQueue<String[]> lsidQueue = new ArrayBlockingQueue<String[]>(500);
+        ArrayBlockingQueue<String[]> lsidQueue = new ArrayBlockingQueue<String[]>(50);
         List<SolrInputDocument>docs = Collections.synchronizedList(new ArrayList<SolrInputDocument>(100));
         IndexingThread primaryThread = new IndexingThread(lsidQueue, docs, 1);
         new Thread(primaryThread).start();
@@ -60,8 +62,9 @@ public class BiocacheDynamicLoader {
             new Thread(it).start();
            
         }
+        
         for(String load : geoLoads){
-            String loadUrl = suffix + load;
+            String loadUrl = load.equals("taxon_concept_lsid")?minorTaxonRanksUrlSuffix + load:suffix+load ;
             logger.info("Starting to reload " + loadUrl);
                    
             try{                
@@ -101,10 +104,78 @@ public class BiocacheDynamicLoader {
             catch(Exception e){
                 logger.error("Unable to reload " + geoLoads[0], e);
             }
-        }
-        
-        
+        }  
     }
+    
+    private interface UpdateBiocache{
+        
+        public  List<SolrInputDocument> update(String[] values, boolean lookup, int id);
+    }
+    
+    private class OccurrenceCountUpdate implements UpdateBiocache{
+        private boolean index =true;
+        OccurrenceCountUpdate(boolean index){
+            this.index = index;
+        }
+        public List<SolrInputDocument> update(String[] value, boolean lookup, int id){
+            
+            try{                      
+                String lsid = lookup?taxonConceptDao.findLsidByName(value[0]):value[0];
+                if(lsid != null){
+                    logger.debug(id+">>Indexing " + lsid);
+                    Integer count= Integer.parseInt(value[1]);
+                    logger.debug("Updating: " + value[0] +" : " + count);
+                    taxonConceptDao.setOccurrenceRecordsCount(lsid, count);
+                    if(index){
+                        return taxonConceptDao.indexTaxonConcept(lsid,null);
+                    }
+                }
+                else{
+                    logger.warn("Unable to locate " + value);
+                }
+              }
+              catch(Exception e){
+                  logger.warn("Unable to generate index documents for " + value);
+              }
+            
+            
+            return null;
+        }
+    }
+    
+    
+    private class GeospatialUpdate implements UpdateBiocache{
+        String suffix = "http://biocache.ala.org.au/ws/occurrences/facets/download?q=lat_long:%5B*+TO+*%5D&count=true&facets=";
+        private boolean index =true;
+        GeospatialUpdate(boolean index){
+            this.index = index;
+        }
+        public List<SolrInputDocument> update(String[] value, boolean lookup, int id){
+            
+            try{                      
+                String lsid = lookup?taxonConceptDao.findLsidByName(value[0]):value[0];
+                if(lsid != null){
+                    logger.debug(id+">>Indexing " + lsid);
+                    Integer count= Integer.parseInt(value[1]);
+                    logger.debug("Updating: " + value[0] +" : " + count);
+                    taxonConceptDao.setGeoreferencedRecordsCount(lsid, count);
+                    if(index){
+                        return taxonConceptDao.indexTaxonConcept(lsid,null);
+                    }
+                }
+                else{
+                    logger.warn("Unable to locate " + value);
+                }
+              }
+              catch(Exception e){
+                  logger.warn("Unable to generate index documents for " + value);
+              }
+            
+            
+            return null;
+        }
+    }
+    
 
     /**
      * 
@@ -184,7 +255,7 @@ public class BiocacheDynamicLoader {
                           Integer count= Integer.parseInt(value[1]);
                           logger.debug("Updating: " + value[0] +" : " + count);
                           taxonConceptDao.setGeoreferencedRecordsCount(lsid, count);
-                          docs.addAll(taxonConceptDao.indexTaxonConcept(lsid));
+                          docs.addAll(taxonConceptDao.indexTaxonConcept(lsid,null));
                       }
                       else{
                           logger.warn("Unable to locate " + value);

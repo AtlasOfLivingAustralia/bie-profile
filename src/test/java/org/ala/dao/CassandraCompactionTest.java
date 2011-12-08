@@ -4,9 +4,9 @@ import java.io.File;
 
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.commons.io.FileUtils;
-import org.wyki.cassandra.pelops.Mutator;
-import org.wyki.cassandra.pelops.Pelops;
-import org.wyki.cassandra.pelops.Policy;
+import org.scale7.cassandra.pelops.Cluster;
+import org.scale7.cassandra.pelops.Pelops;
+import org.scale7.cassandra.pelops.Mutator;
 
 public class CassandraCompactionTest {
 
@@ -28,8 +28,9 @@ public class CassandraCompactionTest {
 	}
 	
 	public static void add(int count) throws Exception{
-		Pelops.addPool(pool, new String[]{host}, port, false, keySpace, new Policy());
-		Mutator mutator = Pelops.createMutator(pool, keySpace);
+	    Pelops.addPool(pool, new Cluster(host,port), keySpace);
+		
+		Mutator mutator = Pelops.createMutator(pool);
 		String myString = FileUtils.readFileToString(new File("/tmp/test"));
 		
 		for(int i=0; i< count; i++){
@@ -46,8 +47,8 @@ public class CassandraCompactionTest {
 	}
 	
 	public static void remove(int count) throws Exception{
-		Pelops.addPool(pool, new String[]{host}, port, false, keySpace, new Policy());
-		Mutator mutator = Pelops.createMutator(pool, keySpace);
+	    Pelops.addPool(pool, new Cluster(host,port), keySpace);
+		Mutator mutator = Pelops.createMutator(pool);
 		for(int i=0; i< count; i++){
 			try{
 				mutator.deleteSubColumn(i+"", "rk", "rk", "test");

@@ -22,6 +22,8 @@ import org.ala.dao.InfoSourceDAO;
 import org.ala.dao.TaxonConceptDao;
 import org.ala.lucene.CreateLoadingIndex;
 import org.ala.model.Publication;
+import org.ala.model.Reference;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.ala.util.LoadUtils;
@@ -84,7 +86,8 @@ public class ANBGDataLoader {
     	loadTaxonConceptPublicationInfo();
     	loadTaxonNames(); // includes rank information
 //    	loadVernacularConcepts();
-    	loadRelationships();
+    	//TO DO we potentially want to add additional relationship information including hybrid parents
+//    	loadRelationships();
     	loadPublications();
 	}
 
@@ -96,33 +99,42 @@ public class ANBGDataLoader {
 	private void loadPublications() throws Exception {
 		logger.info("Starting to load taxon names");
 		
-		TabReader tr = new TabReader(PUBLICATIONS);
+		TabReader tr = new TabReader(PUBLICATIONS, false);
 		LoadUtils loadUtils = new LoadUtils();
     	String[] record = null;
     	int i = 0;
     	int j = 0;
     	while((record = tr.readNext())!=null){
     		i++;
-    		if(record.length<5){
+    		if(record.length<10){
     			logger.warn("truncated at line "+i+" record: "+record);
     			continue;
     		}
     		
     		List<String> taxonConceptIds = loadUtils.getGuidsForPublicationGuid(record[0], 100);
+    		java.util.Set<String> preferredLsids = new java.util.HashSet<String>();
     		
     		Publication p = new Publication();
     		p.setGuid(record[0]);
-    		p.setTitle(record[1]);
-    		p.setAuthor(record[2]);
-    		p.setDatePublished(record[3]);
-    		p.setPublicationType(record[4]);
+    		p.setTitle(record[2]);
+    		//p.setAuthor(record[2]);
+    		p.setDatePublished(record[4]);
+    		p.setCitation(record[5]);
+    		p.setYear(record[3]);
+    		p.setPublisher(record[9]);
+    		//p.setPublicationType(record[4]);
     		
     		//add this taxon name to each taxon concept
     		for(String tcId: taxonConceptIds){
-    			logger.debug("Adding publication to "+tcId+" record: "+p.getGuid());
-   				boolean success = taxonConceptDao.addPublication(tcId, p);
-   				if(success)
-   					j++;
+    		    String preferredGuid= loadUtils.getPreferredGuid(tcId);
+                if(!preferredLsids.contains(preferredGuid)){
+                    logger.debug("Adding publication to "+tcId+" record: "+p.getGuid());
+                    boolean success = taxonConceptDao.addPublication(tcId, p);
+                    if(success)
+                        j++;
+                    preferredLsids.add(preferredGuid);
+                }
+    			
     		}
     	}
     	logger.info(i+" lines read. "+j+" publications added to concept records.");
@@ -159,7 +171,7 @@ public class ANBGDataLoader {
     			if(keyValue[2].endsWith("HasSynonym")){
     				TaxonConcept synonym = loadUtils.getByGuid(keyValue[1],1);
     				if(synonym!=null){
-    					taxonConceptDao.addSynonym(keyValue[0], synonym);
+    					taxonConceptDao.addSynonym(keyValue[0], (org.ala.model.SynonymConcept)synonym);
     					j++;
     				}
     			}
@@ -210,50 +222,57 @@ public class ANBGDataLoader {
 		
 		logger.info("Starting to load taxon names");
 		
-		TabReader tr = new TabReader(TAXON_NAMES);
+		TabReader tr = new TabReader(TAXON_NAMES,false);
 		LoadUtils loadUtils = new LoadUtils();
     	String[] record = null;
     	int i = 0;
     	int j = 0;
     	while((record = tr.readNext())!=null){
     		i++;
-    		if(record.length<8){
+    		if(record.length<21){
     			logger.info("truncated at line "+i+"record: "+record);
     			continue;
     		}
     		
     		List<TaxonConcept> tcs = loadUtils.getByNameGuid(record[0], 100);
-    		
+    		java.util.Set<String> preferredLsids = new java.util.HashSet<String>();
     		TaxonName tn = new TaxonName();
-    		tn.guid = record[0];
-    		tn.nameComplete = record[2];
-    		tn.authorship = record[3];
-    		tn.rankString = record[4];
-    		tn.publishedInCitation = record[5];
-    		tn.nomenclaturalCode = record[6];
-    		tn.typificationString = record[7];
+            tn.guid = record[0];
+            tn.nameComplete = record[2];
+            tn.authorship = record[5];
+            tn.rankString = record[4];
+            tn.publishedInCitation = record[8];
+            tn.nomenclaturalCode = record[10];
+            tn.typificationString = record[19];
+            tn.genusPart = record[11];
+            tn.specificEpithet = record[12];
+            tn.infraspecificEpithet = record[13];
+            tn.nomenclaturalStatus = record[14];
+            tn.hybridForm = record[15];
+            tn.infragenericEpithet = record[17];
+            tn.basionymAuthorship = record[18];
+            tn.microReference = record[9];
 
-    		//load the publication information for the name
-    		if(record[5]!=null){
-    			Publication pub = loadUtils.getPublicationByGuid(record[5]);
-    			if(pub!=null){
-    				tn.publishedIn = pub.getTitle();
-    			}
-    		}
+            //load the publication information for the name
+            if(record[8]!=null){
+                Publication pub = loadUtils.getPublicationByGuid(record[8]);
+                if(pub!=null){
+                    tn.publishedIn = pub.getTitle();
+                }
+            }
+    		
     		
     		//add this taxon name to each taxon concept
     		for(TaxonConcept tc: tcs){
-    			j++;
-//        		boolean isVernacular = loadUtils.isVernacularConcept(tc.guid);
-    			if(addTaxonToProfile(loadUtils, tc.getGuid())){
-    				//some of these name additions will fail, where the concept
-    				//is not an accepted concept and is congruent to another
-    				//we have not added the concept to the profile - hence the lookup will fail
-    				taxonConceptDao.addTaxonName(tc.getGuid(), tn);
-    				
-    				//FIXME load the publication information
-    				
-    			}
+    		    //get the preferred lsid for the supplied concept
+    		    String preferredGuid= loadUtils.getPreferredGuid(tc.getGuid());
+    		    if(!preferredLsids.contains(preferredGuid)){
+    		        j++;
+    		        
+    		        taxonConceptDao.addTaxonName(preferredGuid, tn);
+    		        preferredLsids.add(preferredGuid);
+    		    }
+
     		}
     	}
     	logger.info(i+" lines read. "+j+" names added to concept records.");
@@ -269,17 +288,140 @@ public class ANBGDataLoader {
 		logger.info("Starting load of taxon concepts...");
 		
 		LoadUtils loadUtils = new LoadUtils();
-		TabReader tr = new TabReader(TAXON_CONCEPTS);
+		TabReader tr = new TabReader(TAXON_CONCEPTS,false);
 		
     	String[] record = null;
     	long start = System.currentTimeMillis();
     	int i=0;
     	int j=0;
+    	int acc=0;
+    	int same=0;
+    	int syn=0;
+    	int sameSyn=0;
     	try {
 	    	while((record = tr.readNext())!=null){
 	    		i++;
-	    		if(record.length==9){
-
+	    		if(record.length==11){
+	    		    
+	    		    String guid = record[0];
+	    		    String nameGuid = record[4];
+	    		    String name = record[3];
+	    		    
+	    		    //check to see if this is the preferred guid for the item
+	    		    String preferredGuid= loadUtils.getPreferredGuid(guid);
+	    		    
+	    		    //get the acceptedConcept if this is a synonym
+	    		    String acceptedGuid = loadUtils.getAlaAcceptedConcept(preferredGuid);
+	    		    System.out.println(name+" : guid: "+ guid + " preferred: " + preferredGuid + " accepted: " + acceptedGuid);
+	    		    boolean protologue = "Y".equals(record[7]);
+	    		    boolean draft ="Y".equals(record[10]);
+	    		    
+	    		    Publication publication = loadUtils.getPublicationByGuid(record[8]);
+	    		    Reference reference = loadUtils.getReferenceByGuid(record[8]);
+	    		    
+	    		    if(acceptedGuid == null){
+	    		        
+	    		        //we are dealing with an accepted concept
+	    		        if(guid.equals(preferredGuid)){
+	    		            System.out.println(guid + "is accepted and preferred");
+	    		            acc++;
+	    		            //update the base taxon concept if necesary
+	    		            if(publication != null || reference != null || protologue || draft){
+	    		                TaxonConcept tc = taxonConceptDao.getByGuid(record[0]);
+	    		                if(tc != null){
+	    		                    if(publication != null){
+	    		                        tc.setPublishedIn(publication.getTitle());
+	    		                        tc.setPublishedInCitation(publication.getGuid());
+	    		                    }
+	    		                    if(reference != null){
+	    		                        tc.setReferencedIn(reference.getTitle());
+	    		                        tc.setReferencedInGuid(reference.getGuid());
+	    		                    }
+	    		                    tc.setIsProtologue(protologue);
+	    		                    tc.setIsDraft(draft);
+	    		                    taxonConceptDao.update(tc);
+	    		                }
+	    		            }
+	    		            
+	    		        }
+	    		        else{
+	    		            //add a new sameAs taxonConcept
+	    		            System.out.println(guid + "is accepted and sameAs");
+	    		            same++;
+	    		            TaxonConcept tc = new TaxonConcept();
+	    		            //get the taxon name because we don't want to use the "sensu" name
+	    		            TaxonName tn = loadUtils.getNameByGuid(nameGuid);
+	    		            if(tn != null){
+	    		                tc.setAuthor(tn.getAuthorship());
+	    		                tc.setNameString(tn.getNameComplete());
+	    		            }
+	    		            else
+	    		                tc.setNameString(name);
+	    		            tc.setGuid(guid);
+	    		            tc.setNameGuid(nameGuid);
+	    		            if(publication!= null){
+	    		                tc.setPublishedIn(publication.getTitle());
+                                tc.setPublishedInCitation(publication.getGuid());
+	    		            }
+	    		            if(reference != null){
+                                tc.setReferencedIn(reference.getTitle());
+                                tc.setReferencedInGuid(reference.getGuid());
+                            }
+	    		            tc.setIsProtologue(protologue);
+                            tc.setIsDraft(draft);
+                            taxonConceptDao.addSameAsTaxonConcept(preferredGuid, tc);
+	    		        }
+	    		    }
+	    		    else{
+	    		        sameSyn++;
+	    		        //need to add the synonym information
+	    		        if(guid.equals(preferredGuid)){
+	    		            System.out.println(guid + "is synonym and preferred");
+	    		            syn++;
+	    		            if(publication != null || reference != null){
+	    		                List<SynonymConcept> synonyms =taxonConceptDao.getSynonymsFor(acceptedGuid);
+	    		                for(SynonymConcept synonym: synonyms){
+	    		                    if(synonym.getGuid().equals(guid)){
+	    		                        if(publication != null){
+	    		                        synonym.setPublishedIn(publication.getTitle());
+	                                    synonym.setPublishedInCitation(publication.getGuid());
+	    		                        }
+	    		                        if(reference != null){
+	                                        synonym.setReferencedIn(reference.getTitle());
+	                                        synonym.setReferencedInGuid(reference.getGuid());
+	                                    }
+	                                    taxonConceptDao.addSynonym(acceptedGuid, synonym);
+	                                    break;
+	    		                    }
+	    		                }
+	    		            }
+	    		        }
+	    		        else{
+	    		            System.out.println(guid + "is synonym NOT predferred");
+	    		            SynonymConcept synonym = new SynonymConcept();
+	    		            synonym.setGuid(guid);
+	    		            //get the taxon name because we don't want to use the "sensu" name
+                            TaxonName tn = loadUtils.getNameByGuid(nameGuid);
+	    		            synonym.setNameGuid(nameGuid);
+	    		            if(tn!=null){
+	    		                synonym.setAuthor(tn.getAuthorship());
+	    		                synonym.setNameString(tn.getNameComplete());
+	    		            }
+	    		            else
+	    		                synonym.setNameString(name);
+	    		            if(publication != null){
+	    		                synonym.setPublishedIn(publication.getTitle());
+                                synonym.setPublishedInCitation(publication.getGuid());
+	    		            }
+	    		            if(reference != null){
+                                synonym.setReferencedIn(reference.getTitle());
+                                synonym.setReferencedInGuid(reference.getGuid());
+                            }
+	    		            taxonConceptDao.addSynonym(acceptedGuid, synonym);
+	    		        }
+	    		    }
+	    		    
+	    		    
 	    			// if its congruent to another concept dont add it
 	    			// if its a synonym for another concept dont add it
 	    			
@@ -290,20 +432,20 @@ public class ANBGDataLoader {
 	    			
 	    			//dont add vernacular or congruent concepts
 //	    			if(!isVernacular && !isCongruent){
-	    			if(addTaxonToProfile(loadUtils, record[0])){
-	    				
-	    				TaxonConcept tc = taxonConceptDao.getByGuid(record[0]);
-	    				if(tc!=null){
-			    			tc.setNameGuid(record[1]);
-			    			tc.setNameString(record[2]);
-			    			tc.setAuthor(record[3]);
-			    			tc.setAuthorYear(record[4]);
-			    			tc.setPublishedInCitation(record[5]);
-			    			tc.setPublishedIn(record[6]);
-			    			taxonConceptDao.update(tc);
-	    				}
-		    			j++;
-	    			} 
+//	    			if(addTaxonToProfile(loadUtils, record[0])){
+//	    				
+//	    				TaxonConcept tc = taxonConceptDao.getByGuid(record[0]);
+//	    				if(tc!=null){
+//			    			tc.setNameGuid(record[1]);
+//			    			tc.setNameString(record[2]);
+//			    			tc.setAuthor(record[3]);
+//			    			tc.setAuthorYear(record[4]);
+//			    			tc.setPublishedInCitation(record[5]);
+//			    			tc.setPublishedIn(record[6]);
+//			    			taxonConceptDao.update(tc);
+//	    				}
+//		    			j++;
+//	    			} 
 	    		} else {
 	    			logger.error(i+" - missing fields: "+record.length+" fields:"+record);
 	    		}

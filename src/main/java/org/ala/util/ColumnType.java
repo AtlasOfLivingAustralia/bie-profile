@@ -34,6 +34,7 @@ import org.ala.model.Reference;
 import org.ala.model.SensitiveStatus;
 import org.ala.model.SimpleProperty;
 import org.ala.model.SpecimenHolding;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.apache.commons.lang.builder.ToStringBuilder;
@@ -48,8 +49,9 @@ public enum ColumnType {
 
     TAXONCONCEPT_COL("taxonConcept", TaxonConcept.class, false),
     TAXONNAME_COL("hasTaxonName", TaxonName.class, true),
-    IDENTIFIER_COL("sameAs", String.class, true),
-    SYNONYM_COL("hasSynonym", TaxonConcept.class, true),
+    IDENTIFIER_COL("sameAsIdentifiers", String.class, true), 
+    SAME_AS_COL("sameAs", TaxonConcept.class, true), // Now stores the taxonConcepts instead of identifiers to store publication information for the id's
+    SYNONYM_COL("hasSynonym", SynonymConcept.class, true),
     IS_CONGRUENT_TO_COL("IsCongruentTo", TaxonConcept.class, true),
     VERNACULAR_COL("hasVernacularConcept", CommonName.class, true),
     CONSERVATION_STATUS_COL("hasConservationStatus", ConservationStatus.class, true),
@@ -82,6 +84,7 @@ public enum ColumnType {
     RANKING("TIMESTAMP", Ranking.class, true);
     public static final String COLUMN_FAMILY_NAME = "tc";
     public static final String SUPER_COLUMN_NAME = "tc";
+    public static String[] columnsToIndex= null;
 
     private static final Map<String, ColumnType> columnTypeLookup = new HashMap<String, ColumnType>();
 
@@ -89,6 +92,7 @@ public enum ColumnType {
         for (ColumnType mt : EnumSet.allOf(ColumnType.class)) {
             columnTypeLookup.put(mt.getColumnName(), mt);
         }
+        columnsToIndex = columnTypeLookup.keySet().toArray(new String[]{});
     }
 
     private String columnName;

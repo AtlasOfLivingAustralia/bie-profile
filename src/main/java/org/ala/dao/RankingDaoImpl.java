@@ -104,7 +104,7 @@ public class RankingDaoImpl implements RankingDao {
 			
 			//store the ranking event
 			logger.debug("Storing the rank event...");
-			storeHelper.put("rk", "rk", "image", ""+System.currentTimeMillis(), taxonGuid, r);
+			storeHelper.put("rk",  "image", ""+System.currentTimeMillis(), taxonGuid, r);
 			logger.debug("Updating the images ranking...");
 			taxonConceptDao.setRankingOnImage(taxonGuid, imageUri, positive, blackList);
 			logger.debug("Finished updating ranking");
@@ -126,7 +126,7 @@ public class RankingDaoImpl implements RankingDao {
                     //TODO in the future when LSIDs have potentially changed we will need to look up in an index to find the LSID that is being used
                     logger.debug("Processing Image ranks for " +guid);
                     //get the rankings for the current guid
-                    Map<String, Object> subcolumns =  storeHelper.getSubColumnsByGuid("rk", "image",guid);
+                    Map<String, Object> subcolumns =  storeHelper.getSubColumnsByGuid("rk", guid);
                     Map<String, Integer[]> counts = new java.util.HashMap<String, Integer[]>();
                     
                     for(String key : subcolumns.keySet()){
@@ -205,7 +205,7 @@ public class RankingDaoImpl implements RankingDao {
 			
 			String key = "" + System.currentTimeMillis();
 			//save rk table	
-			storeHelper.put(rankingType.getColumnFamily(), rankingType.getColumnFamily(), rankingType.getSuperColumnName(), key, guid, baseRanking);
+			storeHelper.put(rankingType.getColumnFamily(),  rankingType.getSuperColumnName(), key, guid, baseRanking);
 	/*
 			// save tc table
 			taxonConceptDao.setRanking(guid, rankingType.getColumnType(), baseRanking);
@@ -224,58 +224,58 @@ public class RankingDaoImpl implements RankingDao {
 	 * @see org.ala.dao.TaxonConceptDao#createIndex()
 	 */
 	public void createIndex() throws Exception {
-		long start = System.currentTimeMillis();
-
-		if(solrServer == null){
-			solrServer = solrUtils.getSolrServer();
-		}		
-        solrServer.deleteByQuery("idxtype:"+IndexedTypes.RANKING); // delete everything!
-    	
-    	int i = 0;
-    	int j = 0;
-    	
-		Scanner scanner = storeHelper.getScanner(RK_COLUMN_FAMILY, RK_COLUMN_FAMILY);		
-		byte[] guidAsBytes = null;		
-		while ((guidAsBytes = scanner.getNextGuid())!=null) {    		
-			String guid = new String(guidAsBytes);
-			i++;
-			
-			if(i%1000==0){
-				logger.info("Indexed records: "+i+", current guid: "+guid);
-			}
-    		
-    		//get taxon concept details
-			List<String> list = storeHelper.getSuperColumnsByGuid(guid, RK_COLUMN_FAMILY);
-			for(String superColumnName : list){
-				RankingType rankingType = RankingType.getRankingTypeByColumnName(superColumnName);
-//				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, rankingType.getClazz());
-				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, BaseRanking.class);
-				Set<String> keys = columnList.keySet();
-				Iterator<String> itr = keys.iterator();
-				while(itr.hasNext()){
-					String key = itr.next();
-					List<Comparable> rankingList = columnList.get(key);
-					for(Comparable c : rankingList){
-						BaseRanking br = (BaseRanking)c;
-			    		SolrInputDocument doc = new SolrInputDocument();
-			    		doc.addField("idxtype", IndexedTypes.RANKING);
-			    		doc.addField("userId", br.getUserId());
-			    		doc.addField("userIP", br.getUserIP());
-			    		doc.addField("id", key);
-			    		doc.addField("guid", guid);
-			    		doc.addField("superColumnName", superColumnName);
-			            solrServer.add(doc);
-			            solrServer.commit();
-			            j++;
-						if(j%1000==0){
-							logger.info("Indexed records: "+j+", current guid: "+guid);
-						}
-					}
-				}
-			}
-    	}
-    	long finish = System.currentTimeMillis();
-    	logger.info("Index created in: "+((finish-start)/1000)+" seconds with  species: " + i + ", column items: " + j);
+//		long start = System.currentTimeMillis();
+//
+//		if(solrServer == null){
+//			solrServer = solrUtils.getSolrServer();
+//		}		
+//        solrServer.deleteByQuery("idxtype:"+IndexedTypes.RANKING); // delete everything!
+//    	
+//    	int i = 0;
+//    	int j = 0;
+//    	
+//		Scanner scanner = storeHelper.getScanner(RK_COLUMN_FAMILY, RK_COLUMN_FAMILY);		
+//		byte[] guidAsBytes = null;		
+//		while ((guidAsBytes = scanner.getNextGuid())!=null) {    		
+//			String guid = new String(guidAsBytes);
+//			i++;
+//			
+//			if(i%1000==0){
+//				logger.info("Indexed records: "+i+", current guid: "+guid);
+//			}
+//    		
+//    		//get taxon concept details
+//			List<String> list = storeHelper.getSuperColumnsByGuid(guid, RK_COLUMN_FAMILY);
+//			for(String superColumnName : list){
+//				RankingType rankingType = RankingType.getRankingTypeByColumnName(superColumnName);
+////				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, rankingType.getClazz());
+//				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, BaseRanking.class);
+//				Set<String> keys = columnList.keySet();
+//				Iterator<String> itr = keys.iterator();
+//				while(itr.hasNext()){
+//					String key = itr.next();
+//					List<Comparable> rankingList = columnList.get(key);
+//					for(Comparable c : rankingList){
+//						BaseRanking br = (BaseRanking)c;
+//			    		SolrInputDocument doc = new SolrInputDocument();
+//			    		doc.addField("idxtype", IndexedTypes.RANKING);
+//			    		doc.addField("userId", br.getUserId());
+//			    		doc.addField("userIP", br.getUserIP());
+//			    		doc.addField("id", key);
+//			    		doc.addField("guid", guid);
+//			    		doc.addField("superColumnName", superColumnName);
+//			            solrServer.add(doc);
+//			            solrServer.commit();
+//			            j++;
+//						if(j%1000==0){
+//							logger.info("Indexed records: "+j+", current guid: "+guid);
+//						}
+//					}
+//				}
+//			}
+//    	}
+//    	long finish = System.currentTimeMillis();
+//    	logger.info("Index created in: "+((finish-start)/1000)+" seconds with  species: " + i + ", column items: " + j);
 	}
 	
 	private void addRankingIndex(RankingType rankingType, BaseRanking baseRanking, String columnName, String guid) throws Exception{
@@ -456,90 +456,90 @@ public class RankingDaoImpl implements RankingDao {
 	}
 		
 	private void reloadRanks() throws Exception {
-		SolrServer solrServer = solrUtils.getSolrServer();
-		long start = System.currentTimeMillis();
-		Map<String, String> compareFieldValue = new HashMap<String, String>();
-    	int i = 0;
-    	int j = 0;
-    	logger.debug("reload Ranks...");
-		Scanner scanner = storeHelper.getScanner(RK_COLUMN_FAMILY, RK_COLUMN_FAMILY);		
-		byte[] guidAsBytes = null;		
-		while ((guidAsBytes = scanner.getNextGuid())!=null) {    		
-			String guid = new String(guidAsBytes);
-			i++;
-			
-			if(i%1000==0){
-				logger.info("Indexed records: "+i+", current guid: "+guid);
-			}
-			try{			
-	    		//get taxon concept details
-				List<String> list = storeHelper.getSuperColumnsByGuid(guid, RK_COLUMN_FAMILY);
-				for(String superColumnName : list){
-					RankingType rankingType = RankingType.getRankingTypeByColumnName(superColumnName);
-	//				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, rankingType.getClazz());
-					Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, BaseRanking.class);
-					Set<String> keys = columnList.keySet();
-					Iterator<String> itr = keys.iterator();
-					while(itr.hasNext()){
-						String key = itr.next();
-						List<Comparable> rankingList = columnList.get(key);
-						for(Comparable c : rankingList){
-							BaseRanking br = (BaseRanking)c;
-							if("rk".equalsIgnoreCase(superColumnName)){
-								//old record convert to baseRanking
-								compareFieldValue.clear();
-								compareFieldValue.put("identifier", br.getUri());
-								br.setCompareFieldValue(compareFieldValue);	
-								rankingType = RankingType.RK_IMAGE;
-							}
-							// defaultNameValue
-							else if(RankingType.RK_NAME_VALUE.getSuperColumnName().equalsIgnoreCase(superColumnName)){
-								compareFieldValue.clear();
-								compareFieldValue.put("nameString", key);
-								compareFieldValue.put("identifier", br.getUri());
-								compareFieldValue.put("defaultValue", "100000");
-								
-								br.setCompareFieldValue(compareFieldValue);							
-								rankingType = RankingType.RK_COMMON_NAME;
-							}
-							//no reindex by each common name						
-							taxonConceptDao.setRanking(guid, rankingType.getColumnType(), br, false);
-				            
-							j++;
-							if(j%1000==0){
-								logger.info("Indexed records: "+j+", current guid: "+guid);
-							}
-						}
-					}
-				}
-				try{
-					//reindex whole row record
-					List<SolrInputDocument> docList = taxonConceptDao.indexTaxonConcept(guid);
-					if(solrServer == null){
-						solrServer = solrUtils.getSolrServer();
-					}
-					if(solrServer != null && docList != null && docList.size() > 0){
-						solrServer.add(docList);
-					}	
-				}
-				catch(Exception e){
-					logger.error("***** add solr record failed. guid: " + guid + " ," + e);
-				}
-			}
-			catch(Exception ex){
-				logger.error("***** guid: " + guid + " ," + ex);
-			}
-    	}
-		if(solrServer == null){
-			solrServer = solrUtils.getSolrServer();
-		}
-		if(solrServer != null){
-			solrServer.commit();
-		}
-		
-    	long finish = System.currentTimeMillis();
-    	logger.info("Index created in: "+((finish-start)/1000)+" seconds with  species: " + i + ", column items: " + j);
-    	logger.debug("reload Ranks finished...");
+//		SolrServer solrServer = solrUtils.getSolrServer();
+//		long start = System.currentTimeMillis();
+//		Map<String, String> compareFieldValue = new HashMap<String, String>();
+//    	int i = 0;
+//    	int j = 0;
+//    	logger.debug("reload Ranks...");
+//		Scanner scanner = storeHelper.getScanner(RK_COLUMN_FAMILY, RK_COLUMN_FAMILY);		
+//		byte[] guidAsBytes = null;		
+//		while ((guidAsBytes = scanner.getNextGuid())!=null) {    		
+//			String guid = new String(guidAsBytes);
+//			i++;
+//			
+//			if(i%1000==0){
+//				logger.info("Indexed records: "+i+", current guid: "+guid);
+//			}
+//			try{			
+//	    		//get taxon concept details
+//				List<String> list = storeHelper.getSuperColumnsByGuid(guid, RK_COLUMN_FAMILY);
+//				for(String superColumnName : list){
+//					RankingType rankingType = RankingType.getRankingTypeByColumnName(superColumnName);
+//	//				Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, rankingType.getClazz());
+//					Map<String, List<Comparable>> columnList = storeHelper.getColumnList(RK_COLUMN_FAMILY, superColumnName, guid, BaseRanking.class);
+//					Set<String> keys = columnList.keySet();
+//					Iterator<String> itr = keys.iterator();
+//					while(itr.hasNext()){
+//						String key = itr.next();
+//						List<Comparable> rankingList = columnList.get(key);
+//						for(Comparable c : rankingList){
+//							BaseRanking br = (BaseRanking)c;
+//							if("rk".equalsIgnoreCase(superColumnName)){
+//								//old record convert to baseRanking
+//								compareFieldValue.clear();
+//								compareFieldValue.put("identifier", br.getUri());
+//								br.setCompareFieldValue(compareFieldValue);	
+//								rankingType = RankingType.RK_IMAGE;
+//							}
+//							// defaultNameValue
+//							else if(RankingType.RK_NAME_VALUE.getSuperColumnName().equalsIgnoreCase(superColumnName)){
+//								compareFieldValue.clear();
+//								compareFieldValue.put("nameString", key);
+//								compareFieldValue.put("identifier", br.getUri());
+//								compareFieldValue.put("defaultValue", "100000");
+//								
+//								br.setCompareFieldValue(compareFieldValue);							
+//								rankingType = RankingType.RK_COMMON_NAME;
+//							}
+//							//no reindex by each common name						
+//							taxonConceptDao.setRanking(guid, rankingType.getColumnType(), br, false);
+//				            
+//							j++;
+//							if(j%1000==0){
+//								logger.info("Indexed records: "+j+", current guid: "+guid);
+//							}
+//						}
+//					}
+//				}
+//				try{
+//					//reindex whole row record
+//					List<SolrInputDocument> docList = taxonConceptDao.indexTaxonConcept(guid);
+//					if(solrServer == null){
+//						solrServer = solrUtils.getSolrServer();
+//					}
+//					if(solrServer != null && docList != null && docList.size() > 0){
+//						solrServer.add(docList);
+//					}	
+//				}
+//				catch(Exception e){
+//					logger.error("***** add solr record failed. guid: " + guid + " ," + e);
+//				}
+//			}
+//			catch(Exception ex){
+//				logger.error("***** guid: " + guid + " ," + ex);
+//			}
+//    	}
+//		if(solrServer == null){
+//			solrServer = solrUtils.getSolrServer();
+//		}
+//		if(solrServer != null){
+//			solrServer.commit();
+//		}
+//		
+//    	long finish = System.currentTimeMillis();
+//    	logger.info("Index created in: "+((finish-start)/1000)+" seconds with  species: " + i + ", column items: " + j);
+//    	logger.debug("reload Ranks finished...");
 	}
 	
 	public boolean optimiseIndex() throws Exception{
@@ -679,7 +679,7 @@ public class RankingDaoImpl implements RankingDao {
         	br.setUri(identifier);
         	
 			//save rk table	
-    		storeHelper.put(RankingType.RK_NAME_VALUE.getColumnFamily(), RankingType.RK_NAME_VALUE.getColumnFamily(), RankingType.RK_NAME_VALUE.getSuperColumnName(), commonName.trim(), guid, br);
+    		storeHelper.put(RankingType.RK_NAME_VALUE.getColumnFamily(), RankingType.RK_NAME_VALUE.getColumnFamily(),  commonName.trim(), guid +"|" + RankingType.RK_NAME_VALUE.getSuperColumnName(), br);
         }
         else{
             logger.info("Unable to locate " + cl.getScientificName());

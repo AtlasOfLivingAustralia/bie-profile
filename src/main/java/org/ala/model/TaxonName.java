@@ -32,6 +32,15 @@ public class TaxonName extends AttributableObject implements Comparable<TaxonNam
 	public String publishedIn; //readable title
 	public String nomenclaturalCode;
 	public String typificationString;
+	//Additional fields 2011-12
+	public String microReference;
+	public String genusPart;
+	public String specificEpithet;
+	public String infraspecificEpithet;
+	public String infragenericEpithet;
+	public String hybridForm;
+	public String basionymAuthorship;
+	public String nomenclaturalStatus;
 
 	/**
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
@@ -43,7 +52,18 @@ public class TaxonName extends AttributableObject implements Comparable<TaxonNam
 			return nameComplete.compareTo(o.getNameComplete());
 		}
 		return -1;
-	}	
+	}
+	@Override
+    public boolean equals(Object obj) {
+        if(obj!=null && obj instanceof TaxonName){
+            TaxonName tn = (TaxonName) obj;
+            if(tn.getGuid()!=null && guid!=null){
+                return tn.getGuid().equals(guid);
+            }
+
+        }
+        return false;
+    }
 	/**
 	 * @return the guid
 	 */
@@ -156,6 +176,102 @@ public class TaxonName extends AttributableObject implements Comparable<TaxonNam
 	}
 	
 	/**
+     * @return the microReference
+     */
+    public String getMicroReference() {
+        return microReference;
+    }
+    /**
+     * @param microReference the microReference to set
+     */
+    public void setMicroReference(String microReference) {
+        this.microReference = microReference;
+    }
+    /**
+     * @return the genusPart
+     */
+    public String getGenusPart() {
+        return genusPart;
+    }
+    /**
+     * @param genusPart the genusPart to set
+     */
+    public void setGenusPart(String genusPart) {
+        this.genusPart = genusPart;
+    }
+    /**
+     * @return the specificEpithet
+     */
+    public String getSpecificEpithet() {
+        return specificEpithet;
+    }
+    /**
+     * @param specificEpithet the specificEpithet to set
+     */
+    public void setSpecificEpithet(String specificEpithet) {
+        this.specificEpithet = specificEpithet;
+    }
+    /**
+     * @return the infraspecificEpithet
+     */
+    public String getInfraspecificEpithet() {
+        return infraspecificEpithet;
+    }
+    /**
+     * @param infraspecificEpithet the infraspecificEpithet to set
+     */
+    public void setInfraspecificEpithet(String infraspecificEpithet) {
+        this.infraspecificEpithet = infraspecificEpithet;
+    }
+    /**
+     * @return the infragenericEpithet
+     */
+    public String getInfragenericEpithet() {
+        return infragenericEpithet;
+    }
+    /**
+     * @param infragenericEpithet the infragenericEpithet to set
+     */
+    public void setInfragenericEpithet(String infragenericEpithet) {
+        this.infragenericEpithet = infragenericEpithet;
+    }
+    /**
+     * @return the hybridForm
+     */
+    public String getHybridForm() {
+        return hybridForm;
+    }
+    /**
+     * @param hybridForm the hybridForm to set
+     */
+    public void setHybridForm(String hybridForm) {
+        this.hybridForm = hybridForm;
+    }
+    /**
+     * @return the basionymAuthorship
+     */
+    public String getBasionymAuthorship() {
+        return basionymAuthorship;
+    }
+    /**
+     * @param basionymAuthorship the basionymAuthorship to set
+     */
+    public void setBasionymAuthorship(String basionymAuthorship) {
+        this.basionymAuthorship = basionymAuthorship;
+    }
+    /**
+     * @return the nomenclaturalStatus
+     */
+    public String getNomenclaturalStatus() {
+        return nomenclaturalStatus;
+    }
+    /**
+     * @param nomenclaturalStatus the nomenclaturalStatus to set
+     */
+    public void setNomenclaturalStatus(String nomenclaturalStatus) {
+        this.nomenclaturalStatus = nomenclaturalStatus;
+    }
+    /**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -177,6 +293,22 @@ public class TaxonName extends AttributableObject implements Comparable<TaxonNam
 		builder.append(this.rankString);
 		builder.append(", typificationString=");
 		builder.append(this.typificationString);
+		builder.append(", microReference=");
+		builder.append(this.microReference);
+		builder.append(", genusPart=");
+		builder.append(this.genusPart);
+		builder.append(", specificEpithet=");
+		builder.append(this.specificEpithet);
+		builder.append(", infraspecificEpithet=");
+		builder.append(this.infraspecificEpithet);
+		builder.append(", infragenericEpithet=");
+		builder.append(this.infragenericEpithet);
+		builder.append(", hybridForm=");
+		builder.append(this.hybridForm);
+		builder.append(", basionymAuthorship=");
+		builder.append(this.basionymAuthorship);
+		builder.append(", nomenclaturalStatus=");
+		builder.append(this.nomenclaturalStatus);
 		builder.append(", documentId=");
 		builder.append(this.documentId);
 		builder.append(", infoSourceId=");

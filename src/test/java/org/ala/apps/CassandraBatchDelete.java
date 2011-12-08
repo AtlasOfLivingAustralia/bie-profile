@@ -35,13 +35,15 @@ import org.apache.cassandra.thrift.SliceRange;
 import org.apache.cassandra.thrift.SuperColumn;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.wyki.cassandra.pelops.Mutator;
-import org.wyki.cassandra.pelops.Pelops;
-import org.wyki.cassandra.pelops.Policy;
-import org.wyki.cassandra.pelops.Selector;
+import org.scale7.cassandra.pelops.Cluster;
+import org.scale7.cassandra.pelops.Mutator;
+import org.scale7.cassandra.pelops.Pelops;
+import org.scale7.cassandra.pelops.Selector;
 
 /**
  * This is a standalone java app.  
+ * 
+ * TODO Modify so that it uses the NEW cassandra schema. ie without super columns
  * 
  * Cassandra Batch Delete.
  * 
@@ -144,7 +146,7 @@ public class CassandraBatchDelete {
 		this.columnFamily = columnFamily;
 		this.host = host;
 		this.port = port;
-		Pelops.addPool(POOL_NAME, new String[]{this.host}, this.port, false, this.keyspace, new Policy());
+		Pelops.addPool(POOL_NAME, new Cluster(host,port), keySpace);
 	}
 	
 	public void closeConnectionPool(){
@@ -169,8 +171,8 @@ public class CassandraBatchDelete {
 		ColumnParent columnParent = new ColumnParent(columnFamily);
 
 		KeyRange keyRange = new KeyRange(ROWS);
-		keyRange.setStart_key("");
-		keyRange.setEnd_key("");
+		keyRange.setStart_key("".getBytes());
+		keyRange.setEnd_key("".getBytes());
 
 		SliceRange sliceRange = new SliceRange();
 		sliceRange.setStart(new byte[0]);
@@ -185,7 +187,7 @@ public class CassandraBatchDelete {
 		// start with the empty string, and after each call use the last key read as the start key 
 		// in the next iteration.
 		// when lastKey == startKey is finish.
-		List<KeySlice> keySlices = client.get_range_slices(keyspace, columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
+		List<KeySlice> keySlices = client.get_range_slices(columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
 		List<DeleteItemInfo> delList = getDeleteItemsList(keySlices, infoSourceIds, columnNames);		
 		//dump test case
 		/*
@@ -203,7 +205,7 @@ public class CassandraBatchDelete {
 			}
 			startKey = lastKey;
 			keyRange.setStart_key(lastKey.getKey());			
-			keySlices = client.get_range_slices(keyspace, columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
+			keySlices = client.get_range_slices(columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
 			delList = getDeleteItemsList(keySlices, infoSourceIds, columnNames);
 			if(delList.size() > 0){
 				delCtr = doValueUpdate(delList, infoSourceIds, columnNames);
@@ -225,12 +227,12 @@ public class CassandraBatchDelete {
 	 */
 	private int doValueUpdate(List<DeleteItemInfo> delList, String[] infoSourceIds, String[] columnNames) throws Exception{
 		int ctr = 0;
-		Selector selector = Pelops.createSelector(POOL_NAME, keyspace);
+		Selector selector = Pelops.createSelector(POOL_NAME);
 		
 		for(DeleteItemInfo item : delList){		
 			//get cassandra value
 			Column col = selector.getSubColumnFromRow(item.getKey(), columnFamily, item.getSColName(), item.getColName(), ConsistencyLevel.ONE);
-			Mutator mutator = Pelops.createMutator(POOL_NAME, keyspace);
+			Mutator mutator = Pelops.createMutator(POOL_NAME);
 			
 			// infoSourceIds is empty... remove whole column
 			if(infoSourceIds.length < 1){
@@ -294,9 +296,9 @@ public class CassandraBatchDelete {
 		for (KeySlice keySlice : keySlices) {
 			for (ColumnOrSuperColumn columns : keySlice.getColumns()) {
 				// set break point for debug only 
-				if(keySlice.getKey().equalsIgnoreCase("urn:lsid:biodiversity.org.au:apni.taxon:359404")){
-					logger.debug("urn:lsid:biodiversity.org.au:apni.taxon:359404");
-				}
+//				if(keySlice.getKey().equalsIgnoreCase("urn:lsid:biodiversity.org.au:apni.taxon:359404")){
+//					logger.debug("urn:lsid:biodiversity.org.au:apni.taxon:359404");
+//				}
 				
 				if (columns.isSetSuper_column()) {
 					SuperColumn scol = columns.getSuper_column();
@@ -306,7 +308,7 @@ public class CassandraBatchDelete {
 						colName = new String(col.getName(), CHARSET_ENCODING);						
 						// check column infoSourceId
 						if(hasInfoSourceId(value, infoSourceIds) && hasColumnName(colName, columnNames)){
-							l.add(new DeleteItemInfo(keySlice.getKey(), sColName, colName));
+							l.add(new DeleteItemInfo(new String(keySlice.getKey(), "UTF-8"), sColName, colName));
 							logger.debug("** col.getName(): " +  colName + ", Key = " + keySlice.getKey() + ", col.getValue(): " + value);
 						}						
 					}
@@ -316,7 +318,7 @@ public class CassandraBatchDelete {
 					colName = new String(col.getName(), CHARSET_ENCODING);					
 					// check column infoSourceId
 					if(hasInfoSourceId(value, infoSourceIds) && hasColumnName(colName, columnNames)){
-						l.add(new DeleteItemInfo(keySlice.getKey(), colName));
+						l.add(new DeleteItemInfo(new String(keySlice.getKey(),"UTF-8"), colName));
 						logger.debug("col.getName(): " +  colName + ", Key = " + keySlice.getKey() + ", col.getValue(): " + value );
 					}																				
 				}
@@ -440,8 +442,8 @@ public class CassandraBatchDelete {
 		ColumnParent columnParent = new ColumnParent(columnFamily);
 
 		KeyRange keyRange = new KeyRange(ROWS);
-		keyRange.setStart_key("");
-		keyRange.setEnd_key("");
+		keyRange.setStart_key("".getBytes());
+		keyRange.setEnd_key("".getBytes());
 
 		SliceRange sliceRange = new SliceRange();
 		sliceRange.setStart(new byte[0]);
@@ -456,7 +458,7 @@ public class CassandraBatchDelete {
 		// start with the empty string, and after each call use the last key read as the start key 
 		// in the next iteration.
 		// when lastKey == startKey is finish.
-		List<KeySlice> keySlices = client.get_range_slices(keyspace, columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
+		List<KeySlice> keySlices = client.get_range_slices(columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
 		int delCtr = doDeleteRkItems(keySlices, columnNames);
 		
 		totalDelCtr += delCtr;
@@ -470,7 +472,7 @@ public class CassandraBatchDelete {
 			}
 			startKey = lastKey;
 			keyRange.setStart_key(lastKey.getKey());			
-			keySlices = client.get_range_slices(keyspace, columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
+			keySlices = client.get_range_slices(columnParent, slicePredicate, keyRange, ConsistencyLevel.ONE);
 			delCtr = doDeleteRkItems(keySlices, columnNames);
 			totalDelCtr += delCtr;
 			System.out.println("Total Column Update Count:" + totalDelCtr);
@@ -483,14 +485,14 @@ public class CassandraBatchDelete {
 	private int doDeleteRkItems(List<KeySlice> keySlices, String[] columnNames) throws Exception{
 		int ctr = 0;
 		String sColName = null;
-		Mutator mutator = Pelops.createMutator(POOL_NAME, keyspace);
+		Mutator mutator = Pelops.createMutator(POOL_NAME);
 		for (KeySlice keySlice : keySlices) {
 			for (ColumnOrSuperColumn columns : keySlice.getColumns()) {
 				
 				if (columns.isSetSuper_column()) {
 					SuperColumn scol = columns.getSuper_column();
 					sColName = new String(scol.getName(), CHARSET_ENCODING);
-					String key = keySlice.getKey();
+					String key = new String(keySlice.getKey(),"UTF-8");
 					if("defaultNameValue".equalsIgnoreCase(sColName)){
 			        	mutator.deleteColumn(key, columnFamily, sColName);
 			        	mutator.execute(ConsistencyLevel.ONE);

@@ -24,6 +24,7 @@ import org.ala.model.ExtantStatus;
 import org.ala.model.Habitat;
 import org.ala.model.Image;
 import org.ala.model.PestStatus;
+import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -334,9 +335,9 @@ public class XmlReportUtil {
 
         dedicatedEtc.setScreenshotImages(screenshotImages);
 
-        List<TaxonConcept> synonyms = new ArrayList<TaxonConcept>();
+        List<SynonymConcept> synonyms = new ArrayList<SynonymConcept>();
 
-        for (TaxonConcept synonym : etc.getSynonyms()) {
+        for (SynonymConcept synonym : etc.getSynonyms()) {
             if (uid.equals(uidInfosourceIdMap.get(synonym.getInfoSourceId()))) {
                 synonyms.add(synonym);
                 if (synonym.getIdentifier() != null && !gotIdentifier) {

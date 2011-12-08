@@ -101,7 +101,7 @@ public interface StoreHelper {
 	 * @return true if successful
 	 * @throws Exception
 	 */
-	boolean put(String table, String columnFamily, String superColumn, String columnName, String guid, Comparable object) throws Exception;
+	//boolean put(String table, String columnFamily, String superColumn, String columnName, String guid, Comparable object) throws Exception;
 	
 	/**
 	 * Put a list of instances into this row.
@@ -126,7 +126,7 @@ public interface StoreHelper {
 	 * @return an instance of Scanner, initialised and read to be used
 	 * @throws Exception
 	 */
-	Scanner getScanner(String table, String columnFamily, String column) throws Exception;
+	Scanner getScanner(String table, String columnFamily, String... column) throws Exception;
 	
 	/**
 	 * Retrieve a map of subcolumns for the row with the supplied GUID.
@@ -137,7 +137,7 @@ public interface StoreHelper {
 	 * @return
 	 * @throws Exception
 	 */
-	Map<String, Object> getSubColumnsByGuid(String columnFamily, String superColName, String guid) throws Exception;
+	Map<String, Object> getSubColumnsByGuid(String columnFamily, String guid) throws Exception;
 	
 	/**
 	 * Retrieve a page of sub columns using the supplied startGuid
@@ -148,7 +148,7 @@ public interface StoreHelper {
 	 * @param pageSize the number of objects to return
 	 * @return a Map keys on record GUID
 	 */
-	Map<String, Map<String,Object>> getPageOfSubColumns(String tcColFamily, String superColumn, String startGuid, int pageSize);
+	Map<String, Map<String,Object>> getPageOfSubColumns(String tcColFamily,  String startGuid, int pageSize);
 
 	/**
 	 * 
@@ -157,7 +157,7 @@ public interface StoreHelper {
 	 * @param startGuid
 	 * @param pageSize
 	 */
-	Map<String, Map<String,Object>> getPageOfSubColumns(String tcColFamily, String superColumn, ColumnType[] subColumns, String startGuid, int pageSize);
+	Map<String, Map<String,Object>> getPageOfSubColumns(String tcColFamily,  ColumnType[] subColumns, String startGuid, int pageSize);
 
     /**
      *
@@ -166,7 +166,7 @@ public interface StoreHelper {
      * @param guids
      * @return
      */
-    Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, ColumnType[] subColumns,List<String> guids);
+    Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, ColumnType[] subColumns,List<String> guids);
 
     /**
      *
@@ -175,7 +175,7 @@ public interface StoreHelper {
      * @param guids
      * @return
      */
-    Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily, String superColName, List<String> guids);
+    Map<String, Map<String,Object>> getPageOfSubColumns(String columnFamily,  List<String> guids);
 	
 	/**
 	 * Get a single string value property.
@@ -230,5 +230,5 @@ public interface StoreHelper {
      * @return
      * @throws Exception
      */
-    Map<String, List<Comparable>> getColumnList(String columnFamily, String superColumnName, String guid, Class theClass) throws Exception;
+    Map<String, List<Comparable>> getColumnList(String columnFamily,  String guid, Class theClass) throws Exception;
 }

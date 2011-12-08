@@ -69,9 +69,11 @@ import au.org.ala.checklist.lucene.CBIndexSearch;
  * 
  * Loads the concepts, synonyms, parent and child taxa references.
  *
+ * TODO Delete me
  * @author Dave Martin (David.Martin@csiro.au)
  */
 @Component("checklistBankLoader")
+@Deprecated
 public class ChecklistBankLoader {
 	
 	protected static Logger logger = Logger.getLogger(ChecklistBankLoader.class);
@@ -596,7 +598,7 @@ public class ChecklistBankLoader {
 					tc.setNameString(nameString);
 					tc.setAuthor(author);
 					tc.setRankString(rankString);
-					if (taxonConceptDao.addSynonym(acceptedGuid, tc)) {
+					if (taxonConceptDao.addSynonym(acceptedGuid, (org.ala.model.SynonymConcept)tc)) {
 						numberAdded++;
 						if(numberAdded % 1000 == 0){
 							long current = System.currentTimeMillis();

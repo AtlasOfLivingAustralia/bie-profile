@@ -68,7 +68,7 @@ public class TabReader {
 		String line = br.readLine();
 		if(line==null)
 			return null;
-		String[] fields = p.split(line);
+		String[] fields = p.split(line,-1);
 		for(int i=0;i<fields.length;i++){
 			if(hasQuotes && fields[i].length()>=2){
 				//remove quotes				

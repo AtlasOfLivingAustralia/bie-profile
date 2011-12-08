@@ -173,7 +173,7 @@ public class GoogleSitemapGenerator {
         };
         String lastKey = "";
         String startKey="";
-        Map<String, Map<String,Object>> rowMaps = storeHelper.getPageOfSubColumns(columnFamily, columnFamily,columns, "", ROWS);
+        Map<String, Map<String,Object>> rowMaps = storeHelper.getPageOfSubColumns(columnFamily,columns, "", ROWS);
     
 		generateURL(rowMaps);
 		
@@ -183,7 +183,7 @@ public class GoogleSitemapGenerator {
                 break;
             }
 		    startKey = lastKey;
-            rowMaps = storeHelper.getPageOfSubColumns(columnFamily, columnFamily,columns, startKey, ROWS);
+            rowMaps = storeHelper.getPageOfSubColumns(columnFamily,columns, startKey, ROWS);
             generateURL(rowMaps);
 		}
         writeFileFooter();
@@ -434,3 +434,4 @@ public class GoogleSitemapGenerator {
 		this.columnFamily = columnFamily;
 	}	
 }
+
