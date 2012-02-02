@@ -1180,7 +1180,20 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public boolean syncTriples(org.ala.model.Document document,
 			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly)
 			throws Exception {
-
+		String guid = syncTriples(document, triples, dublinCore, statsOnly, false);
+		if(guid != null && guid.trim().length() > 0 ){
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * @see org.ala.dao.TaxonConceptDao#syncTriples(org.ala.model.Document,
+	 *      java.util.List)
+	 */
+	public String syncTriples(org.ala.model.Document document,
+			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly, boolean reindex)
+			throws Exception {
 		List<String> scientificNames = new ArrayList<String>();
 		String specificEpithet = null;
 		List<String> subspecies = new ArrayList<String>();
@@ -1200,6 +1213,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		
 		boolean isScreenshot = false;
 		boolean isPreferredImage = false;
+
+		String occurrenceUid = null;
+		String occurrenceRowKey = null;
 
 		if (document != null) {
 			dcPublisher = document.getInfoSourceName();
@@ -1253,6 +1269,12 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			if (predicate.endsWith("isPreferredImage")) {
 			    isPreferredImage = true;
             }
+			if (predicate.endsWith("hasOccurrenceUid")) {
+				occurrenceUid = triple.object.trim();
+            }
+			if (predicate.endsWith("hasOccurrenceRowKey")) {
+				occurrenceRowKey = triple.object.trim();
+            }
 		}
 
 		if (scientificNames.isEmpty() && subspecies.isEmpty()
@@ -1261,7 +1283,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				&& order == null && klass == null && phylum == null) {
 			logger.info("No classification found for document at: "
 					+ document.getFilePath());
-			return false; // we have nothing to work with, so give up
+			return null; // we have nothing to work with, so give up
 		}
 		
 		// Lookup LSID in Checklist Bank data
@@ -1313,7 +1335,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			} else {
 				logger.info("Not enough search data for Checklist Bank found for document at: "
 						+ document.getFilePath());
-				return false;
+				return null;
 			}
 		}
 
@@ -1346,7 +1368,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		}
 		//is statsOnly we can return whether or not the scientific name was found...
 		if(statsOnly) {
-		    return guid != null;
+		    return guid;
 		}
 		
 		if (guid != null) {
@@ -1517,6 +1539,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					} else if (hasPredicate(triples, Predicates.VIDEO_PAGE_URL)) {
                         addScreenshotImage(guid, image);
                     } else {
+                    	image.setOccurrenceUid(occurrenceUid);
+                    	image.setOccurrenceRowKey(occurrenceRowKey);
 						addImage(guid, image);
 //						logger.info("ADDING IMAGE TO: " + guid);
 					}
@@ -1532,11 +1556,23 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// addLiteralValues(guid,
 			// infoSourceId,Integer.toString(document.getId()), properties);
 
-			return true;
+			if(reindex && guid != null){
+				List<SolrInputDocument> docList = indexTaxonConcept(guid, null);
+				SolrServer solrServer = solrUtils.getSolrServer();
+				if(solrServer != null){
+					solrServer.add(docList);
+//					solrServer.commit(true, true);
+				}
+				else{
+					logger.error("****** Can't connect to Solr server.....");
+				}
+			}
+//			return true;
 		} else {
 			logger.info("GUID null");
-			return false;
+//			return false;
 		}
+		return guid;
 	}
 
 	/**
