@@ -652,6 +652,13 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	void createIndex(String startKey) throws Exception;
+	
+	/**
+	 * Reindexes a list of taxa based on the guid. 
+	 * @param guids
+	 * @throws Exception
+	 */
+	void reindexTaxa(List<String> guids) throws Exception;
 
 	/**
 	 * Add a classification to this taxon.
@@ -762,7 +769,8 @@ public interface TaxonConceptDao {
      */
     boolean setIsAustralian(String guid) throws Exception;
 	  
-	  boolean setIsAustralian(String guid, boolean bool) throws Exception;
+	boolean setIsAustralian(String guid, boolean bool) throws Exception;
+	boolean setIsAustralian(String guid, boolean bool, boolean reindex) throws Exception;
     /**
      * Is this concept Aussie ?
      * 
@@ -868,6 +876,7 @@ public interface TaxonConceptDao {
 	
 	public boolean setRanking(String guid, ColumnType columnType, BaseRanking ir)throws Exception;
 	public boolean setRanking(String guid, ColumnType columnType, BaseRanking baseRanking, boolean reindex)throws Exception;
+	List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception;
 	List<SolrInputDocument> indexTaxonConcept(String guid,Scanner scanner) throws Exception;
 	
 	public void resetRanking(String guid, ColumnType columnType, Integer value)throws Exception;

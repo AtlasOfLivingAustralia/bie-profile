@@ -462,9 +462,15 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	}
 
 	public boolean setIsAustralian(String guid, boolean bool) throws Exception {
-		return storeHelper.putSingle(TC_TABLE, TC_COL_FAMILY,
+	    return setIsAustralian(guid, bool, false);
+	}
+	public boolean setIsAustralian(String guid, boolean bool, boolean reindex) throws Exception {
+		boolean success= storeHelper.putSingle(TC_TABLE, TC_COL_FAMILY,
 				ColumnType.IS_AUSTRALIAN.getColumnName(), guid,
 				bool);
+		if(reindex)
+		    reindexTaxon(guid);
+		return success;
 	}
 
 	/**
@@ -1744,6 +1750,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		long finish = System.currentTimeMillis();
 		logger.info("Index created in: " + ((finish - start) / 1000)
 				+ " seconds with " + i + " taxon concepts processed.");
+	}
+	
+	public List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception{
+	    return indexTaxonConcept(guid, null);
 	}
 
 	/**
@@ -3105,7 +3115,47 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         }
 	}
 	*/	
-		
+	/**
+	 * reindexes the taxon with the supplied guid
+	 * @param guid
+	 * @throws Exception
+	 */
+	private void reindexTaxon(String guid) throws Exception {
+	    List<SolrInputDocument> docs = indexTaxonConcept(guid);
+	    SolrServer solrServer = solrUtils.getSolrServer();
+	    if(solrServer != null){
+    	    solrServer.add(docs);
+            solrServer.commit(true,true);
+	    }
+	    
+	}
+	/**
+	 * Reindexes a list of taxa guids. 
+	 * 
+	 * 
+	 * 
+	 * @param guids
+	 * @throws Exception
+	 */
+	public void reindexTaxa(List<String> guids) throws Exception{
+	    List<SolrInputDocument> docs = new ArrayList<SolrInputDocument>();
+	    int i = 0;
+	    SolrServer solrServer = solrUtils.getSolrServer();
+	    if(solrServer != null){
+    	    for(String guid : guids){
+    	        docs.addAll(indexTaxonConcept(guid));
+    	        i++;
+    	        if (i > 0 && i % 1000 == 0) {
+    	            solrServer.add(docs);
+    	            docs = new ArrayList<SolrInputDocument>();
+    	        }
+    	    }
+    	    solrServer.add(docs);
+    	    solrServer.commit(true,true);
+	    }
+	    
+	}
+	
 	public void resetRanking(String guid, ColumnType columnType, Integer value)throws Exception{
 		List list = new ArrayList();
 		
