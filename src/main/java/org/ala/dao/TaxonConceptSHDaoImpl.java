@@ -2015,6 +2015,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 							synonymDoc.addField("commonNameDisplay",StringUtils.join(commonNameSet, ", "));
 						}
 						addRankToIndex(synonymDoc, taxonConcept.getRankString());
+						//add the synonym author
+						synonymDoc.addField("author", synonym.getAuthor());
+						
 						// add the synonym as a separate document
 						docsToAdd.add(synonymDoc);
 						// store the source
