@@ -64,6 +64,7 @@ public class ALANamesLoader {
     
     private static final String AFD_COMMON_NAMES = "/data/bie-staging/anbg/AFD-common-names.csv";
     private static final String APNI_COMMON_NAMES = "/data/bie-staging/anbg/APNI-common-names.csv";
+    public static final String ALA_NAMES_FILE = "/data/bie-staging/ala-names/ala_concepts_dump.txt";
     
     public static final String COL_HOME = "http://www.catalogueoflife.org/";
     public static final String APNI_HOME = "http://www.anbg.gov.au/apni/";
@@ -81,6 +82,7 @@ public class ALANamesLoader {
 
         ApplicationContext context = SpringUtils.getContext();
         ALANamesLoader l = context.getBean(ALANamesLoader.class);
+        LinkIdentifierLoader lil = context.getBean(LinkIdentifierLoader.class);
         long start = System.currentTimeMillis();
 
         logger.info("Creating checklist bank loading index....");
@@ -97,7 +99,7 @@ public class ALANamesLoader {
         if (args.length == 0 || "-sci".equals(args[0])) {
 
             logger.info("Loading concepts....");
-          //  l.loadConcepts();
+            l.loadConcepts(lil);
 
             logger.info("Loading synonyms....");
             l.loadSynonyms();
@@ -174,7 +176,7 @@ public class ALANamesLoader {
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
-        CSVReader tr = new CSVReader(new FileReader("/data/names/Version2011/ala_concepts_dump.txt"), '\t', '"', '\\');
+        CSVReader tr = new CSVReader(new FileReader(ALA_NAMES_FILE), '\t', '"', '\\');
 //      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/checklistbank/cb_name_usages.txt"), '\t', '"', '\\');
         String[] cols = tr.readNext(); //first line contains headers - ignore
         int numberRead = 0;
@@ -266,7 +268,7 @@ public class ALANamesLoader {
      * Load the accepted concepts into the persistent data store
      * @throws Exception
      */
-    public void loadConcepts() throws Exception {
+    public void loadConcepts(LinkIdentifierLoader lil) throws Exception {
         
         long start = System.currentTimeMillis();
         
@@ -277,7 +279,7 @@ public class ALANamesLoader {
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
-        CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/ala-names/ala_concepts_dump.txt"), '\t', '"', '\\');
+        CSVReader tr = new CSVReader(new FileReader(ALA_NAMES_FILE), '\t', '"', '\\');
 //      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/checklistbank/cb_name_usages.txt"), '\t', '"', '\\');
         
         String[] cols = tr.readNext(); //first line contains headers - ignore
@@ -456,6 +458,10 @@ public class ALANamesLoader {
                         }
                         boolean success = taxonConceptDao.addClassification(guid, c);
                         if(!success) logger.error("Failed to add classification to "+guid+", line number: "+lineNumber);
+                        
+                        //add the link identifier for the taxon
+                        lil.updateLinkIdentifier(guid,scientificName);
+                        
                     } else {
                         if(StringUtils.isEmpty(acceptedGuid)){
                             logger.error("Failed to add line number: "+lineNumber+", guid:"+guid);
