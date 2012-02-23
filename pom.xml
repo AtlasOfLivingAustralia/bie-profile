@@ -331,9 +331,19 @@
                     <exclusion>
                         <groupId>jaxen</groupId>
                         <artifactId>jaxen</artifactId>
-                    </exclusion>
+                    </exclusion>                 
+                	<exclusion>
+                    	<artifactId>guava</artifactId>
+                    	<groupId>com.google.guava</groupId>
+                	</exclusion>
                 </exclusions>
             </dependency>
+            <!--  Remove the guava version conflict issue -->
+	    	<dependency>
+	            <groupId>com.google.guava</groupId>
+	            <artifactId>guava</artifactId>
+	            <version>11.0.1</version>
+	        </dependency>
             <!-- JSOUP HTML PARSER -->
             <dependency>
                 <groupId>org.jsoup</groupId>
