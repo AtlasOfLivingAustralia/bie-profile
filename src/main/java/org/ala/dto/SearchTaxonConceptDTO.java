@@ -14,13 +14,34 @@
  ***************************************************************************/
 package org.ala.dto;
 
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * A DTO used for returning search results.
  *
  * @author Dave Martin (David.Martin@csiro.au)
  */
 public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<SearchTaxonConceptDTO>{
-	
+
+    protected static String bieRepoUrl = "http://bie.ala.org.au/repo/";
+    protected static String bieRepoDir = "/data/bie/";
+
+    static {
+        //check the properties file for an override
+        try {
+            Properties p = new Properties();
+            InputStream inStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("bie.properties");
+            p.load(inStream);
+            if(p.getProperty("bieRepo") != null)
+                bieRepoUrl = p.getProperty("bieRepo");
+            if(p.getProperty("bieRepoDir") != null)
+                bieRepoDir = p.getProperty("bieRepoDir");
+        } catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
 	protected String parentId;
 	protected String parentGuid;
 	protected String commonName;
@@ -52,6 +73,81 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     protected String author;
     protected String linkIdentifier;
     protected Integer occCount;
+
+    //image properties
+    String imageUrl;
+    String largeImageUrl;
+    String smallImageUrl;
+    String thumbnailUrl;
+    String imageMetadataUrl;
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public void setLargeImageUrl(String largeImageUrl) {
+        this.largeImageUrl = largeImageUrl;
+    }
+
+    public void setSmallImageUrl(String smallImageUrl) {
+        this.smallImageUrl = smallImageUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public void setImageMetadataUrl(String imageMetadataUrl) {
+        this.imageMetadataUrl = imageMetadataUrl;
+    }
+
+    public String getImageUrl(){
+        if(imageUrl == null){
+            if(image != null && image.startsWith(bieRepoDir)){
+                imageUrl= image.replace(bieRepoDir, bieRepoUrl);
+            }
+        }
+        return imageUrl;
+    }
+
+    private String getImageUrl(String image, String imageFormatName){
+        if(image !=null){
+            if(image.startsWith(bieRepoDir)){
+                image = image.replace(bieRepoDir, bieRepoUrl);
+            }
+            return image.replace("/raw.", imageFormatName);
+        } else {
+            return null;
+        }
+    }
+    
+    
+    public String getLargeImageUrl(){
+        this.largeImageUrl = getImageUrl(image, "/largeRaw.");
+        return this.largeImageUrl;
+    }
+
+    public String getSmallImageUrl(){
+        this.smallImageUrl = getImageUrl(image, "/smallRaw.");
+        return smallImageUrl;
+    }
+
+    public String getThumbnailUrl(){
+        this.thumbnailUrl = getImageUrl(image, "/thumbnail.");
+        return thumbnailUrl;
+    }
+
+    public String getImageMetadataUrl(){
+        if(imageMetadataUrl ==null){
+            if(image != null && image.startsWith(bieRepoDir)){
+                image =  image.replace(bieRepoDir, bieRepoUrl);
+            }
+            if(image !=null){
+                this.imageMetadataUrl = image.substring(0, image.lastIndexOf('/') +1) + "dc";
+            }
+        }
+        return this.imageMetadataUrl;
+    }
 
 	/**
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
