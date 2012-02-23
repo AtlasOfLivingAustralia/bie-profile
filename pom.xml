@@ -63,6 +63,10 @@
                         <groupId>xerces</groupId>
                         <artifactId>xercesImpl</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>au.org.ala</groupId>
+                        <artifactId>ala-name-matching</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
             <!-- DwC Archive Reader -->
