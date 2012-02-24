@@ -56,8 +56,7 @@
     <property name="poolPreparedStatements" value="true"/>
 </bean>
 
-   <bean id="googleSitemapGenerator" class="org.ala.report.GoogleSitemapGenerator" lazy-init="true">
-     <property name="storeHelper" ref="cassandraHelper"/>
+   <bean id="googleSitemapGenerator" class="org.ala.report.GoogleSitemapGenerator" lazy-init="true">     
      <property name="fileName" value="/data/sitemaps/sitemap"/>
    </bean>
     
