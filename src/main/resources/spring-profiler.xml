@@ -14,7 +14,7 @@
     <context:property-override location="classpath:bie.properties" ignore-unresolvable="true" ignore-resource-not-found="true"/>
     
     <bean id="CBIndexSearch" class="au.org.ala.checklist.lucene.CBIndexSearch" lazy-init="true">
-        <constructor-arg value="/data/lucene/namematching"/>
+        <constructor-arg value="/data/lucene/namematchingv1_1"/>
     </bean>
 
     <bean id="cassandraHelper" class="org.ala.dao.CassandraPelopsHelper" init-method="init" lazy-init="true"/>
@@ -36,16 +36,12 @@
       <property name="dataSource" ref="dataSource"/>
     </bean>
     
+
     <bean id="classificationRank" class="org.ala.util.ClassificationRank" init-method="init" lazy-init="true">
 
     </bean>
     
-    
-<!--     <bean id="cassandraUtil" class="org.ala.util.CassandraUtil" lazy-init="true">
-      <property name="taxonConceptDao" ref="taxonConceptDao"/>
-      <property name="infoSourceDAO" ref="infoSourceDAO"/>
-      <property name="storeHelper" ref="cassandraHelper"/>
-    </bean> -->
+
     
     <!-- data source -->
   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
