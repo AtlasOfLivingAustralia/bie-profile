@@ -52,6 +52,7 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
 	protected boolean hasChildren;
     protected String rank;
     protected int rankId;
+    protected String rawRank;
     protected String pestStatus;
     protected String conservationStatus;
     protected String conservationStatusAUS;
@@ -550,5 +551,21 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
 
 	public void setOccCount(Integer occCount) {
 		this.occCount = occCount;
-	}	
+	}
+
+    /**
+     * @return the rawRank
+     */
+    public String getRawRank() {
+        return rawRank;
+    }
+
+    /**
+     * @param rawRank the rawRank to set
+     */
+    public void setRawRank(String rawRank) {
+        this.rawRank = rawRank;
+    }	
+	
+	
 }

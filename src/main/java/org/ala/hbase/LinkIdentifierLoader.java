@@ -106,7 +106,7 @@ public class LinkIdentifierLoader {
 	    try {
             //List results  = indexSearch.searchForRecords(scientificName, null,false);
 	        String lsid = indexSearch.searchForLSID(scientificName);
-            if(lsid == null){
+            if(lsid == null || !lsid.equals(guid)){
                 taxonConceptDao.setLinkIdentifier(guid, guid);
             } else {
                 taxonConceptDao.setLinkIdentifier(guid, scientificName);
@@ -121,7 +121,7 @@ public class LinkIdentifierLoader {
 	/**
 	 * scan cassandra repository
 	 * 
-	 * This obsolete it is inefficient to page through cassandra when the same information can be obtained through the names
+	 * This is obsolete it is inefficient to page through cassandra when the same information can be obtained through the names
 	 * dump
 	 * 
 	 * 

@@ -40,6 +40,8 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	protected String referencedIn;
 	protected Integer rankID;
 	protected String rankString;
+	/** The rank as supplied by the source data resource */
+	protected String rawRankString;
 	protected Integer left;
 	protected Integer right;
 	/** Indicates that this is the preferred concept.  Ie the guid for the concept matches the unique id for the record **/
@@ -374,6 +376,21 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
     public void setReferencedIn(String referencedIn) {
         this.referencedIn = referencedIn;
     }
+    
+
+    /**
+     * @return the rawRankString
+     */
+    public String getRawRankString() {
+        return rawRankString;
+    }
+
+    /**
+     * @param rawRankString the rawRankString to set
+     */
+    public void setRawRankString(String rawRankString) {
+        this.rawRankString = rawRankString;
+    }
 
     /**
 	 * @see java.lang.Object#toString()
@@ -405,6 +422,8 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 		builder.append(this.publishedInCitation);
 		builder.append(", rankString=");
 		builder.append(this.rankString);
+		builder.append(", rawRankString=");
+        builder.append(this.rawRankString);
 		builder.append(", isPreferred=");
 		builder.append(this.isPreferred);
 		builder.append(", isDraft=");

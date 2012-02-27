@@ -96,13 +96,17 @@ public class ALANamesLoader {
         logger.info("Initialise indexes....");
         l.initIndexes();
 
-        if (args.length == 0 || "-sci".equals(args[0])) {
+        if (args.length == 0 || "-sci".equals(args[0]) || "-update".equals(args[0])) {
 
             logger.info("Loading concepts....");
-            l.loadConcepts(lil);
+            boolean update = args.length>0 && "-update".equals(args[0]);
+            l.loadConcepts(lil, update);
 
-            logger.info("Loading synonyms....");
-            l.loadSynonyms();
+            logger.info("Loading synonyms....");            
+            if(!update){
+                //synonyms can't be updated
+                l.loadSynonyms();
+            }
             
             //IDENTIFIERS are not being loaded separately because they will be loaded as taxonConcept "sameAs" in during the ANBG loading phase.
             //logger.info("Loading identifiers....");
@@ -268,7 +272,7 @@ public class ALANamesLoader {
      * Load the accepted concepts into the persistent data store
      * @throws Exception
      */
-    public void loadConcepts(LinkIdentifierLoader lil) throws Exception {
+    public void loadConcepts(LinkIdentifierLoader lil,boolean update) throws Exception {
         
         long start = System.currentTimeMillis();
         
@@ -286,7 +290,7 @@ public class ALANamesLoader {
         int lineNumber = 1;
         while((cols=tr.readNext())!=null){
             try {
-                if(cols.length==35){
+                if(cols.length==36){
                     
                     String identifier = cols[0];
                     String parentNameUsageID = cols[1];
@@ -343,6 +347,7 @@ public class ALANamesLoader {
                     String synonymTypeId = cols[32];
                     String synonymRelationship = cols[33];
                     String synonymDescription = cols[34];
+                    String rawRank = cols[35];
         
                     if(StringUtils.isEmpty(guid)){
                         guid = identifier;
@@ -353,7 +358,7 @@ public class ALANamesLoader {
                     if (StringUtils.isNotEmpty(guid) && StringUtils.isEmpty(acceptedGuid)) {
                         
                         //add the base concept
-                        TaxonConcept tc = new TaxonConcept();
+                        TaxonConcept tc = update? taxonConceptDao.getByGuid(guid): new TaxonConcept();
                         tc.setId(Integer.parseInt(identifier));
                         tc.setGuid(guid);
                         tc.setParentId(parentNameUsageID);
@@ -367,6 +372,7 @@ public class ALANamesLoader {
                         tc.setRight(right);
                         tc.setIsPreferred(true);
                         tc.setNameGuid(nameLsid);
+                        tc.setRawRankString(rawRank);
                         
                         //set the parent source  - indicates how the parent for the term was identified.
                         if(StringUtils.isNotEmpty(parentSrc)){
@@ -450,12 +456,13 @@ public class ALANamesLoader {
                         c.setPhylumGuid(phylumID);
                         c.setKingdom(kingdom);
                         c.setKingdomGuid(kingdomID);
-                        try {
-                            // Attempt to set the rank Id via Rank enum
-                            c.setRankId(Rank.getForName(taxonRank).getId());
-                        } catch (Exception e) {
-                            logger.warn("Could not set rankId for: "+taxonRank+" in "+guid);
-                        }
+                        c.setRankId(rankID);
+//                        try {
+//                            // Attempt to set the rank Id via Rank enum
+//                            c.setRankId(Rank.getForName(taxonRank).getId());
+//                        } catch (Exception e) {
+//                            logger.warn("Could not set rankId for: "+taxonRank+" in "+guid);
+//                        }
                         boolean success = taxonConceptDao.addClassification(guid, c);
                         if(!success) logger.error("Failed to add classification to "+guid+", line number: "+lineNumber);
                         
@@ -563,7 +570,7 @@ public class ALANamesLoader {
         
         while((cols=tr.readNext())!=null){
             
-            if(cols.length==35){
+            if(cols.length==36){
             
                 String identifier = cols[0];
                 String parentNameUsageID = cols[1];

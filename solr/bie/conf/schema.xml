@@ -595,6 +595,7 @@
    <field name="commonNameDisplay" type="string" indexed="false" stored="true" multiValued="false" omitNorms="true" />
    <field name="commonNameSingle" type="string" indexed="true" stored="true" multiValued="false" omitNorms="false" />
    <field name="rank" type="string" indexed="true" stored="true" multiValued="false" omitNorms="true" />
+   <field name="rawRank" type="string" indexed="true" stored="true" multiValued="false" omitNorms="true" /
    <field name="rankId" type="int" indexed="true" stored="true" multiValued="false" omitNorms="true" />
    <field name="hasChildren" type="string" indexed="false" stored="true" />
    <field name="simpleText" type="text_ws" indexed="true" stored="true" multiValued="true" omitNorms="false" />

@@ -2014,7 +2014,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 							synonymDoc.addField("commonNameSort", commonNames.get(0).getNameString());
 							synonymDoc.addField("commonNameDisplay",StringUtils.join(commonNameSet, ", "));
 						}
-						addRankToIndex(synonymDoc, taxonConcept.getRankString());
+						addRankToIndex(synonymDoc, taxonConcept.getRankString(),taxonConcept.getRankID(), taxonConcept.getRawRankString());
 						//add the synonym author
 						synonymDoc.addField("author", synonym.getAuthor());
 						
@@ -2116,7 +2116,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					doc.addField("linkIdentifier", linkIdentifier);
 				}
 				
-				addRankToIndex(doc, taxonConcept.getRankString());
+				addRankToIndex(doc, taxonConcept.getRankString(),taxonConcept.getRankID(), taxonConcept.getRawRankString());
 
 				doc.addField("hasChildren",Boolean.toString(!children.isEmpty()));
 				//doc.addField("dataset", StringUtils.join(infoSourceIds, " "));
@@ -2289,7 +2289,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 * @param rankString
 	 * @param doc
 	 */
-	private void addRankToIndex(SolrInputDocument doc, String rankString) {
+	private void addRankToIndex(SolrInputDocument doc, String rankString, Integer rankId, String rawRank) {
 		if (StringUtils.isNotEmpty(rankString)) {
 			try {
 				Rank rank = Rank.getForField(rankString.toLowerCase());
@@ -2298,7 +2298,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				// doc.add(new Field("rankId", rank.getId().toString(),
 				// Store.YES, Index.NOT_ANALYZED_NO_NORMS));
 				doc.addField("rank", rank.getName());
-				doc.addField("rankId", rank.getId());
+				Integer rid = rankId == null ? rank.getId() : rankId;
+				doc.addField("rankId", rid);
+				doc.addField("rawRank", rawRank);
 			} catch (Exception e) {
 				logger.warn("Rank not found: " + rankString + " - ");
 				// assign to Rank.TAXSUPRAGEN so that sorting still works

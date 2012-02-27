@@ -28,6 +28,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.ala.model.Rank;
 import org.ala.util.ClassificationRank;
 import org.ala.dto.FacetResultDTO;
 import org.ala.dto.FieldResultDTO;
@@ -190,6 +191,20 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             return searchResults;
         }
+	}
+	
+	public List<SearchTaxonConceptDTO> findScientificNameByRank(String rank, String[] filterQuery, boolean includeChildren, Integer startIndex, Integer pageSize) throws Exception {
+	    StringBuffer sb = new StringBuffer();
+	    Integer rankId =Rank.getForName(rank.toLowerCase()).getId();
+	    sb.append("rankId:");
+	    if(includeChildren){
+	        sb.append("[").append(rankId.toString()).append(" TO *]");
+	    }
+	    else{
+	        sb.append(rankId.toString());
+	    }
+	    
+	    return null;
 	}
 
 	/**
@@ -1021,6 +1036,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 		taxonConcept.setHasChildren(Boolean.parseBoolean(hasChildrenAsString));
         taxonConcept.setScore((Float) doc.getFirstValue("score"));
         taxonConcept.setRank((String) doc.getFirstValue("rank"));
+        taxonConcept.setRawRank((String)doc.getFirstValue("rawRank"));
         taxonConcept.setLeft((Integer) doc.getFirstValue("left"));
         taxonConcept.setRight((Integer) doc.getFirstValue("right"));
         taxonConcept.setKingdom((String) doc.getFirstValue("kingdom"));
