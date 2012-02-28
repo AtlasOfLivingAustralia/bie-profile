@@ -2290,30 +2290,36 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 * @param doc
 	 */
 	private void addRankToIndex(SolrInputDocument doc, String rankString, Integer rankId, String rawRank) {
-		if (StringUtils.isNotEmpty(rankString)) {
-			try {
-				Rank rank = Rank.getForField(rankString.toLowerCase());
-				// doc.add(new Field("rank", rank.getName(), Store.YES,
-				// Index.NOT_ANALYZED_NO_NORMS));
-				// doc.add(new Field("rankId", rank.getId().toString(),
-				// Store.YES, Index.NOT_ANALYZED_NO_NORMS));
-				doc.addField("rank", rank.getName());
-				Integer rid = rankId == null ? rank.getId() : rankId;
-				doc.addField("rankId", rid);
-				doc.addField("rawRank", rawRank);
-			} catch (Exception e) {
-				logger.warn("Rank not found: " + rankString + " - ");
-				// assign to Rank.TAXSUPRAGEN so that sorting still works
-				// reliably
-				// doc.add(new Field("rank", Rank.TAXSUPRAGEN.getName(),
-				// Store.YES, Index.NOT_ANALYZED_NO_NORMS));
-				// doc.add(new Field("rankId",
-				// Rank.TAXSUPRAGEN.getId().toString(), Store.YES,
-				// Index.NOT_ANALYZED_NO_NORMS));
-				doc.addField("rank", Rank.TAXSUPRAGEN.getName());
-				doc.addField("rankId", Rank.TAXSUPRAGEN.getId());
-			}
-		}
+	    //The ranks string, id and rawRank should be correct since we are generating them during the ALA name generation
+	    
+	    doc.addField("rank", rankString);
+        doc.addField("rankId", rankId);
+        doc.addField("rawRank", rawRank);
+	    
+//		if (StringUtils.isNotEmpty(rankString)) {
+//			try {
+//				Rank rank = Rank.getForField(rankString.toLowerCase());
+//				// doc.add(new Field("rank", rank.getName(), Store.YES,
+//				// Index.NOT_ANALYZED_NO_NORMS));
+//				// doc.add(new Field("rankId", rank.getId().toString(),
+//				// Store.YES, Index.NOT_ANALYZED_NO_NORMS));
+//				doc.addField("rank", rank.getName());				
+//				doc.addField("rankId", rank.getId());
+//				doc.addField("rawRank", rawRank);
+//			} catch (Exception e) {
+//				logger.warn("Rank not found: " + rankString + " - ");
+//				// assign to Rank.TAXSUPRAGEN so that sorting still works
+//				// reliably
+//				// doc.add(new Field("rank", Rank.TAXSUPRAGEN.getName(),
+//				// Store.YES, Index.NOT_ANALYZED_NO_NORMS));
+//				// doc.add(new Field("rankId",
+//				// Rank.TAXSUPRAGEN.getId().toString(), Store.YES,
+//				// Index.NOT_ANALYZED_NO_NORMS));
+//				doc.addField("rank", rankString);
+//				doc.addField("rankId", rankId);
+//				doc.addField("rawRank", rawRank);
+//			}
+//		}
 	}
 
 	/**
