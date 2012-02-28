@@ -188,7 +188,7 @@ public class ALANamesLoader {
         long start = System.currentTimeMillis();
         while((cols=tr.readNext())!=null){
             numberRead++;
-            if(cols.length==35){
+            if(cols.length==36){
                 String identifier = cols[0];
                 String parentNameUsageID = cols[1];
                 String guid = cols[2]; //TaxonID
