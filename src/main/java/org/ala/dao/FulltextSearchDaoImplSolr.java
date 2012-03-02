@@ -291,14 +291,17 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             queryString.append("idxtype:"+indexType);
             query = StringUtils.trimToNull(query);
             if(query!=null){
-            	cleanQuery = ClientUtils.escapeQueryChars(query).toLowerCase();
+            	cleanQuery = ClientUtils.escapeQueryChars(query);//.toLowerCase();
 	            queryString.append(" AND ");
 	            queryString.append(" (");
-	            queryString.append(" commonName:"+cleanQuery);
+	            queryString.append(" commonName:\""+cleanQuery+"\"");
 	            queryString.append(" OR ");
 	            queryString.append(" text:"+cleanQuery);
 	            queryString.append(" OR ");
-	            queryString.append(" scientificNameText:"+cleanQuery);
+	            queryString.append(" scientificNameText:\""+cleanQuery+"\"");
+	            //check to see if it represents an id
+	            queryString.append(" OR ");
+	            queryString.append(" guid:\"").append(query).append("\"^10");
 	            
 	    		String canonicalSciName = retrieveCanonicalForm(query);
 	            if(canonicalSciName!=null){
