@@ -160,6 +160,14 @@ public interface FulltextSearchDao {
      */
     SearchResultsDTO<SearchDTO> findByName(IndexedTypes indexType, String query, String[] filterQuery, Integer startIndex,
             Integer pageSize, String sortField, String sortDirection) throws Exception;
+    
+    /**
+     * Returns the results of a list of taxon Guids.
+     * @param guids
+     * @return
+     * @throws Exception
+     */
+    SearchResultsDTO<SearchDTO> findByGuids(String[] guids) throws Exception;
 
     /**
      * Perform a full text search across all object types.

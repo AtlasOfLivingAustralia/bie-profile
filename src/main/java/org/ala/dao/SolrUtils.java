@@ -102,6 +102,25 @@ public class SolrUtils {
     	return cleanQuery;
     }
 	/**
+	 * Changes the direction of the sort based in "score" because a user would assume that a
+	 * default ordering should have the highest score first.
+	 * 
+	 * @param sort
+	 * @param dir
+	 * @return
+	 */
+	public static String getSortDirection(String sort, String dir){
+	    String direction = dir;
+        if("score".equals(sort)){
+                if("asc".equals(dir))
+                    direction = "desc";
+                else
+                    direction = "asc";
+            }
+        return direction;
+	}
+	
+	/**
 	 * Stops the threads for indexing. Allows the program to exit gracefully.
 	 * @throws Exception
 	 */

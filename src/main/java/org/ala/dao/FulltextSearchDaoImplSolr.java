@@ -58,6 +58,7 @@ import org.apache.solr.common.SolrInputDocument;
 import org.gbif.ecat.model.ParsedName;
 import org.gbif.ecat.parser.NameParser;
 import org.gbif.ecat.parser.UnparsableException;
+import org.jsoup.helper.StringUtil;
 import org.springframework.stereotype.Component;
 
 import au.com.bytecode.opencsv.CSVWriter;
@@ -278,6 +279,20 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             return searchResults;
         }
 	}
+    
+    public SearchResultsDTO<SearchDTO> findByGuids(String[] guids) throws Exception{
+        String query = "idxtype:TAXON AND (id:\"" +StringUtils.join(guids, "\" OR id:\"") + "\")";        
+        try{
+            logger.debug("search query: "+query);
+            return doSolrSearch(query, null, guids.length, 0, "score", "desc");
+        }
+        catch(SolrServerException ex){
+            logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
+            SearchResultsDTO searchResults = new SearchResultsDTO();
+            searchResults.setStatus("ERROR"); // TODO also set a message field on this bean with the error message(?)
+            return searchResults;
+        }
+    }
 
 	/**
 	 * @see org.ala.dao.FulltextSearchDao#findByName(java.lang.String, int)
