@@ -301,7 +301,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	            queryString.append(" scientificNameText:\""+cleanQuery+"\"");
 	            //check to see if it represents an id
 	            queryString.append(" OR ");
-	            queryString.append(" guid:\"").append(query).append("\"^10");
+	            queryString.append(" id:\"").append(query).append("\"^10");
 	            
 	    		String canonicalSciName = retrieveCanonicalForm(query);
 	            if(canonicalSciName!=null){
