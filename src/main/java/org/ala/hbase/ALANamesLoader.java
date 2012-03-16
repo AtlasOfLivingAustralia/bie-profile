@@ -19,6 +19,7 @@ import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.ala.util.SpringUtils;
 import org.ala.util.TabReader;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -64,7 +65,7 @@ public class ALANamesLoader {
     
     private static final String AFD_COMMON_NAMES = "/data/bie-staging/anbg/AFD-common-names.csv";
     private static final String APNI_COMMON_NAMES = "/data/bie-staging/anbg/APNI-common-names.csv";
-    public static final String ALA_NAMES_FILE = "/data/bie-staging/ala-names/ala_concepts_dump.txt";
+    public static  String ALA_NAMES_FILE = "/data/bie-staging/ala-names/ala_concepts_dump.txt";
     
     public static final String COL_HOME = "http://www.catalogueoflife.org/";
     public static final String APNI_HOME = "http://www.anbg.gov.au/apni/";
@@ -100,13 +101,14 @@ public class ALANamesLoader {
 
             logger.info("Loading concepts....");
             boolean update = args.length>0 && "-update".equals(args[0]);
+            if(args.length >1)
+                ALA_NAMES_FILE = args[1];
             l.loadConcepts(lil, update);
 
             logger.info("Loading synonyms....");            
-            if(!update){
-                //synonyms can't be updated
-                l.loadSynonyms();
-            }
+            
+                l.loadSynonyms(update);
+            
             
             //IDENTIFIERS are not being loaded separately because they will be loaded as taxonConcept "sameAs" in during the ANBG loading phase.
             //logger.info("Loading identifiers....");
@@ -172,7 +174,7 @@ public class ALANamesLoader {
      * @throws UnsupportedArchiveException
      * @throws Exception
      */
-    public void loadSynonyms() throws IOException, UnsupportedArchiveException, Exception {
+    public void loadSynonyms(boolean update) throws IOException, UnsupportedArchiveException, Exception {
         
         InfoSource afd = infoSourceDAO.getByUri(AFD_HOME);
         InfoSource apc = infoSourceDAO.getByUri(APC_HOME);        
@@ -191,7 +193,7 @@ public class ALANamesLoader {
             if(cols.length==36){
                 String identifier = cols[0];
                 String parentNameUsageID = cols[1];
-                String guid = cols[2]; //TaxonID
+                final String guid = cols[2] != null ?cols[2]: identifier; //TaxonID
                 String nameLsid = cols[5];
                 String nameString =  cols[6];
                 
@@ -207,14 +209,29 @@ public class ALANamesLoader {
                 String synonymRelationship = cols[33];
                 String synonymDescription = cols[34];
                 
-                if(guid == null){
-                    guid = identifier;
-                }
+               
                 
                 if (guid != null && StringUtils.isNotEmpty(acceptedGuid)) {
                     
                     //add the base concept
                     SynonymConcept tc = new SynonymConcept();
+                    if(update){
+                        //get the current synonyms
+                        java.util.List<SynonymConcept> synonyms = taxonConceptDao.getSynonymsFor(acceptedGuid);
+                        Object existing =org.apache.commons.collections.CollectionUtils.find(synonyms, new org.apache.commons.collections.Predicate(){
+
+                            @Override
+                            public boolean evaluate(Object object) {
+                                if(object instanceof SynonymConcept){
+                                    return guid.equals(((SynonymConcept)object).getGuid());
+                                }
+                                return false;
+                            }
+                            
+                        });
+                        if(existing != null)
+                            tc = (SynonymConcept)existing;
+                    }
                     tc.setId(Integer.parseInt(identifier));
                     tc.setGuid(guid);
                     tc.setParentId(parentNameUsageID);
@@ -246,8 +263,8 @@ public class ALANamesLoader {
                         tc.setInfoSourceName(afd.getName());
                         
                         String internalId = guid.substring(guid.lastIndexOf(":")+1);
-                        tc.setInfoSourceURL("http://biodiversity.org.au/afd.taxon/"+internalId);
-                        //tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/"+sciFullName.replaceAll("\\+", "%20"));
+                        //tc.setInfoSourceURL("http://biodiversity.org.au/afd.taxon/"+internalId);
+                        tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/"+nameString.replaceAll("\\+", "%20"));
 //                      }
                     }
                     
@@ -422,8 +439,8 @@ public class ALANamesLoader {
                                 sciFullName = scientificName;
                             }
                             String internalId = guid.substring(guid.lastIndexOf(":")+1);
-                            tc.setInfoSourceURL("http://biodiversity.org.au/afd.taxon/"+internalId);
-                            //tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/"+sciFullName.replaceAll("\\+", "%20"));
+                            //tc.setInfoSourceURL("http://biodiversity.org.au/afd.taxon/"+internalId);
+                            tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/"+sciFullName.replaceAll("\\+", "%20"));
 //                          }
                         }
                         
