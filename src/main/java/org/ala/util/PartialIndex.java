@@ -114,6 +114,7 @@ public class PartialIndex {
 		}
 		logger.debug("***** doIndex guid: " + guid);
 		List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
-		solrServer.add(docs);
+		if(docs.size()>0)
+		    solrServer.add(docs);		
 	}
 }
