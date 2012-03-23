@@ -14,6 +14,9 @@
  ***************************************************************************/
 package org.ala.hbase;
 
+import java.util.Hashtable;
+import java.util.Map;
+
 import org.ala.dao.Scanner;
 import org.ala.dao.StoreHelper;
 import org.ala.dao.TaxonConceptDao;
@@ -49,11 +52,18 @@ public class AdfInfoSourceUrlUpdater {
      * @param args
      */
     public static void main(String[] args) throws Exception {
+    	Map<String, String> hashtable = new Hashtable<String, String>();
+    	for(int i = 0; i < args.length; i++){
+    		String infoId = args[i].substring(0, args[i].indexOf(':'));
+    		String url = args[i].substring(args[i].indexOf(':') + 1);
+    		hashtable.put(infoId, url);
+    	}
+    	
         ApplicationContext context = SpringUtils.getContext();
         AdfInfoSourceUrlUpdater loader = context.getBean(AdfInfoSourceUrlUpdater.class);
 
         try {
-            loader.doFullScan();
+            loader.doFullScan(hashtable);
         }
         catch(Exception e){			
             System.out.println("***** Fatal Error !!!.... shutdown cassandra connection.");			
@@ -69,7 +79,7 @@ public class AdfInfoSourceUrlUpdater {
      * 
      * @throws Exception
      */
-    public void doFullScan() throws Exception {
+    public void doFullScan(Map<String, String> hashtable) throws Exception {
         long start = System.currentTimeMillis();
 
         //		storeHelper.init();
@@ -86,11 +96,22 @@ public class AdfInfoSourceUrlUpdater {
                     TaxonConcept tc = etc.getTaxonConcept();
                     String infosourceId = tc.getInfoSourceId();
                     System.out.println("guid: " + guid + ", infosource id: " + infosourceId);
-                    if(infosourceId != null && "1".equals(infosourceId.trim())){
-                        tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/" + tc.getNameString());                        
-                        taxonConceptDao.update(tc);
-                        System.out.println("**** record updated - guid: " + guid + ", infosource id: " + infosourceId);
-                    } 
+                    
+                    if(hashtable != null && hashtable.size() > 0){
+	                    if(infosourceId != null && hashtable.containsKey(infosourceId)){
+	                        tc.setInfoSourceURL(hashtable.get(infosourceId));                        
+	                        taxonConceptDao.update(tc);
+	                        System.out.println("**** record updated - guid: " + guid + ", infosource id: " + infosourceId);                    
+	                    }
+                    }
+                    else{
+	                    // for ADF only ????
+	                    if(infosourceId != null && "1".equals(infosourceId.trim())){
+	                        tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/" + tc.getNameString());                        
+	                        taxonConceptDao.update(tc);
+	                        System.out.println("**** record updated - guid: " + guid + ", infosource id: " + infosourceId);
+	                    } 
+                    }
                 }                
             }
         }
