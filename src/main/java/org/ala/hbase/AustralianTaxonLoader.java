@@ -2,6 +2,8 @@ package org.ala.hbase;
 
 import javax.inject.Inject;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.util.regex.Pattern;
 
@@ -12,6 +14,7 @@ import org.ala.dao.StoreHelper;
 import org.ala.dao.TaxonConceptDao;
 import org.ala.util.SpringUtils;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.DeserializationConfig;
@@ -47,6 +50,9 @@ public class AustralianTaxonLoader {
 
 
     public static final String AUST_GUID_FILE = "/data/bie-staging/biocache/austTaxonConcepts.txt";
+    
+    public static final String REINDEX_FILE = "reindex_file.txt";
+    
   //create restful client with no connection timeout.
     protected RestfulClient restfulClient = new RestfulClient(0);
 
@@ -60,6 +66,7 @@ public class AustralianTaxonLoader {
     
     public void load() throws Exception {
         Scanner scanner = storeHelper.getScanner("bie", "tc", "", "taxonConcept", "hasGeoReferencedRecords");
+        FileOutputStream fos =FileUtils.openOutputStream(new File(REINDEX_FILE));
         byte[] guidAsBytes = null;
         ObjectMapper mapper = new ObjectMapper();
         mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false); 
@@ -105,14 +112,16 @@ public class AustralianTaxonLoader {
           if(total %10000 == 0)
               System.out.println("Processed " + total + " last id " + guid);
           if(isAust){
-              //load the value in cassandra and then reindex the concept
-              taxonConceptDao.setIsAustralian(guid, true, true);
+              //load the value in cassandra and then add to doc to reindex the concept
+              taxonConceptDao.setIsAustralian(guid, true, false);
+              fos.write((guid + "\n").getBytes());
               austCount++;
           }
               
       }
       
-      
+      fos.flush();
+      fos.close();
       
       System.out.println("Total " + total + " australian: " + austCount);
 //        logger.info("Starting to mark up the Australian Concepts...");
