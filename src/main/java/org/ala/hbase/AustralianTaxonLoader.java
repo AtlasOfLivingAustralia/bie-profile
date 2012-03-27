@@ -113,8 +113,8 @@ public class AustralianTaxonLoader {
               System.out.println("Processed " + total + " last id " + guid);
           if(isAust){
               //load the value in cassandra and then add to doc to reindex the concept
-//              taxonConceptDao.setIsAustralian(guid, true, false);
-//              fos.write((guid + "\n").getBytes());
+              taxonConceptDao.setIsAustralian(guid, true, false);
+              fos.write((guid + "\n").getBytes());
               austCount++;
           }
               
