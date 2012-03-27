@@ -83,7 +83,7 @@ public class AustralianTaxonLoader {
               if(austLsidPattern.matcher(guid).matches())
                   isAust = true;
               else{
-                  if("true".equals(scanner.getCurrentValues().get("hasGeoReferencedRecords"))){
+                  if(scanner.getCurrentValues().get("hasGeoReferencedRecords") != null){
                       Object[] resp = restfulClient.restGet(WS_URL+guid);
                       if((Integer)resp[0] == HttpStatus.SC_OK){
                           String content = resp[1].toString();
@@ -113,8 +113,8 @@ public class AustralianTaxonLoader {
               System.out.println("Processed " + total + " last id " + guid);
           if(isAust){
               //load the value in cassandra and then add to doc to reindex the concept
-              taxonConceptDao.setIsAustralian(guid, true, false);
-              fos.write((guid + "\n").getBytes());
+//              taxonConceptDao.setIsAustralian(guid, true, false);
+//              fos.write((guid + "\n").getBytes());
               austCount++;
           }
               
