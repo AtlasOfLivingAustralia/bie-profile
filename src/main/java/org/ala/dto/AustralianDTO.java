@@ -1,5 +1,7 @@
 package org.ala.dto;
 
+import org.codehaus.jackson.annotate.JsonProperty;
+
 /**
  * DTO for the Australian information about a species.
  * 
@@ -8,12 +10,16 @@ package org.ala.dto;
  */
 public class AustralianDTO {
     /** Indicates that the supplied taxon guid is on the National Species List*/
+    @JsonProperty
     private boolean isNSL =false;
     /** Indicates that there are occurrence records for taxonGuid */
+    @JsonProperty
     private boolean hasOccurrences=false;
     /** Indicates that the only occurrence records found were source from CS */
+    @JsonProperty
     private boolean hasCSOnly=false;
     /** The taxonGuid that the information is about */
+    @JsonProperty
     private String taxonGuid;
     /**
      * @return the isNSL
