@@ -147,6 +147,10 @@ public class RemoveEmptyImageUtil {
                 }
             }
             else{
+            	if(imageUtils == null){
+            		imageUtils = new ImageUtils();
+            	}
+
                 JsonNode next = null;
                 Iterator<JsonNode> it = rootNode.iterator();
                 while(it.hasNext()){
@@ -155,21 +159,41 @@ public class RemoveEmptyImageUtil {
                         objectList.add(next);
                     }
                     else {
-                    	if(imageUtils == null){
-                    		imageUtils = new ImageUtils();
-                    	}
-                    	
                     	String loc = getImageRepoLocation(next);
+                    	boolean notFound = false;
+                    	boolean empty = false;
+                    	try{   
+                    		File file = new File(loc);
+                    		empty = imageUtils.imageIsBlank(file);
+                    	}
+                    	catch(Exception ex){
+                    		notFound = true;
+                    		logger.error("*** open file: " + loc + "\n" + ex);
+                    	}
+
                     	// empty image ?
-                    	if(imageUtils.imageIsBlank(new File(loc))){
+                    	if(empty){
                     		// delete repo directory
-                    		String dir = loc.substring(0, loc.lastIndexOf('/'));
-                    		org.apache.commons.io.FileUtils.deleteDirectory(new File(dir));
-                    		logger.debug("*** delete directory: " + dir);
-                     	}
+                    		String dirStr = loc.substring(0, loc.lastIndexOf('/'));
+                    		File dir = null;
+                        	try{   
+                        		dir = new File(dirStr);                              	
+                            	if(dir != null){
+    	                    		org.apache.commons.io.FileUtils.deleteDirectory(dir);
+    	                    		logger.info("*** delete directory: " + dir);
+    	                        }
+                        	}
+                        	catch(Exception ex1){
+                        		logger.error("*** open dir: " + dir + "\n" + ex1);
+                        	}
+                    	}
+                    	else if(notFound){
+                    		// remove entry from cassandra but no directory remove action
+                    		logger.info("*** file not found: " + notFound);
+                    	}
                     	else{
                     		objectList.add(next);
-                    	}                    	
+                    	}   
                     }
                 }
                 if(objectList.size() > 0){
