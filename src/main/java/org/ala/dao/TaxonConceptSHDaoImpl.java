@@ -1948,7 +1948,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						commonNameString.trim();
 						commonNameSet.add(commonNameString);
 
-						if (cn.isPreferred() != null && cn.isPreferred()) {
+						if (cn.isPreferred()) {
 							higherPriorityNames.add(cn.getNameString());
 						}
 						addToSetSafely(infoSourceIds, cn.getInfoSourceId());
@@ -2052,15 +2052,15 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					addIfNotNull(doc, "genus", classification.getGenus());
 					
 					//speciesGroup
-					if("Arthropoda".equals(classification.getPhylum())) doc.addField("speciesGroup", "Arthropods");
-					if("Mollusca".equals(classification.getPhylum())) doc.addField("speciesGroup", "Molluscs");
-					if("Magnoliophyta".equals(classification.getPhylum())) doc.addField("speciesGroup", "Flowering plants");
-					if("Reptilia".equals(classification.getClazz())) doc.addField("speciesGroup", "Reptiles");
-					if("Amphibia".equals(classification.getClazz())) doc.addField("speciesGroup", "Frogs");
-					if("Aves".equals(classification.getClazz())) doc.addField("speciesGroup", "Birds");
-					if("Mammalia".equals(classification.getClazz())) doc.addField("speciesGroup", "Mammals");
-					if("Plantae".equals(classification.getKingdom())) doc.addField("speciesGroup", "Plants");
-					if("Animalia".equals(classification.getKingdom())) doc.addField("speciesGroup", "Animals");
+					if("arthropoda".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Arthropods");
+					if("mollusca".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Molluscs");
+					if("magnoliophyta".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Flowering plants");
+					if("reptilia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Reptiles");
+					if("amphibia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Frogs");
+					if("aves".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Birds");
+					if("mammalia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Mammals");
+					if("plantae".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Plants");
+					if("animalia".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Animals");
 					if(classification.getClazz()!=null && fishTaxa.contains(classification.getClazz().toLowerCase())){
 						doc.addField("speciesGroup", "Fish");
 					}
