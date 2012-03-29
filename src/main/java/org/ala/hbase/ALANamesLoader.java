@@ -62,6 +62,7 @@ public class ALANamesLoader {
     protected TaxonConceptDao taxonConceptDao;
     
     private static final String IDENTIFIERS_FILE = "/data/bie-staging/ala-names/identifiers.txt";
+    private static final String COL_IDENTIFIERS_FILE = "/data/bie-staging/ala-names/col_identifiers.txt";
     
     private static final String AFD_COMMON_NAMES = "/data/bie-staging/anbg/AFD-common-names.csv";
     private static final String APNI_COMMON_NAMES = "/data/bie-staging/anbg/APNI-common-names.csv";
@@ -114,6 +115,12 @@ public class ALANamesLoader {
             //logger.info("Loading identifiers....");
             //l.loadIdentifiers();
         }
+        
+        if(args.length == 0 || "-sci".equals(args[0]) || "-id".equals(args[0])){
+            logger.info("Loading identifiers....");
+            l.loadIdentifiers(IDENTIFIERS_FILE, 1,2);
+            l.loadIdentifiers(COL_IDENTIFIERS_FILE, 0, 1);
+        }
 
         if (args.length == 0 || "-common".equals(args[0])) {
             logger.info("Loading afd common names....");
@@ -138,19 +145,19 @@ public class ALANamesLoader {
      * 
      * @throws Exception
      */
-    private void loadIdentifiers() throws Exception {
+    private void loadIdentifiers(String fileName, int accIdx, int extraIdx) throws Exception {
         
         //read the identifiers file
-        CSVReader reader = new CSVReader(new FileReader(IDENTIFIERS_FILE),'\t', '\n');
+        CSVReader reader = new CSVReader(new FileReader(fileName),'\t', '\n');
         String[] line = null;
         int numberRead = 0;
         int numberAdded = 0;
         long start = System.currentTimeMillis();
         while((line = reader.readNext())!=null){
             numberRead++;
-            if(line[1]!=null && line[2]!=null){
+            if(line[accIdx]!=null && line[extraIdx]!=null){
                 //add this guid somewhere
-                if(taxonConceptDao.addIdentifier(line[1], line[2])){
+                if(taxonConceptDao.addIdentifier(line[accIdx], line[extraIdx])){
                     numberAdded++;
                     if(numberAdded % 1000 == 0){
                         long current = System.currentTimeMillis();
