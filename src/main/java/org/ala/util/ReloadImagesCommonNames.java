@@ -41,16 +41,16 @@ public class ReloadImagesCommonNames {
         String startKey="";
         Map<String, Map<String,Object>> rowMaps = storeHelper.getPageOfSubColumns("tc",columns, "", 1000);
         processMaps(rowMaps);
-//        while (rowMaps.size() > 0) {
-//            lastKey = rowMaps.keySet().toArray()[rowMaps.size() - 1].toString();
-//            if (lastKey.equals(startKey)) {
-//                break;
-//            }
-//            startKey = lastKey;
-//            rowMaps = storeHelper.getPageOfSubColumns("tc", columns, startKey,
-//                    1000);
-//            processMaps(rowMaps);
-//        }
+        while (rowMaps.size() > 0) {
+            lastKey = rowMaps.keySet().toArray()[rowMaps.size() - 1].toString();
+            if (lastKey.equals(startKey)) {
+                break;
+            }
+            startKey = lastKey;
+            rowMaps = storeHelper.getPageOfSubColumns("tc", columns, startKey,
+                    1000);
+            processMaps(rowMaps);
+        }
         storeHelper.shutdown();
     }
     
