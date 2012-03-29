@@ -58,7 +58,8 @@ public class StandardNameLoader {
         InfoSource is = new InfoSource();
         is.setName("Birds Australia");
         is.setWebsiteUrl("http://www.birdsaustralia.com.au/images/stories/birds/checklist2008_sm.pdf");
-        is.setId(9999);
+        is.setId(600);
+        is.setUid("dr359");
         while(reader.hasNext()){
             String[] values = reader.readNext();
             if(values != null && values.length > 2){
@@ -113,7 +114,8 @@ public class StandardNameLoader {
         if(guid != null){
             CommonName cn = new CommonName();
             cn.setNameString(WordUtils.capitalizeFully(commonName));
-            cn.setRanking(100000);
+            cn.setIsPreferred(true);
+            //cn.setRanking(100000);
             cn.setInfoSourceURL(is.getWebsiteUrl());
             cn.setInfoSourceId(Integer.toString(is.getId()));
             cn.setInfoSourceName(is.getName());

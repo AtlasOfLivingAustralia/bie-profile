@@ -1674,7 +1674,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#createIndex()
 	 */
-	public void createIndex(String startKey) throws Exception {
+	public void createIndex(String startKey, boolean remove) throws Exception {
 		int max_loop_count = 100000;
 		long start = System.currentTimeMillis();
 
@@ -1686,7 +1686,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		SolrServer solrServer = solrUtils.getSolrServer();
 
 		logger.info("Clearing existing taxon entries in the search index...");
-		solrServer.deleteByQuery("idxtype:" + IndexedTypes.TAXON); // delete
+		if(remove)
+		    solrServer.deleteByQuery("idxtype:" + IndexedTypes.TAXON); // delete
 																	// everything!
 		solrServer.commit();
 

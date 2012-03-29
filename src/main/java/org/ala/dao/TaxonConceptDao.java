@@ -651,7 +651,7 @@ public interface TaxonConceptDao {
 	 *
 	 * @throws Exception
 	 */
-	void createIndex(String startKey) throws Exception;
+	void createIndex(String startKey, boolean remove) throws Exception;
 	
 	/**
 	 * Reindexes a list of taxa based on the guid. 

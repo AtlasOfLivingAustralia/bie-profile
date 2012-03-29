@@ -36,6 +36,10 @@ public class CommonName extends AttributableObject implements Comparable<CommonN
 	 */
 	@Override
 	public int compareTo(CommonName o) {
+	    if(isPreferred() && !o.isPreferred())
+            return -1;
+        if(o.isPreferred() && !isPreferred())
+            return 1;
 		//check the infosources
     	if(ranking!=null && o.getRanking()==null){
     		return ranking *-1;
