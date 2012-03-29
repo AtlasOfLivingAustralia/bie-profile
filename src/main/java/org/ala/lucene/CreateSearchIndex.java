@@ -43,7 +43,14 @@ public class CreateSearchIndex {
 	        logger.info("Creating species indexes...");
 	        TaxonConceptDao tcDao = (TaxonConceptDao) context.getBean(TaxonConceptDao.class);
 	        boolean replace = args.length >1 && "-replace".equals(args[1]);
-	        tcDao.createIndex("", !replace);
+	        String start = "";
+	        if(args.length>0 && !args[0].startsWith("-"))
+	            start = args[0];
+	        if(args.length>1 && !args[1].startsWith("-"))
+	            start = args[1];
+	        if(args.length>2 && !args[2].startsWith("-"))
+	            start = args[2];
+	        tcDao.createIndex(start, !replace);
 	        logger.info("Finished creating species indexes.");
         }
 		
