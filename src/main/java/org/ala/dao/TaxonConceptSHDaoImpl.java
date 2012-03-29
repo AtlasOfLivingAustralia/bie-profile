@@ -1805,8 +1805,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			Set<String> infoSourceUids = new TreeSet<String>();
 
 			// get alternative ids
-//			List<String> identifiers = scanner != null? (List)scanner.getListValue(ColumnType.IDENTIFIER_COL.getColumnName(), 
-//	                String.class):getIdentifiers(guid);
+			List<String> identifiers = scanner != null? (List)scanner.getListValue(ColumnType.IDENTIFIER_COL.getColumnName(), 
+	                String.class):getIdentifiers(guid);
 			
 			List<TaxonConcept> otherTaxonConcepts = scanner != null? (List)scanner.getListValue(ColumnType.SAME_AS_COL.getColumnName(),
 			        TaxonConcept.class):getSameAsFor(guid);
@@ -1850,9 +1850,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				    doc.addField("otherGuid", tc.getGuid());
 				}
 
-//				for (String identifier : identifiers) {
-//					doc.addField("otherGuid", identifier);
-//				}
+				for (String identifier : identifiers) {
+					doc.addField("otherGuid", identifier);
+				}
 				// add the numeric checklistbank id
 				doc.addField("otherGuid", taxonConcept.getId());
 
