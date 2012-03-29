@@ -56,4 +56,8 @@ public interface Rankable {
      * @param isBlackListed
      */
 	void setIsBlackListed(boolean isBlackListed);
+	
+    public boolean isPreferred();
+    
+    public void setPreferred(boolean isPreferred);
 }

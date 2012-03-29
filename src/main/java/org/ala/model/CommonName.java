@@ -28,7 +28,7 @@ public class CommonName extends AttributableObject implements Comparable<CommonN
     protected Integer ranking;
     /** Indicates the name should be blacklisted, and hence removed from certain views */
     protected boolean isBlackListed = false;
-    /** @deprecated this has been superceded by the ranking field */
+    /** An preferred common name ranks higher than any other name. When multiple "preferred" the one with the highest ranking is selected. */
 	protected Boolean isPreferred = false;
 	
 	/**
@@ -148,14 +148,14 @@ public class CommonName extends AttributableObject implements Comparable<CommonN
 	/**
 	 * @return the isPreferred
 	 */
-	public Boolean isPreferred() {
+	public boolean isPreferred() {
 		return isPreferred;
 	}
 
 	/**
 	 * @param isPreferred the isPreferred to set
 	 */
-	public void setPreferred(Boolean isPreferred) {
+	public void setPreferred(boolean isPreferred) {
 		this.isPreferred = isPreferred;
 	}
 		

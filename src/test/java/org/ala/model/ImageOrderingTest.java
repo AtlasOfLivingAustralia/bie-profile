@@ -13,11 +13,13 @@ public class ImageOrderingTest extends TestCase{
 		Image image1 = new Image("1", null, null,null, null, null,null, null, null,null, null, null,1, 1);
 		Image image2 = new Image("2", null, null,null, null, null,null, null, null,null, null, null, null, null);
 		Image image3 = new Image("3", null, null,null, null, null,null, null, null,null, null, null,1, -1);
+		Image image4 = new Image("4", null, null,null, null, null,null, null, null,null, null, null,1, null,false,true);
 		
 		List<Image> images = new ArrayList<Image>();
 		images.add(image2);
 		images.add(image3);
 		images.add(image1);
+		images.add(image4);
 		Collections.sort(images);
 		
 		for( Image image: images){

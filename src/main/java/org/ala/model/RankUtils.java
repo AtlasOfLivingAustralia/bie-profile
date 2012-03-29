@@ -10,6 +10,11 @@ public class RankUtils {
 	 * @return
 	 */
 	public static int compareTo(Rankable o1, Rankable o2) {
+	    
+	    if(o1.isPreferred() && !o2.isPreferred())
+	        return -1;
+	    if(o2.isPreferred() && !o1.isPreferred())
+	        return 1;
 	
 		if(o1.getRanking()!=null && o2.getRanking()==null){
 			return o1.getRanking() *-1;
