@@ -130,7 +130,8 @@ public class LimneticDataLoader {
 								habitatList.add(h);
 
 								logger.info("Adding guid=" + guid + " SciName=" + currentScientificName + " Habitat=" + HABITAT_CODE);
-								taxonConceptDao.addHabitat(guid, habitatList);
+								//append it to the existing habitats
+								taxonConceptDao.addHabitat(guid, habitatList, true);
 								matchCounter++;
 							}
 						} else {

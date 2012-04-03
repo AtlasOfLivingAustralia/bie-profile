@@ -148,7 +148,7 @@ public class IrmngDataLoader {
                         h.setInfoSourceName(infosource.getName());
                         h.setInfoSourceURL(baseUrl+identifier);
                         habitatList.add(h);
-                        taxonConceptDao.addHabitat(guid, habitatList);
+                        taxonConceptDao.addHabitat(guid, habitatList, true);
                     }
                     
                     logger.trace("Adding guid=" + guid + " SciName=" + currentScientificName + " Extant=" + extantCode + " Habitat=" + habitatCode);

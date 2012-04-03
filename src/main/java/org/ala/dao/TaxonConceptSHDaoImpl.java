@@ -2406,6 +2406,12 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				ColumnType.HABITAT_COL.getColumnName(), guid,
 				(List) habitatList, false);
 	}
+	
+	public boolean addHabitat(String guid, List<Habitat> habitatList, boolean append) throws Exception{
+	    return storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
+                ColumnType.HABITAT_COL.getColumnName(), guid,
+                (List) habitatList, append);
+	}
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#getRegions(java.lang.String)

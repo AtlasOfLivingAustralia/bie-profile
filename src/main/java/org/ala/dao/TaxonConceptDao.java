@@ -335,6 +335,8 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	boolean addHabitat(String guid, List<Habitat> habitatList) throws Exception;
+	
+	boolean addHabitat(String guid, List<Habitat> habitatList, boolean append) throws Exception;
 
 	/**
 	 * Add this list of regions to the Taxon Concept.
