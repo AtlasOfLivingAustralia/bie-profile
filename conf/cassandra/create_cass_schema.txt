@@ -10,9 +10,16 @@ create keyspace bie;
 use bie;
 
 create column family tc with comparator=UTF8Type and default_validation_class=UTF8Type
-and comment='The column family for a BIE taxon concept' and key_validation_class=UTF8Type;
+and comment='The column family for a BIE taxon concept' and key_validation_class=UTF8Type
+and compaction_strategy=LeveledCompactionStrategy  AND compaction_strategy_options=[{sstable_size_in_mb: 100}];
 
-update column family tc with compaction_strategy=LeveledCompactionStrategy;
+create column family rk with comparator=UTF8Type and default_validation_class=UTF8Type
+and comment='The column family for Rankings' and key_validation_class=UTF8Type
+and compaction_strategy=LeveledCompactionStrategy;
+
+create column family gr with comparator=UTF8Type and default_validation_class=UTF8Type
+and comment='The column family for Geo Regions' and key_validation_class=UTF8Type
+and compaction_strategy=LeveledCompactionStrategy;
 
 
- 
+      
