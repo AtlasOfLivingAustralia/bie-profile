@@ -899,6 +899,48 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
                 updateStats(lsid, homonym);
 		return lsid;
 	}
+	/**
+     * @see org.ala.dao.TaxonConceptDao#findLsidForSearch(java.lang.String)
+     */
+	@Override
+	public String findLsidForSearch(String scientificName){
+	    return findLsidForSearch(scientificName, false);
+	}
+	/**
+	 * @see org.ala.dao.TaxonConceptDao#findLsidForSearch(String, boolean)
+	 */
+    @Override
+    public String findLsidForSearch(String scientificName, boolean useSoundEx){
+        String lsid =null;
+        try{
+            NameSearchResult nsr = findCBDataByName(scientificName, null, null);
+            if(nsr != null)
+                lsid =  nsr.getLsid();
+        }
+        catch(Exception e){
+            if(e instanceof HomonymException){
+                //ignore the homonym exception if there is only one result
+                //homonyms should only be ignore during searches - not matches...
+                HomonymException he = (HomonymException)e;
+                if(he.getResults().size()==1)
+                    lsid = he.getResults().get(0).getLsid();
+                else{
+                    //if the results contain only 1 "accepted" concept return it
+                    int count =0;
+                    NameSearchResult ac = null;
+                    for(NameSearchResult nsr: he.getResults()){
+                        if(!nsr.isSynonym()){
+                            count++;
+                            ac = nsr;
+                        }
+                    }
+                    if(count == 1)
+                        lsid = ac.getLsid();
+                }
+            }
+        }
+        return lsid;
+    }
 
 	@Override
 	public NameSearchResult findCBDataByName(String scientificName,

@@ -569,6 +569,31 @@ public interface TaxonConceptDao {
 	 * @return 
 	 */
 	NameSearchResult findCBDataByName(String scientificName, LinnaeanRankClassification classification, String rank) throws Exception;
+	
+	/**
+	 * Attempts to find the lsid for the supplied species in the name matching. This method should only be used for 
+	 * searching purposes because it allows homonyms to be reolved unde the following conditions:
+	 * <ul>
+	 * <li>The NSL only has one of the homonyms</li>
+	 * <li>The NSL has multiple values but only one is accepted</li>
+	 * </ul> 
+	 * 
+	 * @param scientificName The name to locate
+	 * @return The lsid of the supplied name OR null if not found
+	 * @throws Exception
+	 */
+	String findLsidForSearch(String scientificName);
+	/**
+	 * 
+	 * @see #findLsidForSearch(String)
+	 * Allows the search to use sound like expressions to perform a match.
+	 * 
+	 * @param scientificName
+	 * @param useSoundEx
+	 * @return
+	 * @throws Exception
+	 */
+	String findLsidForSearch(String scientificName, boolean useSoundEx);
 
     /**
      * Reports the name matching statistics to the supplied output stream
