@@ -134,9 +134,15 @@ public class RepoDataLoader {
         					}
         					args = new String[]{};
         					args = arg.toArray(args);
+        					//handle the situation where biocache-service reports no data resources
+        					if(args.length<1){
+        					    logger.error("No biocache data resources found. Unable to load.");
+        					    System.exit(0);
+        					}
         				}
         				catch(Exception e){
         					logger.error("ERROR: exit process....." + e);
+        					e.printStackTrace();
         					System.exit(0);
         				}
         			}
