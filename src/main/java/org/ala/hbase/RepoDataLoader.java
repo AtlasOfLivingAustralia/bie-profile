@@ -117,7 +117,7 @@ public class RepoDataLoader {
             	ObjectMapper mapper = new ObjectMapper();
         		mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             	RestfulClient restfulClient = new RestfulClient(0);
-            	Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Multimedia&facets=data_resource_uid&pageSize=0", hashTable);
+            	Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0", hashTable);
         		if((Integer)resp[0] == HttpStatus.SC_OK){
         			String content = resp[1].toString();
         			if(content != null && content.length() > "[]".length()){
