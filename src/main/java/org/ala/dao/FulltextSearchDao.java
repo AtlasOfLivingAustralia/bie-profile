@@ -218,7 +218,7 @@ public interface FulltextSearchDao {
      * @return
      * @throws Exception
      */
-    List<AutoCompleteDTO> getAutoCompleteList(String value,IndexedTypes indexType, boolean gsOnly, int maxTerms) throws Exception;
+    List<AutoCompleteDTO> getAutoCompleteList(String value,String[] filterQuery,IndexedTypes indexType, boolean gsOnly, int maxTerms) throws Exception;
     
     /**
      * ranking search functions

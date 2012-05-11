@@ -492,6 +492,30 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setQuery(queryString);
         return doSolrQuery(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
     }
+    private void addFqs(SolrQuery solrQuery,String[] filterQuery){
+        if (filterQuery != null) {
+            for (String fq : filterQuery) {
+                // pull apart fq. E.g. Rank:species and then sanitize the string parts
+                // so that special characters are escaped appropriately
+                if (fq == null || fq.isEmpty()) continue;
+                String[] parts = fq.split(":", 2); // separate query field from query text
+                logger.debug("fq split into: "+parts.length+" parts: "+parts[0]+" & "+parts[1]);
+                String prefix = null;
+                String suffix = null;
+                // don't escape range queries
+                if (parts[1].contains(" TO ")) {
+                    prefix = parts[0];
+                    suffix = parts[1];
+                } else {
+                    prefix = ClientUtils.escapeQueryChars(parts[0]);
+                    suffix = ClientUtils.escapeQueryChars(parts[1]);
+                }
+
+                solrQuery.addFilterQuery(prefix + ":" + suffix); // solrQuery.addFacetQuery(facetQuery)
+                logger.debug("adding filter query: " + prefix + ":" + suffix);
+            }
+        }
+    }
 
     /**
      * Re-usable method for performing SOLR searches - takes SolrQuery input
@@ -515,28 +539,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     	SearchResultsDTO searchResults = new SearchResultsDTO();
         
         // set the facet query if set
-        if (filterQuery != null) {
-            for (String fq : filterQuery) {
-                // pull apart fq. E.g. Rank:species and then sanitize the string parts
-                // so that special characters are escaped appropriately
-                if (fq == null || fq.isEmpty()) continue;
-                String[] parts = fq.split(":", 2); // separate query field from query text
-                logger.debug("fq split into: "+parts.length+" parts: "+parts[0]+" & "+parts[1]);
-                String prefix = null;
-                String suffix = null;
-                // don't escape range queries
-                if (parts[1].contains(" TO ")) {
-                    prefix = parts[0];
-                    suffix = parts[1];
-                } else {
-                    prefix = ClientUtils.escapeQueryChars(parts[0]);
-                    suffix = ClientUtils.escapeQueryChars(parts[1]);
-                }
-
-                solrQuery.addFilterQuery(prefix + ":" + suffix); // solrQuery.addFacetQuery(facetQuery)
-                logger.debug("adding filter query: " + prefix + ":" + suffix);
-            }
-        }
+        addFqs(solrQuery,filterQuery);
 
         solrQuery.setRows(pageSize);
         solrQuery.setStart(startIndex);
@@ -1415,7 +1418,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     /**
      * @see org.ala.dao.FulltextSearchDao#getAutoCompleteList(String, String[], int)
      */
-    public List<AutoCompleteDTO> getAutoCompleteList(String value, IndexedTypes indexType, boolean gsOnly, int maxTerms) {      
+    public List<AutoCompleteDTO> getAutoCompleteList(String value,String[] filterQuery, IndexedTypes indexType, boolean gsOnly, int maxTerms) {      
         if (StringUtils.trimToNull(value) != null && value.length() >= 3) {
             List<AutoCompleteDTO> items = new ArrayList<AutoCompleteDTO>();
             QueryResponse qr;
@@ -1423,7 +1426,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 			try {
 				SolrDocumentList sdl = null;
 				// do exact search
-				solrQuery = buildAutoExactMatchQuery(value, indexType, gsOnly, maxTerms);
+				solrQuery = buildAutoExactMatchQuery(value,filterQuery, indexType, gsOnly, maxTerms);
 				qr = solrUtils.getSolrServer().query(solrQuery);				
 	            sdl = qr.getResults();
 	            if (sdl != null && !sdl.isEmpty()) {
@@ -1439,7 +1442,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	            // no exact match found
 	            else{
 	            	// do wildcard search
-	            	solrQuery = buildAutoConcatMatchQuery(value, indexType, gsOnly, maxTerms);
+	            	solrQuery = buildAutoConcatMatchQuery(value, filterQuery, indexType, gsOnly, maxTerms);
 					qr = solrUtils.getSolrServer().query(solrQuery);					
 		            sdl = qr.getResults();
 		            if (sdl != null && !sdl.isEmpty()) {
@@ -1541,7 +1544,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}  
 	
 
-	private SolrQuery buildAutoExactMatchQuery(String value, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
+	private SolrQuery buildAutoExactMatchQuery(String value, String[] filterQuery, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
         StringBuffer queryString = new StringBuffer();
         SolrQuery solrQuery = new SolrQuery();  
         String cleanQuery = value.toLowerCase();
@@ -1569,11 +1572,13 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setQueryType("standard");
         solrQuery.setFields("*", "score");
         solrQuery.setRows(maxTerms);
-
+        
+        addFqs(solrQuery, filterQuery);
+        
         return solrQuery;
     }
 	
-	private SolrQuery buildAutoConcatMatchQuery(String value, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
+	private SolrQuery buildAutoConcatMatchQuery(String value,String[] filterQuery, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
         StringBuffer queryString = new StringBuffer();
         SolrQuery solrQuery = new SolrQuery();  
         String cleanQuery = value.toLowerCase();
@@ -1606,6 +1611,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setFields("*", "score");
         solrQuery.setRows(maxTerms);
 
+        addFqs(solrQuery,filterQuery);
+        
         return solrQuery;
     }		
 }
