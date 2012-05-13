@@ -127,9 +127,9 @@ public class RepoDataLoader {
         					Set<String> arg = new LinkedHashSet<String>();
         					for(int i = 0; i < list.size(); i++){
         						java.util.LinkedHashMap<String,String> value = list.get(i);
-        						String provider = (loader.getUidInfoSourceMap().get(value.get("label"))).toString();
+        						Object provider = (loader.getUidInfoSourceMap().get(value.get("label")));
         						if(provider != null){
-        							arg.add(provider);
+        							arg.add(provider.toString());
         						}
         					}
         					args = new String[]{};
