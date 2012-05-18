@@ -80,7 +80,7 @@ public class PartialIndex {
 		//Read File Line By Line
 		while ((strLine = br.readLine()) != null)   {
 			// Print the content on the console
-			strLine = strLine.trim().toLowerCase();
+			strLine = strLine.trim();
 			if(strLine.length() > 0){
 				doIndex(strLine);
 				ctr++;
