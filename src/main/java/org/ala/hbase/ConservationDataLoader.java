@@ -100,8 +100,7 @@ public class ConservationDataLoader {
 
     public void load(List<String> infosources) {
         boolean all = infosources.contains("all");
-        try {
-            loadGenericState(ntPlantsNearThreatened, "Northern Territory", "Near Threatened Plants", 508, 0, -1, 1);
+        try {            
             if(all ||infosources.contains("500"))
                 loadEpbc(',');
             if(all ||infosources.contains("506"))
