@@ -20,6 +20,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.ala.dao.FulltextSearchDao;
 import org.ala.dao.IndexedTypes;
@@ -64,7 +66,7 @@ public class PartialIndex {
 			System.out.println(e);
 			System.exit(0);	
 		}
-		System.exit(0);	
+		//System.exit(0);	
 	}
 
 	public void process(String args) throws Exception {
@@ -75,23 +77,40 @@ public class PartialIndex {
 		DataInputStream in = new DataInputStream(fstream);
 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
 //			loader.cleanIndex();
-		
+		ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<String>(100);
+		IndexingThread[] threads = new IndexingThread[20];
+		for(int i = 0; i<20;i++){
+		    IndexingThread t = new IndexingThread(i, queue);
+		    threads[i]=t;
+		    t.start();
+		}
 		String strLine;
+		if(solrServer == null){
+            solrServer = solrUtils.getSolrServer();
+        }
 		//Read File Line By Line
 		while ((strLine = br.readLine()) != null)   {
 			// Print the content on the console
 			strLine = strLine.trim();
 			if(strLine.length() > 0){
-				doIndex(strLine);
+				//doIndex(strLine);
+			    while(!queue.offer(strLine))
+			        Thread.currentThread().sleep(50);
 				ctr++;
 			}
 		}
+		for(IndexingThread t : threads){
+		    t.setCanStop();	
+		    t.join();
+		}
 		//Close the input stream
 		in.close();
+		
 		commitIndex();
+		solrUtils.shutdownSolr();
 		logger.info("**** total count: " + ctr);
 	}
-
+	
 	public void cleanIndex() throws Exception{
 		if(solrServer == null){
 			solrServer = solrUtils.getSolrServer();
@@ -117,4 +136,46 @@ public class PartialIndex {
 		if(docs.size()>0)
 		    solrServer.add(docs);		
 	}
+	
+	private class IndexingThread extends Thread{
+	    private ArrayBlockingQueue<String> queue;
+	    private int id, total ;
+	    boolean stop = false;
+	    boolean canStop = false;
+	    IndexingThread(int id,ArrayBlockingQueue<String> queue){
+	        logger.info("Creating Index Thread " + id);
+	        this.queue = queue;
+	        this.id = id;
+	    }
+	    
+	    void setCanStop(){
+	        canStop=true;
+	    }
+	    
+	    public void run(){
+	        while(!stop){
+	            try{
+	                if(canStop && queue.size()==0){
+	                    stop = true;
+	                    logger.info("Index Thread: " + id + " is stopping" );
+	                }
+	                else{
+    	            String guid = queue.poll(500,TimeUnit.MILLISECONDS);
+    	            total++;
+    	            List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
+    	            if(docs.size()>0)
+    	                solrServer.add(docs);
+    	            if(total%100== 0){
+                        logger.info("Indexer " + id + " has indexed " + total + " last key: " + guid);
+                    }
+	                }
+	            
+	            }	           
+	            catch(Exception e){
+	                e.printStackTrace();
+	            }
+	        }
+	    }
+	}
+	
 }

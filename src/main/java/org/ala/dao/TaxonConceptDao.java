@@ -29,6 +29,7 @@ import org.ala.model.ExtantStatus;
 import org.ala.model.Habitat;
 import org.ala.model.IdentificationKey;
 import org.ala.model.Image;
+import org.ala.model.InfoSource;
 import org.ala.model.OccurrencesInGeoregion;
 import org.ala.model.PestStatus;
 import org.ala.model.Publication;
@@ -540,6 +541,20 @@ public interface TaxonConceptDao {
 	String findLsidByName(String scientificName, LinnaeanRankClassification classification, String taxonRank);
 	
 	String findLsidByName(String scientificName, LinnaeanRankClassification classification, String taxonRank, boolean useSoundEx);
+	
+	/**
+	 * Searches the name matching index for an LSID based on the supplied classification.  When addMissingName=true scientific names that can not be
+	 * found are added to the index AND data store as an ALA concept.
+	 * @param scientificName
+	 * @param classification
+	 * @param taxonRank
+	 * @param useSoundEx
+	 * @param addMissingName
+	 * @return
+	 */
+	String findLsidByName(String scientificName, LinnaeanRankClassification classification, String taxonRank, String authority, InfoSource infoSource, boolean useSoundEx, boolean addMissingName);
+	
+	void refreshNameIndex() throws Exception;
 	
 	/**
 	 * Get LSID from Checklist Bank by scientific name.

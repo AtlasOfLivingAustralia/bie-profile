@@ -31,7 +31,7 @@ public class SolrUtils {
 	
     /** SOLR server instance */
     private EmbeddedSolrServer server = null;
-    
+    private CoreContainer coreContainer = null;
     private AddDocThread[] threads = null;
     ArrayBlockingQueue<List<SolrInputDocument>> queue = null;
     
@@ -43,7 +43,8 @@ public class SolrUtils {
     public SolrServer getSolrServer() throws Exception {
         if (this.server == null & solrHome != null) {
 	        System.setProperty("solr.solr.home", solrHome);
-	        CoreContainer coreContainer = null;
+	        System.out.println("SOLR HOME : " + solrHome);
+	         coreContainer = null;
 	        try {
 		        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
 		        coreContainer = initializer.initialize();
@@ -56,11 +57,14 @@ public class SolrUtils {
 		        idxWriter.commit();
 		        idxWriter.close();
 		        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-		        coreContainer = initializer.initialize();
+		        coreContainer = initializer.initialize();		        
 	        }
 	        this.server = new EmbeddedSolrServer(coreContainer, "");
         }
         return server;
+    }
+    public void shutdownSolr(){
+        coreContainer.shutdown();
     }
     
     /**

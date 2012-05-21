@@ -41,6 +41,7 @@ import org.ala.model.ExtantStatus;
 import org.ala.model.Habitat;
 import org.ala.model.IdentificationKey;
 import org.ala.model.Image;
+import org.ala.model.InfoSource;
 import org.ala.model.OccurrencesInGeoregion;
 import org.ala.model.PestStatus;
 import org.ala.model.Publication;
@@ -98,6 +99,7 @@ import org.gbif.ecat.parser.NameParser;
 import org.gbif.ecat.parser.UnparsableException;
 import org.springframework.stereotype.Component;
 
+import au.org.ala.checklist.lucene.CBCreateLuceneIndex;
 import au.org.ala.checklist.lucene.CBIndexSearch;
 import au.org.ala.checklist.lucene.HomonymException;
 import au.org.ala.checklist.lucene.SearchResultException;
@@ -161,6 +163,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 	@Inject
 	protected CBIndexSearch cbIdxSearcher;
+	
+	@Inject
+	protected CBCreateLuceneIndex cbIdxWriter;
 
 	/** The spring wired store helper to use */
 	protected StoreHelper storeHelper;
@@ -833,6 +838,12 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		return sortPageSearch(searchQuery, startIndex, pageSize, sortField,
 				sortDirection);
 	}
+	
+	@Override
+    public String findLsidByName(String scientificName,
+            LinnaeanRankClassification classification, String taxonRank, boolean useSoundEx){
+	    return findLsidByName(scientificName,classification,taxonRank,null, null,useSoundEx,false);
+	}
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#findLsidByName(java.lang.String,
@@ -840,7 +851,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 */
 	@Override
 	public String findLsidByName(String scientificName,
-			LinnaeanRankClassification classification, String taxonRank, boolean useSoundEx) {
+			LinnaeanRankClassification classification, String taxonRank, String authority, InfoSource infoSource, boolean useSoundEx, boolean addMissingName) {
 		String lsid = null;
                 boolean homonym = false;
 		try {
@@ -854,8 +865,49 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
                         homonym = e instanceof HomonymException;
 		}
                 updateStats(lsid, homonym);
+        if(lsid == null && addMissingName && !homonym){
+            //create a new entry in the data store
+            lsid = "ALA_" + scientificName.replaceAll(" ", "_");
+            TaxonConcept tc = new TaxonConcept();
+            tc.setGuid(lsid);
+            tc.setNameString(scientificName);
+            if(infoSource != null){
+                tc.setInfoSourceURL(infoSource.getWebsiteUrl());            
+                tc.setInfoSourceId(""+infoSource.getId());
+                tc.setInfoSourceUid(infoSource.getUid());
+                tc.setInfoSourceName(infoSource.getName());
+            }
+            if(authority != null)
+                tc.setAuthor(authority);
+            try{
+                create(tc);
+                //create a classification if necessary
+                if(classification != null){
+                    Classification cl = new Classification();
+                    cl.setKingdom(classification.getKingdom());
+                    cl.setPhylum(classification.getPhylum());
+                    cl.setClazz(classification.getKlass());
+                    cl.setOrder(classification.getOrder());
+                    cl.setFamily(classification.getFamily());
+                    cl.setGenus(classification.getGenus());
+                    addClassification(lsid, cl);
+                }                                
+                //add the new name to the index.            
+                cbIdxWriter.addAdditionalName(lsid, scientificName, authority, classification);
+            }
+            catch(Exception e){
+                logger.error("Unable to add " + lsid ,e);
+            }
+            
+        }
 		return lsid;
 	}
+	
+	public void refreshNameIndex() throws Exception {	    
+	    cbIdxWriter.commit();
+	    cbIdxSearcher.reopenReaders();
+	}
+	
 	@Override
     public String findLsidByName(String scientificName,
             LinnaeanRankClassification classification, String taxonRank) {
@@ -1855,6 +1907,11 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 			// TODO this index should also include nub ids
 			SolrInputDocument doc = new SolrInputDocument();
+			
+			//if the doc is an ala generated concept include a flag
+			if(guid.startsWith("ALA"))
+			    doc.addField("is_ala_b", "true");
+			
 			doc.addField("idxtype", IndexedTypes.TAXON);
 
 			// is this species iconic
@@ -2095,15 +2152,21 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					addIfNotNull(doc, "genus", classification.getGenus());
 					
 					//speciesGroup
-					if("arthropoda".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Arthropods");
-					if("mollusca".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Molluscs");
-					if("magnoliophyta".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Flowering plants");
-					if("reptilia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Reptiles");
-					if("amphibia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Frogs");
-					if("aves".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Birds");
-					if("mammalia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Mammals");
-					if("plantae".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Plants");
-					if("animalia".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Animals");
+					if(StringUtils.isNotBlank(classification.getPhylum())){
+    					if("arthropoda".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Arthropods");
+    					if("mollusca".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Molluscs");
+    					if("magnoliophyta".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Flowering plants");
+					}
+					if(StringUtils.isNotBlank(classification.getClazz())){
+    					if("reptilia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Reptiles");
+    					if("amphibia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Frogs");
+    					if("aves".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Birds");
+    					if("mammalia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Mammals");
+					}
+					if(StringUtils.isNotBlank(classification.getKingdom())){
+    					if("plantae".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Plants");
+    					if("animalia".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Animals");
+					}
 					if(classification.getClazz()!=null && fishTaxa.contains(classification.getClazz().toLowerCase())){
 						doc.addField("speciesGroup", "Fish");
 					}
