@@ -2,8 +2,12 @@ package org.ala.dao;
 
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.File;
+
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -14,8 +18,10 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.embedded.EmbeddedSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrInputDocument;
+import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.core.CoreContainer;
 import org.springframework.stereotype.Component;
 /**
@@ -66,6 +72,101 @@ public class SolrUtils {
     public void shutdownSolr(){
         coreContainer.shutdown();
     }
+    /**
+     * Reopens the SOLR core container to allow a refresh of the index from external processes.
+     * @throws Exception
+     */
+    public void reopenSolr() throws Exception{
+        coreContainer.reload("");
+    }
+    
+    
+    public Set<IndexFieldDTO> getIndexFieldDetails(String... fields) throws Exception{
+        ModifiableSolrParams params = new ModifiableSolrParams();
+        params.set("qt", "/admin/luke");
+        
+        params.set("tr", "luke.xsl");
+        if(fields != null){
+            params.set("fl" ,fields);
+            params.set("numTerms", "1");
+        }
+        else
+            params.set("numTerms", "0");        
+        QueryResponse response = server.query(params);
+        Set<IndexFieldDTO>  results = parseLukeResponse(response.toString(), fields != null);
+        
+        return results;
+    }
+    
+    /**
+     * parses the response string from the service that returns details about the indexed fields
+     * @param str
+     * @return
+     */
+    private  Set<IndexFieldDTO> parseLukeResponse(String str, boolean includeCounts) {
+        //System.out.println(str);
+        Set<IndexFieldDTO> fieldList = includeCounts?new java.util.LinkedHashSet<IndexFieldDTO>():new java.util.TreeSet<IndexFieldDTO>();
+        
+        Pattern typePattern = Pattern.compile(
+        "(?:type=)([a-z]{1,})");
+
+        Pattern schemaPattern = Pattern.compile(
+        "(?:schema=)([a-zA-Z\\-]{1,})");
+        
+        Pattern distinctPattern = Pattern.compile(
+        "(?:distinct=)([0-9]{1,})");
+
+        String[] fieldsStr = str.split("fields=\\{");
+
+        for (String fieldStr : fieldsStr) {
+            if (fieldStr != null && !"".equals(fieldStr)) {
+                String[] fields = includeCounts?fieldStr.split("\\}\\},"):fieldStr.split("\\},");
+
+                for (String field : fields) {
+                    if (field != null && !"".equals(field)) {
+                        IndexFieldDTO f = new IndexFieldDTO();
+                        
+                        String fieldName = field.split("=")[0];
+                        String type = null;
+                        String schema = null;
+                        Matcher typeMatcher = typePattern.matcher(field);
+                        if (typeMatcher.find(0)) {
+                            type = typeMatcher.group(1);
+                        }
+                        
+                        Matcher schemaMatcher = schemaPattern.matcher(field);
+                        if (schemaMatcher.find(0)) {
+                            schema = schemaMatcher.group(1);
+                        }
+                        if(schema != null){
+                            logger.debug("fieldName:" + fieldName);
+                            logger.debug("type:" + type);
+                            logger.debug("schema:" + schema);
+                            //don't allow the sensitive coordinates to be exposed via ws
+                            if(fieldName != null && !fieldName.startsWith("sensitive")){
+                                
+                                f.setName(fieldName);
+                                f.setDataType(type);
+                                //interpret the schema information
+                                f.setIndexed(schema.contains("I"));
+                                f.setStored(schema.contains("S"));
+                                
+                                fieldList.add(f);
+                            }
+                        }
+                        Matcher distinctMatcher = distinctPattern.matcher(field);
+                        if(distinctMatcher.find(0)){
+                            Integer distinct = Integer.parseInt(distinctMatcher.group(1));
+                            f.setNumberDistinctValues(distinct);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return fieldList;
+    }
+    
     
     /**
 	 * @param solrHome the solrHome to set
@@ -207,5 +308,102 @@ public class SolrUtils {
 	        }
 	    }
 	}
+	
+	/**
+	 * DTO for the fields that belong to the index.
+	 * 
+	 * A field is available for faceting if indexed=true 
+	 * 
+	 * @author "Natasha Carter <Natasha.Carter@csiro.au>"
+	 */
+	public class IndexFieldDTO implements Comparable<IndexFieldDTO> {
+	    /** The name of the field in the index */
+	    private String name;
+	    /** The SOLR data type for the field */
+	    private String dataType;
+	    /** True when the field is available in the index for searching purposes */
+	    private boolean indexed;
+	    /** True when the field is available for extraction in search results */
+	    private boolean stored;
+	    /** Stores the number of distinct values that are in the field */
+	    private Integer numberDistinctValues;
+	    
+	    @Override
+	    public boolean equals(Object obj){
+	        if(obj instanceof IndexFieldDTO && name != null){
+	            return name.equals(((IndexFieldDTO)obj).getName());
+	        }
+	        return false;
+	    }
+	    
+	    /**
+	     * @return the name
+	     */
+	    public String getName() {
+	        return name;
+	    }
+	    /**
+	     * @param name the name to set
+	     */
+	    public void setName(String name) {
+	        this.name = name;
+	    }
+	    /**
+	     * @return the dataType
+	     */
+	    public String getDataType() {
+	        return dataType;
+	    }
+	    /**
+	     * @param dataType the dataType to set
+	     */
+	    public void setDataType(String dataType) {
+	        this.dataType = dataType;
+	    }
+	    /**
+	     * @return the indexed
+	     */
+	    public boolean isIndexed() {
+	        return indexed;
+	    }
+	    /**
+	     * @param indexed the indexed to set
+	     */
+	    public void setIndexed(boolean indexed) {
+	        this.indexed = indexed;
+	    }
+	    /**
+	     * @return the stored
+	     */
+	    public boolean isStored() {
+	        return stored;
+	    }
+	    /**
+	     * @param stored the stored to set
+	     */
+	    public void setStored(boolean stored) {
+	        this.stored = stored;
+	    }
+	    /**
+	     * @return the numberDistinctValues
+	     */
+	    public Integer getNumberDistinctValues() {
+	        return numberDistinctValues;
+	    }
+	    /**
+	     * @param numberDistinctValues the numberDistinctValues to set
+	     */
+	    public void setNumberDistinctValues(Integer numberDistinctValues) {
+	        this.numberDistinctValues = numberDistinctValues;
+	    }
+
+	    @Override
+	    public int compareTo(IndexFieldDTO other) {        
+	        return this.getName().compareTo(other.getName());
+	    }
+	    
+	    
+	}
+
 	
 }
