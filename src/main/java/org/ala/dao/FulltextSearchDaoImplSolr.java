@@ -435,6 +435,37 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         }
         return dto;
 	}
+	/**
+	 * Writes the fields of the results to the supplied q and fq to the supplied output stream.
+	 */
+	public int writeResults(String q, String[] fq, String sort,String dir, String[] fields, OutputStream output) throws Exception{
+	    int resultsCount =0;
+	    int startIndex =0;
+	    int pageSize=100;
+	    QueryResponse qr = doSolrSearchForQueryResponse(q, fq, fields, pageSize, startIndex, sort, dir);
+	    CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(output), ',', '"');
+	    while (qr.getResults().size() > 0 && resultsCount <maxDownloadForConcepts){
+	        for(SolrDocument sd:qr.getResults()){
+	            resultsCount++;
+	            String[] valuesToUse = new String[fields.length];
+	            for(int i=0;i<fields.length;i++){
+	                String field = fields[i];
+	                Object value = sd.getFirstValue(field);
+	                if(value != null){
+	                    valuesToUse[i] = value.toString();
+	                }
+	                else
+	                    valuesToUse[i] ="";
+	            }
+	            //output.write(StringUtils.join(valuesToUse,",").getBytes());
+	            csvWriter.writeNext(valuesToUse);
+	        }
+	        startIndex += pageSize;
+	        qr = doSolrSearchForQueryResponse(q, fq, fields, pageSize, startIndex, sort, dir);
+	    }
+	    csvWriter.flush();
+	    return resultsCount;
+	}
 
 	public SearchResultsDTO<SearchDTO> doExactTextSearch(String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
 		SearchResultsDTO<SearchDTO> dto = null;
@@ -492,6 +523,24 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setQuery(queryString);
         return doSolrQuery(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
     }
+    /**
+     * Re-usable method for performing a SOLR search that returns the RAW query response
+     * @param queryString
+     * @param filterQuery
+     * @param pageSize
+     * @param startIndex
+     * @param sortField
+     * @param sortDirection
+     * @return
+     * @throws Exception
+     */
+    private QueryResponse  doSolrSearchForQueryResponse(String queryString, String filterQuery[], String[] fields, Integer pageSize,
+            Integer startIndex, String sortField,  String sortDirection) throws Exception {
+          SolrQuery solrQuery = initSolrQuery(); // general search settings
+          solrQuery.setFields(fields);
+          solrQuery.setQuery(queryString);
+          return getSolrQueryResponse(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
+      }
     private void addFqs(SolrQuery solrQuery,String[] filterQuery){
         if (filterQuery != null) {
             for (String fq : filterQuery) {
@@ -516,6 +565,24 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             }
         }
     }
+    
+    private QueryResponse getSolrQueryResponse(SolrQuery solrQuery, String[] filterQuery, Integer pageSize, 
+            Integer startIndex, String sortField,String sortDirection) throws Exception{
+        if(logger.isDebugEnabled()){
+            logger.debug(solrQuery.getQuery());
+        }
+                
+        // set the facet query if set
+        addFqs(solrQuery,filterQuery);
+
+        solrQuery.setRows(pageSize);
+        solrQuery.setStart(startIndex);
+        solrQuery.setSortField(sortField, ORDER.valueOf(sortDirection));
+        
+        // do the Solr search
+        QueryResponse qr = solrUtils.getSolrServer().query(solrQuery); // can throw exception
+        return qr;        
+    }
 
     /**
      * Re-usable method for performing SOLR searches - takes SolrQuery input
@@ -531,22 +598,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
      */
     private SearchResultsDTO doSolrQuery(SolrQuery solrQuery, String[] filterQuery, Integer pageSize,
             Integer startIndex, String sortField, String sortDirection) throws Exception {
-    	
-    	if(logger.isDebugEnabled()){
-    		logger.debug(solrQuery.getQuery());
-    	}
-        
-    	SearchResultsDTO searchResults = new SearchResultsDTO();
-        
-        // set the facet query if set
-        addFqs(solrQuery,filterQuery);
-
-        solrQuery.setRows(pageSize);
-        solrQuery.setStart(startIndex);
-        solrQuery.setSortField(sortField, ORDER.valueOf(sortDirection));
-        
-        // do the Solr search
-        QueryResponse qr = solrUtils.getSolrServer().query(solrQuery); // can throw exception
+        SearchResultsDTO searchResults = new SearchResultsDTO();
+    	QueryResponse qr = getSolrQueryResponse(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
         
         //process results
         SolrDocumentList sdl = qr.getResults();

@@ -141,6 +141,16 @@ public interface FulltextSearchDao {
 			throws Exception;
     
     /**
+     * Writes supplied fields of the "TAXON" results to the output stream. 
+     * @param q
+     * @param fq
+     * @param fields
+     * @param output
+     * @return
+     */
+    int writeResults(String q, String[] fq, String sort,String dir, String[] fields, OutputStream output) throws Exception;
+    
+    /**
      * Search for taxon concept with the following scientific name.
      *
      * @param input
