@@ -33,6 +33,7 @@ public class Habitat extends AttributableObject implements Comparable<Habitat> {
 	 * Limnetic 
 	 */
 	protected String status;
+    protected String statusAsString; // only used when unmarshalling from json
 	
 	/**
 	 * @param status
@@ -85,7 +86,14 @@ public class Habitat extends AttributableObject implements Comparable<Habitat> {
 		}
 	}
 
-	/*
+    /**
+     * @param statusAsString
+     */
+    public void setStatusAsString(String statusAsString) {
+        this.statusAsString = statusAsString;
+    }
+
+    /*
 	 * (non-Javadoc)
 	 * 
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
