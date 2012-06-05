@@ -29,9 +29,10 @@ public class ExtantStatus extends AttributableObject implements Comparable<Extan
 	 * EF = Known Extant & Known Fossil
 	 * F  = Known fossil only
 	 */
-	protected String status;
-	
-	/**
+    protected String status;
+    protected String statusAsString; // only used when unmarshalling from json
+
+    /**
 	 * @param status
 	 */
 	public ExtantStatus(String status) {
@@ -78,6 +79,13 @@ public class ExtantStatus extends AttributableObject implements Comparable<Extan
 			}
 		}
 	}
+
+    /**
+     * @param statusAsString
+     */
+    public void setStatusAsString(String statusAsString) {
+        this.statusAsString = statusAsString;
+    }
 
 	/*
 	 * (non-Javadoc)
