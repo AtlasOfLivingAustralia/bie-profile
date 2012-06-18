@@ -36,6 +36,9 @@ import javax.inject.Inject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
+/**
+ * Takes a file of LSIDs and reindexes the resource.
+ */
 @Component("partialIndex")
 public class PartialIndex {
 	/** Logger initialisation */
