@@ -141,7 +141,7 @@ public class SearchResultsDTO<T extends SearchDTO> {
         this.query = query;
     }
 
-    @JsonIgnore
+    //@JsonIgnore
     public Collection<FacetResultDTO> getFacetResults() {
         return facetResults;
     }
