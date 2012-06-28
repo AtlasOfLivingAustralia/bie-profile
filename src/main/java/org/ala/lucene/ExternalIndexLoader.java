@@ -387,6 +387,7 @@ public class ExternalIndexLoader {
 								doc.addField("url", url);
 								doc.addField("regionType", region);
 								doc.addField("name", name);
+                                doc.addField("text", name);
 								solrServer.add(doc);
 								ctr++;
 							}						
