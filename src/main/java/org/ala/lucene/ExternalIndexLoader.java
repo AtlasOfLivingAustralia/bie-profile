@@ -388,6 +388,7 @@ public class ExternalIndexLoader {
 								doc.addField("regionType", region);
 								doc.addField("name", name);
                                 doc.addField("text", name);
+                                doc.addField("australian_s", "recorded"); // so they appear in default QF search
 								solrServer.add(doc);
 								ctr++;
 							}						
