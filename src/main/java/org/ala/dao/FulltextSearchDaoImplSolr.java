@@ -1167,9 +1167,11 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setQueryType("standard");
         solrQuery.setFacet(true);
         solrQuery.addFacetField("idxtype");
-        solrQuery.addFacetField("rank");
-        solrQuery.addFacetField("kingdom");
+
         solrQuery.addFacetField("australian_s");
+        solrQuery.addFacetField("speciesGroup");
+        //solrQuery.addFacetField("kingdom");
+        solrQuery.addFacetField("rank");
         //solrQuery.addFacetField("rankId");
         //solrQuery.addFacetField("pestStatus");
 //        solrQuery.addFacetField("conservationStatus");
@@ -1182,7 +1184,6 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.addFacetField("conservationStatusTAS");
         solrQuery.addFacetField("conservationStatusVIC");
         solrQuery.addFacetField("conservationStatusWA");
-        solrQuery.addFacetField("speciesGroup");
 
         solrQuery.setFacetMinCount(1);
         solrQuery.setRows(10);
