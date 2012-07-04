@@ -2041,7 +2041,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				Set<String> commonNameSet = new TreeSet<String>();
 				List<String> higherPriorityNames = new ArrayList<String>();
 				for (CommonName cn : commonNames) {
-					if (cn.getNameString() != null) {
+					if (cn.getNameString() != null && !cn.getIsBlackListed()) {
 						// normalise the common names for display
 						String commonNameString = WordUtils.capitalizeFully(cn
 								.getNameString());
@@ -2825,14 +2825,23 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		};
 		
 		Map<String, Map<String,Object>> rowMaps = storeHelper.getPageOfSubColumns(TC_COL_FAMILY,  columns, startGuid, pageSize);
-		
-		for(Map<String, Object> row : rowMaps.values()){
+		int count = 0;
+		String lastKey ="";
+		boolean storeLastKey=true;
+		for(String key : rowMaps.keySet()){
+		    Map<String, Object> row = rowMaps.get(key);
+		    if(storeLastKey){
+		        if(key.compareTo(lastKey) >0)
+		            lastKey = key;
+		    }
+		    count++;		    
 			SpeciesProfileDTO spDTO = new SpeciesProfileDTO();
 			TaxonConcept tc = (TaxonConcept) getColumnValue(row,ColumnType.TAXONCONCEPT_COL);
 			List<CommonName> cns = (List<CommonName>) getColumnValue(row,ColumnType.VERNACULAR_COL);
 			List<Habitat> habs = (List<Habitat>) getColumnValue(row,ColumnType.HABITAT_COL);
 			List<ConservationStatus> cons = (List<ConservationStatus>) getColumnValue(row,ColumnType.CONSERVATION_STATUS_COL);
 			if(tc!=null){
+			    storeLastKey = false;
 				spDTO.setGuid(tc.getGuid());
 				spDTO.setScientificName(tc.getNameString());
                                 spDTO.setRank(tc.getRankString());
@@ -2857,6 +2866,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				dtoList.add(spDTO);
 			}
 		}
+		if(count > 0 && dtoList.size() == 0)
+		    return getProfilePage(lastKey,pageSize);
 		return dtoList;
 	}
 
