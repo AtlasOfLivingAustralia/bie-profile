@@ -644,6 +644,24 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		}
 		return guid;
 	}
+	/**
+	 * Returns the accepted GUID for the supplied GUID.
+	 * 
+	 * @param guid
+	 * @return
+	 */
+	public String getAcceptedGuid(String guid) {
+	  String acceptedGuid = guid;
+	  try{
+	     NameSearchResult nsr = cbIdxSearcher.searchForRecordByLsid(guid);
+	     if(nsr != null && nsr.isSynonym())
+	       acceptedGuid = nsr.getAcceptedLsid();
+	  }
+	  catch(Exception e){
+	      logger.error("Unable to get accepted guid for : " + guid);
+	  }
+	  return acceptedGuid;
+	}
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#getTaxonNameFor(java.lang.String)
@@ -2649,13 +2667,24 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
     }
 
     /**
-	 * @see org.ala.dao.TaxonConceptDao#getExtendedTaxonConceptByGuid(java.lang.String, boolean)
+     * @see org.ala.dao.TaxonConceptDao#getExtendedTaxonConceptByGuid(java.lang.String, boolean)
+     */
+    public ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkPreferred)
+        throws Exception {
+        return getExtendedTaxonConceptByGuid(guid, checkPreferred, false);
+    }
+    
+    /**
+	 * @see org.ala.dao.TaxonConceptDao#getExtendedTaxonConceptByGuid(java.lang.String, boolean,boolean)
 	 */
-	public ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkPreferred)
+	public ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkPreferred, boolean checkSynonym)
 			throws Exception {
 		logger.debug("Retrieving concept for guid: " + guid);
 		if(checkPreferred){
 			guid = getPreferredGuid(guid);
+		}
+		if(checkSynonym){
+		  guid = getAcceptedGuid(guid);
 		}
 		Map<String, Object> map = storeHelper.getSubColumnsByGuid(TC_COL_FAMILY, guid);
 		ExtendedTaxonConceptDTO etc = createExtendedDTO(map);

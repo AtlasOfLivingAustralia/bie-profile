@@ -470,6 +470,18 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkedPreferred) throws Exception;
+	
+	/**
+	 * Retrieve the entire profile data for a taxon concept by guid.
+	 * When checkSynonym is true the guid is looked up as a synonym if the other search fails 
+	 * 
+	 * @param guid
+	 * @param checkedPreferred
+	 * @param checkSynonym
+	 * @return
+	 * @throws Exception
+	 */
+	ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkedPreferred, boolean checkSynonym) throws Exception;
 
     /**
      * Retrieve the entire profile data for a taxon concept by guid.
