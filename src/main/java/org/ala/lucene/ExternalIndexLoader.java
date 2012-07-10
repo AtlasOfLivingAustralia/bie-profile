@@ -88,19 +88,19 @@ public class ExternalIndexLoader {
 		ApplicationContext context = new ClassPathXmlApplicationContext(locations);
 		ExternalIndexLoader l = (ExternalIndexLoader) context.getBean(ExternalIndexLoader.class);
 		
-//        l.loadRegions();
-//
-//        //load collections
-//        l.loadCollections();
-//
-//        //load institutions
-//        l.loadInstitutions();
-//
-//        //load data providers
-//        l.loadDataProviders();
-//
-//        //load datasets
-//        l.loadDatasets();
+        l.loadRegions();
+
+        //load collections
+        l.loadCollections();
+
+        //load institutions
+        l.loadInstitutions();
+
+        //load data providers
+        l.loadDataProviders();
+
+        //load datasets
+        l.loadDatasets();
 
         //load layers
         l.loadLayers();
