@@ -28,18 +28,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.ala.dto.*;
 import org.ala.model.Rank;
 import org.ala.util.ClassificationRank;
-import org.ala.dto.FacetResultDTO;
-import org.ala.dto.FieldResultDTO;
-import org.ala.dto.SearchCollectionDTO;
-import org.ala.dto.SearchDTO;
-import org.ala.dto.SearchDataProviderDTO;
-import org.ala.dto.SearchDatasetDTO;
-import org.ala.dto.SearchInstitutionDTO;
-import org.ala.dto.SearchRegionDTO;
-import org.ala.dto.SearchResultsDTO;
-import org.ala.dto.SearchTaxonConceptDTO;
 import org.ala.util.ColumnType;
 import org.ala.util.StatusType;
 import org.ala.vocabulary.Vocabulary;
@@ -63,8 +54,6 @@ import org.springframework.stereotype.Component;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import java.util.regex.Pattern;
-import org.ala.dto.AutoCompleteDTO;
-import org.ala.dto.SearchWordpressDTO;
 
 /**
  * SOLR implementation of {@see org.ala.dao.FulltextSearchDao}. Used for searching against Lucene
@@ -631,7 +620,11 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             		results.add(createRegionFromIndex(qr, doc));
             	} else if(IndexedTypes.WORDPRESS.toString().equalsIgnoreCase((String)doc.getFieldValue("idxtype"))){
             		results.add(createWordpressFromIndex(qr, doc));
-            	}
+                } else if(IndexedTypes.LAYERS.toString().equalsIgnoreCase((String)doc.getFieldValue("idxtype"))){
+                    results.add(createLayerFromIndex(qr, doc));
+                } else {
+                    results.add(createSearchDTOFromIndex(qr, doc));
+                }
             }
         } else {
         	logger.debug("No results for query.");
@@ -1062,7 +1055,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	private SearchDatasetDTO createDatasetFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchDatasetDTO dataset = new SearchDatasetDTO();
 		dataset.setScore((Float)doc.getFirstValue("score"));
-                dataset.setIdxType(IndexedTypes.DATASET.toString());
+        dataset.setIdxType(IndexedTypes.DATASET.toString());
 		dataset.setGuid((String) doc.getFirstValue("guid"));
 		dataset.setName((String) doc.getFirstValue("name"));
 		dataset.setDescription((String) doc.getFirstValue("description"));
@@ -1070,7 +1063,29 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 		dataset.setScore((Float) doc.getFirstValue("score"));
         return dataset;
 	}
-	
+
+    private SearchLayerDTO createLayerFromIndex(QueryResponse qr, SolrDocument doc) {
+        SearchLayerDTO dataset = new SearchLayerDTO();
+        dataset.setScore((Float)doc.getFirstValue("score"));
+        dataset.setIdxType(IndexedTypes.LAYERS.toString());
+        dataset.setGuid((String) doc.getFirstValue("guid"));
+        dataset.setName((String) doc.getFirstValue("name"));
+        dataset.setDescription((String) doc.getFirstValue("description"));
+        dataset.setDataProviderName((String) doc.getFirstValue("dataProviderName"));
+        dataset.setScore((Float) doc.getFirstValue("score"));
+        return dataset;
+    }
+
+    private SearchDTO createSearchDTOFromIndex(QueryResponse qr, SolrDocument doc) {
+        SearchDTO dataset = new SearchDTO();
+        dataset.setScore((Float) doc.getFirstValue("score"));
+        dataset.setIdxType(IndexedTypes.SEARCH.toString());
+        dataset.setGuid((String) doc.getFirstValue("guid"));
+        dataset.setName((String) doc.getFirstValue("name"));
+        dataset.setScore((Float) doc.getFirstValue("score"));
+        return dataset;
+    }
+
     /**
 	 * Populate a Collection from the data in the lucene index.
 	 *

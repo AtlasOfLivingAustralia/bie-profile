@@ -21,6 +21,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -36,6 +37,9 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.common.SolrInputDocument;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
@@ -50,6 +54,8 @@ import au.com.bytecode.opencsv.CSVReader;
 /**
  * Load tool for loading external data into the indexes to provide a combined
  * single index for the BIE front end.
+ *
+ * TODO Replace the database links with loading via webservices
  *
  * @author Dave Martin (David.Martin@csiro.au)
  */
@@ -82,30 +88,66 @@ public class ExternalIndexLoader {
 		ApplicationContext context = new ClassPathXmlApplicationContext(locations);
 		ExternalIndexLoader l = (ExternalIndexLoader) context.getBean(ExternalIndexLoader.class);
 		
-		if(args.length>0 && args[0].equalsIgnoreCase("-region")){
-			l.loadRegions();
-		}
-		else{
-			//load collections
-			l.loadCollections();
-			
-			//load institutions
-			l.loadInstitutions();
-	
-			//load data providers
-			l.loadDataProviders();
-			
-			//load datasets
-			l.loadDatasets();
-	
-	        // load WordPress pages
-	        CreateWordPressIndex cwpi = (CreateWordPressIndex) context.getBean(CreateWordPressIndex.class);
-	        logger.info("Start of crawling and indexing WP pages.");
-	        cwpi.loadSitemap();
-	        cwpi.indexPages();
-		}
+//        l.loadRegions();
+//
+//        //load collections
+//        l.loadCollections();
+//
+//        //load institutions
+//        l.loadInstitutions();
+//
+//        //load data providers
+//        l.loadDataProviders();
+//
+//        //load datasets
+//        l.loadDatasets();
+
+        //load layers
+        l.loadLayers();
+
+        // load WordPress pages
+        CreateWordPressIndex cwpi = (CreateWordPressIndex) context.getBean(CreateWordPressIndex.class);
+        logger.info("Start of crawling and indexing WP pages.");
+        cwpi.loadSitemap();
+        cwpi.indexPages();
+
 		System.exit(0);
 	}
+
+    public void loadLayers() throws Exception {
+
+        SolrServer solrServer = solrUtils.getSolrServer();
+        solrServer.deleteByQuery("idxtype:"+IndexedTypes.LAYERS); // delete layers!
+
+        HttpClient httpClient = new HttpClient();
+        GetMethod gm = new GetMethod("http://spatial.ala.org.au/layers-service/layers.json");
+        logger.debug("Response code for get method: " +httpClient.executeMethod(gm));
+        String layerJson = gm.getResponseBodyAsString();
+        ObjectMapper om = new ObjectMapper();
+        List<Map<String,Object>> layers = om.readValue(layerJson, new TypeReference<List<Map<String,Object>>>() {});
+        for(Map<String,Object> layer: layers){
+            SolrInputDocument doc = new SolrInputDocument();
+            doc.addField("name", layer.get("displayname"));
+            doc.addField("guid", "http://spatial.ala.org.au/layers/more/"+layer.get("name"));
+            doc.addField("description", layer.get("notes"));
+            doc.addField("text", layer.get("source"));
+            doc.addField("text", layer.get("type"));
+            doc.addField("text", layer.get("notes"));
+            doc.addField("text", layer.get("keywords"));
+            if(layer.get("classification1") !=null) doc.addField("text", layer.get("classification1"));
+            if(layer.get("classification2") !=null) doc.addField("text", layer.get("classification2"));
+            doc.addField("content", layer.get("notes"));
+            doc.addField("dataProviderName", layer.get("source"));
+            doc.addField("url", "http://spatial.ala.org.au/layers/more/"+layer.get("name"));
+            doc.addField("id", layer.get("id"));
+            doc.addField("idxtype", IndexedTypes.LAYERS);
+            doc.addField("australian_s", "recorded"); // so they appear in default QF search
+            solrServer.add(doc);
+        }
+        logger.info("Finished syncing layer information with the collectory.");
+        solrServer.commit();
+        logger.info("Finished syncing layers.");
+    }
 
 	/**
 	 * Loads collections and institutions into the BIE search index.
@@ -155,10 +197,9 @@ public class ExternalIndexLoader {
 			doc.addField("australian_s", "recorded"); // so they appear in default QF search
 
 			solrServer.add(doc);
-			solrServer.commit();
 		}
-		
-		solrServer.optimize();
+
+        solrServer.commit();
 		rs.close();
 		stmt.close();
 		conn.close();
@@ -205,10 +246,9 @@ public class ExternalIndexLoader {
 //			doc.addField("aus_s", "yes");
 			doc.addField("australian_s", "recorded"); // so they appear in default QF search
 			solrServer.add(doc);
-			solrServer.commit();
 		}
-		
-		solrServer.optimize();
+
+        solrServer.commit();
 		rs.close();
 		stmt.close();
 		conn.close();
@@ -257,10 +297,9 @@ public class ExternalIndexLoader {
 //			doc.addField("aus_s", "yes");
 			doc.addField("australian_s", "recorded"); // so they appear in default QF search
 			solrServer.add(doc);
-			solrServer.commit();
 		}
-		
-		solrServer.optimize();
+
+        solrServer.commit();
 		rs.close();
 		stmt.close();
 		conn.close();
@@ -297,44 +336,15 @@ public class ExternalIndexLoader {
 //			doc.addField("aus_s", "yes");
 			doc.addField("australian_s", "recorded"); // so they appear in default QF search
 			solrServer.add(doc);
-			solrServer.commit();
 		}
-		
-		solrServer.optimize();
+
+        solrServer.commit();
 		rs.close();
 		stmt.close();
 		conn.close();
 		logger.info("Finished syncing data provider information.");
 	}
 
-	/**
-	 * @param collectoryDataSource the collectoryDataSource to set
-	 */
-	public void setCollectoryDataSource(DataSource collectoryDataSource) {
-		this.collectoryDataSource = collectoryDataSource;
-	}
-
-	/**
-	 * @param solrUtils the solrUtils to set
-	 */
-	public void setSolrUtils(SolrUtils solrUtils) {
-		this.solrUtils = solrUtils;
-	}
-
-	/**
-	 * @return the collectoryDataSource
-	 */
-	public DataSource getCollectoryDataSource() {
-		return collectoryDataSource;
-	}
-
-	/**
-	 * @param baseUrlForCollectory the baseUrlForCollectory to set
-	 */
-	public void setBaseUrlForCollectory(String baseUrlForCollectory) {
-		this.baseUrlForCollectory = baseUrlForCollectory;
-	}
-	
 	// =======================
 	private String getTagValue(String sTag, Element eElement) {
 		NodeList nl = eElement.getElementsByTagName(sTag);
@@ -399,5 +409,33 @@ public class ExternalIndexLoader {
 			solrServer.commit();
 		}
 		logger.info("Finished syncing regions information. Total count: " + ctr);
-	}	
+	}
+
+    /**
+     * @param collectoryDataSource the collectoryDataSource to set
+     */
+    public void setCollectoryDataSource(DataSource collectoryDataSource) {
+        this.collectoryDataSource = collectoryDataSource;
+    }
+
+    /**
+     * @param solrUtils the solrUtils to set
+     */
+    public void setSolrUtils(SolrUtils solrUtils) {
+        this.solrUtils = solrUtils;
+    }
+
+    /**
+     * @return the collectoryDataSource
+     */
+    public DataSource getCollectoryDataSource() {
+        return collectoryDataSource;
+    }
+
+    /**
+     * @param baseUrlForCollectory the baseUrlForCollectory to set
+     */
+    public void setBaseUrlForCollectory(String baseUrlForCollectory) {
+        this.baseUrlForCollectory = baseUrlForCollectory;
+    }
 }

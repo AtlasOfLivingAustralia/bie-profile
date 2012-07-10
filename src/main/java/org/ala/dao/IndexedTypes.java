@@ -9,7 +9,9 @@ public enum IndexedTypes {
 	DATAPROVIDER(6),
 	DATASET(7),
     WORDPRESS(8),
-    RANKING(9);
+    RANKING(9),
+    LAYERS(10),
+    SEARCH(11);
 	
 	private final int id;
     private IndexedTypes(int id) {
