@@ -8,7 +8,7 @@
     <name>bie-profile</name>
     <url>http://www.ala.org.au</url>
     <description>
-     This is prototype quality code for loading and testing HBase with RDF data.
+     This is the backend for BIE processing.
     </description>
     <properties>
         <!-- This project uses UTF8 for Regular Expressions -->
@@ -18,41 +18,6 @@
      <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
     </properties>
     <dependencies>
-            <!-- ECAT-COMMON - name parsing capabilities -->
-            <!-- History: Wai-23 July updated version from 1.0-SNAPSHOT to 1.1-SNAPSHOT, -->
-            <!-- because ala-name-matching is updated to 1.1-SNAPSHOT -->
-            <!-- Updated to use 1.2-SNAPSHOT - this is he new custom version being used by ala-name-matching -->
-            <!-- <dependency>
-                <groupId>org.gbif</groupId>
-                <artifactId>ecat-common</artifactId>
-                <version>1.2-SNAPSHOT</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>dom4j</groupId>
-                        <artifactId>dom4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xml-apis</groupId>
-                        <artifactId>xml-apis</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xmlParserAPIs</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jdom</groupId>
-                        <artifactId>jdom</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jaxen</groupId>
-                        <artifactId>jaxen</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency> -->
             <!-- BIE Repository -->
             <dependency>
                 <groupId>au.org.ala</groupId>
