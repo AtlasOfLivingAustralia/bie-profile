@@ -34,6 +34,7 @@ import org.ala.dto.SearchTaxonConceptDTO;
 import org.ala.dto.SpeciesProfileDTO;
 import org.ala.model.AttributableObject;
 import org.ala.model.BaseRanking;
+import org.ala.model.Category;
 import org.ala.model.Classification;
 import org.ala.model.CommonName;
 import org.ala.model.ConservationStatus;
@@ -308,6 +309,14 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				ColumnType.PEST_STATUS_COL.getColumnName(), guid,
 				pestStatus);
 	}
+	
+	 public boolean addCategory(String guid, Category category)
+	      throws Exception {
+	    return storeHelper.put(TC_TABLE, TC_COL_FAMILY,
+	        ColumnType.CATEGORY_COL.getColumnName(), guid,
+	        category);
+	  }
+	
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#addRegions(java.lang.String,
@@ -559,6 +568,13 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				ColumnType.PEST_STATUS_COL.getColumnName(), guid,
 				PestStatus.class);
 	}
+	
+	 public List<Category> getCategories(String guid) throws Exception {
+	    return (List) storeHelper.getList(TC_TABLE, TC_COL_FAMILY,
+	        ColumnType.CATEGORY_COL.getColumnName(), guid,
+	        Category.class);
+	  }
+
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#getConservationStatuses(java.lang.String)
@@ -1908,6 +1924,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	                ConservationStatus.class): getConservationStatuses(guid);
 			// List<PestStatus> pestStatuses = getPestStatuses(guid);
 
+			List<Category> categories = scanner != null ? (List)scanner.getListValue(ColumnType.CATEGORY_COL.getColumnName(),
+          Category.class): getCategories(guid);
+			
 			// add text properties
 			List<SimpleProperty> simpleProperties = scanner != null ? (List)scanner.getListValue(ColumnType.TEXT_PROPERTY_COL.getColumnName(),
 	                SimpleProperty.class): getTextPropertiesFor(guid);
@@ -1974,7 +1993,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				doc.addField("otherGuid", taxonConcept.getId());
 
 				addToSetSafely(infoSourceIds, taxonConcept.getInfoSourceId());
-//				addToSetSafely(infoSourceUids,taxonConcept.getInfoSourceUid());
+				addToSetSafely(infoSourceUids,taxonConcept.getInfoSourceUid());
 
 				
 				//TODO do we want to add all the associated TaxonNames???
@@ -2021,6 +2040,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						doc.addField("conservationStatus", cs.getRawStatus(),
 								0.6f);
 						addToSetSafely(infoSourceIds, cs.getInfoSourceId());
+						addToSetSafely(infoSourceUids, cs.getInfoSourceUid());
 						if (cs.getRegion() != null
 								&& Regions.getRegion(cs.getRegion()) != null) {
 							Regions r = Regions.getRegion(cs.getRegion());
@@ -2028,6 +2048,15 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 									cs.getRawStatus());
 						}
 					}
+				}
+				
+				//add the category information
+				for(Category category : categories){
+				    //add the category to the "general" field so all categories from all dr's can be filetred on
+				    doc.addField("category_m_s", category.getCategory());
+				    //add to a dr specific category so that faceting can be performed on individual DR's categories eg weeds or animal pests.
+				    doc.addField(category.getInfoSourceUid() + "_category_m_s", category.getCategory());
+				    addToSetSafely(infoSourceUids, category.getInfoSourceUid());
 				}
 
 				// for (PestStatus ps : pestStatuses) {
@@ -2052,6 +2081,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						// textField.setBoost(0.4f);
 						doc.addField("simpleText", sp.getValue(), 0.4f);
 						addToSetSafely(infoSourceIds, sp.getInfoSourceId());
+						addToSetSafely(infoSourceUids, sp.getInfoSourceUid());
 					}
 				}
 
@@ -2070,6 +2100,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 							higherPriorityNames.add(cn.getNameString());
 						}
 						addToSetSafely(infoSourceIds, cn.getInfoSourceId());
+						addToSetSafely(infoSourceUids, cn.getInfoSourceUid());
 						
 						// push CAAB preferred common name up
 						if(cn.getRanking() != null && cn.getRanking() > 90000){
@@ -2143,6 +2174,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 							infoSourceIds.add(synonym.getInfoSourceId()); // getting
 							// NPE
 						}
+						addToSetSafely(infoSourceUids, synonym.getInfoSourceUid());
 					}
 				}
 
@@ -2216,6 +2248,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						
 						    logger.debug("!!!" + imageInfosourceId);
 						    infoSourceIds.add(imageInfosourceId);
+						    addToSetSafely(infoSourceUids, image.getInfoSourceUid());
 						} catch (Exception e) {
 						    logger.warn("Image infosourceId could not be retrieved");
 						}
@@ -2247,10 +2280,13 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				//Add all the dataset id's individually so that they can be searched indivdually
 				for(String iid : infoSourceIds){
 				    doc.addField("dataset", iid);
-				    String uid = infosourceIdUIDMap.get(iid);
-				    if(StringUtils.isNotBlank(uid)){
-				        doc.addField("uid", uid);
-				    }
+//				    String uid = infosourceIdUIDMap.get(iid);
+//				    if(StringUtils.isNotBlank(uid)){
+//				        doc.addField("uid", uid);
+//				    }
+				}
+				for(String uid : infoSourceUids){
+				  doc.addField("uid", uid);
 				}
 				
 //				Iterator it = infoSourceIds.iterator();
@@ -2739,6 +2775,11 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         }
 		etc.setPestStatuses(pestStatuses);
 		
+		List<Category> categories = new ArrayList<Category>();
+		for(Category category: (List<Category>)getColumnValue(map, ColumnType.CATEGORY_COL)){
+		    categories.add(category);
+		}
+		etc.setCategories(categories);
 		List<ConservationStatus> conservationStatuses = new ArrayList<ConservationStatus>();
         for (ConservationStatus conservationStatus : (List<ConservationStatus>) getColumnValue(map,ColumnType.CONSERVATION_STATUS_COL)) {
             conservationStatuses.add(conservationStatus);

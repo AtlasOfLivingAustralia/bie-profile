@@ -575,6 +575,7 @@
    <field name="parentGuid" type="string" indexed="true" stored="true" omitNorms="true" />
    <field name="synonym" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="scientificName" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
+   <field name="singleScientificName" type="string" indexed="true" stored="true" multiValued="false" omitNorms="false" />
    <field name="scientificNameRaw" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="author" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="acceptedConceptName" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
@@ -680,7 +681,8 @@
         both match, the first appearing in the schema will be used.  -->
    <dynamicField name="*Count"  type="int"    indexed="true"  stored="true"/>     
    <dynamicField name="*_i"  type="int"    indexed="true"  stored="true"/>
-   <dynamicField name="*_s"  type="string"  indexed="true"  stored="true"/>
+   <dynamicField name="*_m_s"  type="string" multiValued="true"  indexed="true"  stored="true"/>
+   <dynamicField name="*_s"  type="string"  indexed="true"  stored="true"/>   
    <dynamicField name="*_l"  type="long"   indexed="true"  stored="true"/>
    <dynamicField name="*_t"  type="text"    indexed="true"  stored="true"/>
    <dynamicField name="*_b"  type="boolean" indexed="true"  stored="true"/>
@@ -735,6 +737,7 @@
    <copyField source="content" dest="text"/>
    <!-- <copyField source="commonName" dest="text"/> -->
    <copyField source="pestStatus" dest="text"/>
+   <copyField source="category_*" dest="text"/>
    <copyField source="conservationStatus" dest="text"/>
    <!-- copy fields required for the auto complete -->
    <copyField source="scientificName" dest="auto_text"/>

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.ala.model.BaseRanking;
+import org.ala.model.Category;
 import org.ala.model.Classification;
 import org.ala.model.CommonName;
 import org.ala.model.ConservationStatus;
@@ -57,6 +58,7 @@ public enum ColumnType {
     CONSERVATION_STATUS_COL("hasConservationStatus", ConservationStatus.class, true),
     SENSITIVE_STATUS_COL("hasSensitiveStatus", SensitiveStatus.class, true),
     PEST_STATUS_COL("hasPestStatus", PestStatus.class, true),
+    CATEGORY_COL("hasCategory", Category.class, true),
     REGION_COL("hasRegion", OccurrencesInGeoregion.class, true),
     EXTANT_STATUS_COL("hasExtantStatus", ExtantStatus.class, true),
     HABITAT_COL("hasHabitat", Habitat.class, true),

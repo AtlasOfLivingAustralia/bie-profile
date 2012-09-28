@@ -17,6 +17,7 @@ package org.ala.dto;
 import java.util.List;
 import org.ala.model.Classification;
 
+import org.ala.model.Category;
 import org.ala.model.CommonName;
 import org.ala.model.ConservationStatus;
 import org.ala.model.ExtantStatus;
@@ -61,6 +62,7 @@ public class ExtendedTaxonConceptDTO {
 	protected List<Reference> publicationReference;
 	protected List<IdentificationKey> identificationKeys;
 	protected List<SpecimenHolding> specimenHolding;
+	protected List<Category> categories;
     protected Boolean isAustralian;
     protected String linkIdentifier;
 	
@@ -369,4 +371,17 @@ public class ExtendedTaxonConceptDTO {
     public void setSameAsConcepts(List<TaxonConcept> sameAsConcepts) {
         this.sameAsConcepts = sameAsConcepts;
     }
+    /**
+     * @return the categories
+     */
+    public List<Category> getCategories() {
+        return categories;
+    }
+    /**
+     * @param categories the categories to set
+     */
+    public void setCategories(List<Category> categories) {
+        this.categories = categories;
+    }
+    
 }

@@ -22,6 +22,7 @@ import org.ala.dto.SearchResultsDTO;
 import org.ala.dto.SearchTaxonConceptDTO;
 import org.ala.dto.SpeciesProfileDTO;
 import org.ala.model.BaseRanking;
+import org.ala.model.Category;
 import org.ala.model.Classification;
 import org.ala.model.CommonName;
 import org.ala.model.ConservationStatus;
@@ -145,6 +146,9 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	List<PestStatus> getPestStatuses(String guid) throws Exception;
+	
+	List<Category> getCategories(String guid) throws Exception;
+
 
 	/**
 	 * Retrieve the conservation status associated with this taxon concept.
@@ -319,6 +323,17 @@ public interface TaxonConceptDao {
 	 */
 	boolean addPestStatus(String guid, PestStatus pestStatus) throws Exception;
 
+	
+	/**
+   * Add this category to the Taxon Concept.
+   *
+   * @param guid
+   * @param pestStatus
+   * @throws Exception
+   */
+  boolean addCategory(String guid, Category category) throws Exception;
+	
+	
 	/**
 	 * Add extant status list to the Taxon Concept.
 	 *
