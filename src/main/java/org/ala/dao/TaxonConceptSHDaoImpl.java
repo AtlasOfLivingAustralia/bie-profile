@@ -1884,6 +1884,27 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception{
 	    return indexTaxonConcept(guid, null);
 	}
+	
+	private String getStateAbbreviation(String state){
+	    String lstate = state.toLowerCase();
+	    if(lstate.equals("new south wales"))
+	        return "NSW";
+	    if(lstate.equals("queensland"))
+	        return "QLD";
+	    if(lstate.equals("victoria"))
+	        return "VIC";
+	    if(lstate.equals("act"))
+	        return "ACT";
+	    if(lstate.equals("tasmania"))
+	        return "TAS";
+	    if(lstate.equals("northern territory"))
+	        return "NT";
+	    if(lstate.equals("south australia"))
+	        return "SA";
+	    if(lstate.equals("western australia"))
+	        return "WA";
+	    return "";
+	}
 
 	/**
 	 * Index the supplied taxon concept.
@@ -2056,6 +2077,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				    doc.addField("category_m_s", category.getCategory());
 				    //add to a dr specific category so that faceting can be performed on individual DR's categories eg weeds or animal pests.
 				    doc.addField(category.getInfoSourceUid() + "_category_m_s", category.getCategory());
+				    //add state limiting facet if necessary
+				    if(StringUtils.isNotBlank(category.getStateProvince())){
+				      doc.addField("category_"+getStateAbbreviation(category.getStateProvince())+"_m_s", category.getCategory());
+				    }
 				    addToSetSafely(infoSourceUids, category.getInfoSourceUid());
 				}
 

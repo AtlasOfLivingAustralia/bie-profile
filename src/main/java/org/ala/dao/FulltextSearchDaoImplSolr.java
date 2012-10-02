@@ -1200,6 +1200,14 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.addFacetField("conservationStatusVIC");
         solrQuery.addFacetField("conservationStatusWA");
         solrQuery.addFacetField("category_m_s");
+        solrQuery.addFacetField("category_NSW_m_s");
+        solrQuery.addFacetField("category_ACT_m_s");
+        solrQuery.addFacetField("category_QLD_m_s");
+        solrQuery.addFacetField("category_SA_m_s");
+        solrQuery.addFacetField("category_NT_m_s");
+        solrQuery.addFacetField("category_TAS_m_s");
+        solrQuery.addFacetField("category_WA_m_s");
+        solrQuery.addFacetField("category_VIC_m_s");
 
         solrQuery.setFacetMinCount(1);
         solrQuery.setRows(10);
