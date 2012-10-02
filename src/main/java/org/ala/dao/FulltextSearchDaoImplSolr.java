@@ -1055,7 +1055,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	private SearchDatasetDTO createDatasetFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchDatasetDTO dataset = new SearchDatasetDTO();
 		dataset.setScore((Float)doc.getFirstValue("score"));
-        dataset.setIdxType(IndexedTypes.DATASET.toString());
+                dataset.setIdxType(IndexedTypes.DATASET.toString());
 		dataset.setGuid((String) doc.getFirstValue("guid"));
 		dataset.setName((String) doc.getFirstValue("name"));
 		dataset.setDescription((String) doc.getFirstValue("description"));
@@ -1199,6 +1199,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.addFacetField("conservationStatusTAS");
         solrQuery.addFacetField("conservationStatusVIC");
         solrQuery.addFacetField("conservationStatusWA");
+        solrQuery.addFacetField("category_m_s");
 
         solrQuery.setFacetMinCount(1);
         solrQuery.setRows(10);
