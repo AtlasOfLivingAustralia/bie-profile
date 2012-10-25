@@ -38,7 +38,10 @@ public class FieldResultDTO {
     }
     public String getFieldValue()
     {
-        return prefix+label;
+        if(prefix != null)
+            return prefix+label;
+        else
+            return label;
     }
     public long getCount() {
         return count;
