@@ -9,7 +9,6 @@ import java.util.Set;
 
 import org.ala.dao.InfoSourceDAOImpl;
 import org.ala.model.InfoSource;
-import org.apache.commons.dbcp.BasicDataSource;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
@@ -23,7 +22,7 @@ public class InfosourceUtil {
     public static void main(String[] args) {
         ApplicationContext context = SpringUtils.getContext();
         
-        BasicDataSource dataSource = (BasicDataSource) context.getBean("dataSource");
+        javax.sql.DataSource  dataSource = ( javax.sql.DataSource ) context.getBean("dataSource");
         InfoSourceDAOImpl infoSourceDAOImpl = new InfoSourceDAOImpl(dataSource);
         
         Map<String, String> nameUidMap = null;
