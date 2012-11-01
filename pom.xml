@@ -14,7 +14,8 @@
         <!-- This project uses UTF8 for Regular Expressions -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <openrdf.sesame.version>2.2</openrdf.sesame.version>
-        <spring.version>3.0.0.RELEASE</spring.version>
+        <!-- <spring.version>3.0.0.RELEASE</spring.version> -->
+        <spring.version>3.1.0.RELEASE</spring.version>
      <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
     </properties>
     <dependencies>
@@ -85,14 +86,14 @@
                 <version>2.3.0</version>
                 <scope>test</scope>
             </dependency>
-            <!-- AVRO - only here for running tests -->
+<!--             AVRO - only here for running tests
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>avro</artifactId>
                 <version>1.2.0</version>
                 <scope>test</scope>
             </dependency>
-            <!-- HBASE -->
+            HBASE
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hbase</artifactId>
@@ -122,7 +123,7 @@
                 <artifactId>hadoop-tools</artifactId>
                 <version>0.20.2</version>
                 <scope>compile</scope>
-            </dependency>
+            </dependency> -->
             <!-- SL4j -->
             <dependency>
                 <groupId>org.slf4j</groupId>
