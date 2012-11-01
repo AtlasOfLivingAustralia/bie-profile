@@ -41,7 +41,7 @@ public class SolrUtils {
     private AddDocThread[] threads = null;
     ArrayBlockingQueue<List<SolrInputDocument>> queue = null;
     
-    private int numThreads =4; 
+    private int numThreads = 4; 
 	
 	/**
      * Initialise the SOLR server instance

@@ -13,38 +13,30 @@
     <!-- Over-ride bean properties - including dataSource configs -->
     <context:property-override location="classpath:bie.properties" ignore-unresolvable="true" ignore-resource-not-found="true"/>
     
-    <bean id="CBIndexSearch" class="au.org.ala.checklist.lucene.CBIndexSearch" lazy-init="true">
+    <bean id="CBIndexSearch" class="org.ala.util.CBIndexBean" lazy-init="true" primary="true">
         <constructor-arg value="/data/lucene/namematchingv1_1"/>
     </bean>
-    <bean id="CBCreateLuceneIndex" class="au.org.ala.checklist.lucene.CBCreateLuceneIndex" lazy-init="true">
+    <bean id="CBCreateLuceneIndex" class="org.ala.util.CBCreateIndexBean" lazy-init="true" primary="true">
     	<property name="indexDirectory" value="/data/lucene/namematchingv1_1"/>
     </bean>
 
-    <bean id="cassandraHelper" class="org.ala.dao.CassandraPelopsHelper" init-method="init" lazy-init="true"/>
-    <!--  bean id="cassandraHelper" class="org.ala.dao.CassandraHelper" init-method="init" lazy-init="true"/ -->
+	<bean id="storeHelper" class="org.ala.dao.CassandraPelopsHelper" init-method="init" lazy-init="true"/>
     
     <bean id="taxonConceptDao" class="org.ala.dao.TaxonConceptSHDaoImpl" init-method="init" lazy-init="true">
-      <property name="storeHelper" ref="cassandraHelper"/>
+      <property name="storeHelper" ref="storeHelper"/>
     </bean>
     
     <bean id="geoRegionDao" class="org.ala.dao.GeoRegionDaoImpl" lazy-init="true">
-      <property name="storeHelper" ref="cassandraHelper"/>
+      <property name="storeHelper" ref="storeHelper"/>
     </bean>
     
     <bean id="rankingDao" class="org.ala.dao.RankingDaoImpl" lazy-init="true">
-      <property name="storeHelper" ref="cassandraHelper"/>
+      <property name="storeHelper" ref="storeHelper"/>
     </bean>
     
     <bean id="infoSourceDAO" class="org.ala.dao.InfoSourceDAOImpl" lazy-init="true">
       <property name="dataSource" ref="dataSource"/>
     </bean>
-    
-
-    <bean id="classificationRank" class="org.ala.util.ClassificationRank" init-method="init" lazy-init="true">
-
-    </bean>
-    
-
     
     <!-- data source -->
   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">

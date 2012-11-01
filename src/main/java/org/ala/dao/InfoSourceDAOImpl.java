@@ -19,8 +19,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +26,13 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import org.ala.model.Document;
 import org.ala.model.InfoSource;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -53,7 +51,9 @@ public class InfoSourceDAOImpl extends JdbcDaoSupport implements InfoSourceDAO {
 	
     private static final String SELECT_ALL_IDS = "select id from infosource";
     private static final String SELECT_ALL_IDS_UIDS = "select id, uid from infosource";
+    private static final String INSERT_BY_UID = "insert into infosource(uid, name, uri) values(?,?,?)";
     private static final String SELECT_UID_BY_INFOSOURCE_ID = "select uid from infosource where id=?";
+    private static final String SELECT_INFOSOURCE_ID_BY_UID = "select id from infosource where uid=";
 	private static final String GET_BY_ID = "select inf.id, inf.name, uri, logo_url, description, connection_params, hv.class, " +
 	            "document_mapper from infosource inf " +
 	            "LEFT JOIN harvester hv ON hv.id=inf.harvester_id " +
@@ -112,6 +112,17 @@ public class InfoSourceDAOImpl extends JdbcDaoSupport implements InfoSourceDAO {
      * Default Constructor
      */
      public InfoSourceDAOImpl() {}
+     
+     public boolean addInfosource(String uid, String name, String uri){
+         try{
+         getJdbcTemplate().update(INSERT_BY_UID, uid,name,uri);
+         return true;
+         }
+         catch(DataAccessException e){
+             logger.error("Unable to create Infosource",e);
+             return false;
+         }
+     }
 
     /**
      * @see org.ala.dao.InfoSourceDAO#getIdsforAll()
@@ -124,6 +135,48 @@ public class InfoSourceDAOImpl extends JdbcDaoSupport implements InfoSourceDAO {
          return infoSourceIds;
      }
 
+     /**
+      * Get the map between infosource Uid and infosource id
+      *
+      * @return uidInfosourceIDMap
+      */
+     @Override
+     public Integer getInfosourceIdByUid(String uid) {
+    	 Integer infoId = null;
+    	 
+         List<Integer> list = (List<Integer>) getJdbcTemplate().queryForList(SELECT_INFOSOURCE_ID_BY_UID + "'" + uid + "'", null, Integer.class);
+         if(list.size() == 1){
+        	 infoId = list.get(0);
+         }                  
+         return infoId;
+     }
+     
+     /**
+      * Get the map between infosource Uid and infosource id
+      *
+      * @return uidInfosourceIDMap
+      */
+     @Override
+     public Map<String, String> getInfosourceIdUidMap() {
+         Map<String, String> uidInfosourceIDMap = new HashMap<String, String>();
+         
+         List<Map<String, Object>> mapList = (List<Map<String, Object>>) getJdbcTemplate().queryForList(SELECT_ALL_IDS_UIDS);
+         
+         for (Map map : mapList) {
+             uidInfosourceIDMap.put(String.valueOf(map.get("id")), String.valueOf(map.get("uid")));
+         }
+         
+//         List<Integer> infosourceIdList = getIdsforAll();
+//         
+//         for (Integer infosourceId : infosourceIdList) {
+//             String uid = getUidByInfosourceId(infosourceId.toString());
+//             uidInfosourceIDMap.put(infosourceId.toString(), uid);
+//         }
+         
+         return uidInfosourceIDMap;
+     }
+     
+    
      /**
       * @see org.ala.dao.InfoSourceDAO#getByUri(java.lang.String)
       */
@@ -178,31 +231,6 @@ public class InfoSourceDAOImpl extends JdbcDaoSupport implements InfoSourceDAO {
         return infoSources;
     }
     
-    /**
-     * Get the map between infosource Uid and infosource id
-     *
-     * @return uidInfosourceIDMap
-     */
-    @Override
-    public Map<String, String> getInfosourceIdUidMap() {
-        Map<String, String> uidInfosourceIDMap = new HashMap<String, String>();
-        
-        List<Map<String, Object>> mapList = (List<Map<String, Object>>) getJdbcTemplate().queryForList(SELECT_ALL_IDS_UIDS);
-        
-        for (Map map : mapList) {
-            uidInfosourceIDMap.put(String.valueOf(map.get("id")), String.valueOf(map.get("uid")));
-        }
-        
-//        List<Integer> infosourceIdList = getIdsforAll();
-//        
-//        for (Integer infosourceId : infosourceIdList) {
-//            String uid = getUidByInfosourceId(infosourceId.toString());
-//            uidInfosourceIDMap.put(infosourceId.toString(), uid);
-//        }
-        
-        return uidInfosourceIDMap;
-    }
-
     final RowMapper<InfoSource> rowMapper = new RowMapper<InfoSource>(){
         @Override
         public InfoSource mapRow(ResultSet resultSet, int rowId) throws SQLException  {
@@ -262,4 +290,23 @@ public class InfoSourceDAOImpl extends JdbcDaoSupport implements InfoSourceDAO {
             return is;
         }
     };
+
+    /**
+     * Get the map between infosource Uid and infosource id
+     *
+     * @return uidInfosourceIDMap
+     */
+    @Override
+    public Map<String, String> getUidInfosourceIdMap() {
+        Map<String, String> uidInfosourceIDMap = new HashMap<String, String>();
+        
+        List<Map<String, Object>> mapList = (List<Map<String, Object>>) getJdbcTemplate().queryForList(SELECT_ALL_IDS_UIDS);
+        
+        for (Map map : mapList) {
+            uidInfosourceIDMap.put(String.valueOf(map.get("uid")), String.valueOf(map.get("id")));
+        }
+        
+        return uidInfosourceIDMap;
+    }
+    
 }

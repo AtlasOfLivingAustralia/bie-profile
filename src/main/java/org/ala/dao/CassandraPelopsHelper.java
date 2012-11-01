@@ -30,24 +30,19 @@ import org.apache.cassandra.thrift.Column;
 import org.apache.cassandra.thrift.ConsistencyLevel;
 import org.apache.cassandra.thrift.KeyRange;
 import org.apache.cassandra.thrift.SlicePredicate;
-import org.apache.cassandra.thrift.SuperColumn;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonSerialize;
 import org.codehaus.jackson.map.type.TypeFactory;
-import org.scale7.cassandra.pelops.Bytes;
 import org.scale7.cassandra.pelops.Cluster;
-import org.scale7.cassandra.pelops.OperandPolicy;
-import org.scale7.cassandra.pelops.Pelops;//Selector, Bytes
-import org.scale7.cassandra.pelops.Selector;
 import org.scale7.cassandra.pelops.Mutator;
-//import org.wyki.cassandra.pelops.Mutator;
-//import org.wyki.cassandra.pelops.Pelops;
-//import org.wyki.cassandra.pelops.Policy;
-//import org.wyki.cassandra.pelops.Selector;
+import org.scale7.cassandra.pelops.OperandPolicy;
+import org.scale7.cassandra.pelops.Pelops;
+import org.scale7.cassandra.pelops.Selector;
 import org.scale7.cassandra.pelops.pool.CommonsBackedPool;
+import org.springframework.stereotype.Component;
 
 /**
  * A StoreHelper implementation for Cassandra that uses Pelops over the
@@ -58,6 +53,7 @@ import org.scale7.cassandra.pelops.pool.CommonsBackedPool;
  * 4 Aug 2010 (MOK011): implement put, putList, putSingle and getScanner functions based on CassandraHelper.java.
  * 8 Oct 2010 (MOK011): added getSubColumnsByGuid function
  */
+@Component("storeHelper")
 public class CassandraPelopsHelper implements StoreHelper  {
 	protected static Logger logger = Logger.getLogger(CassandraPelopsHelper.class);
 

@@ -168,7 +168,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	@Inject
 	protected CBCreateLuceneIndex cbIdxWriter;
 
-	/** The spring wired store helper to use */
+	@Inject
 	protected StoreHelper storeHelper;
 	
 	@Inject

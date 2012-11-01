@@ -26,6 +26,13 @@ import org.ala.model.InfoSource;
  */
 public interface InfoSourceDAO {
     /**
+     * Adds a new infosource based on the name and uid
+     * @param uid
+     * @param name
+     * @return
+     */
+    public boolean addInfosource(String uid, String name,String uri);
+    /**
      * Get an InfoSource object for an infoSource id
      * 
      * @param infoSourceId
@@ -55,7 +62,7 @@ public interface InfoSourceDAO {
      */
     public List<InfoSource> getAllByDatasetType();
     
-    
+    public Integer getInfosourceIdByUid(String uid);    
     /**
      * Populate the Uid column according to infosource name
      *
@@ -65,7 +72,7 @@ public interface InfoSourceDAO {
      */
     public void insertUidByName(final String name, final String uid);
     
-    
+    public Map<String, String> getInfosourceIdUidMap();
     /**
      * Get infosource Uid according to infosource id
      *
@@ -80,5 +87,5 @@ public interface InfoSourceDAO {
      *
      * @return
      */
-    public Map<String, String> getInfosourceIdUidMap();
+    public Map<String, String> getUidInfosourceIdMap();
 }

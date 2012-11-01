@@ -61,6 +61,7 @@ import au.org.ala.data.model.LinnaeanRankClassification;
 public class RankingDaoImpl implements RankingDao {
 
 	private final static Logger logger = Logger.getLogger(RankingDaoImpl.class);
+	
 	@Inject
 	protected StoreHelper storeHelper;
 	

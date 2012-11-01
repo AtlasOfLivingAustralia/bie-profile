@@ -16,45 +16,57 @@ package org.ala.dao;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
-import org.ala.dto.*;
+import org.ala.dto.AutoCompleteDTO;
+import org.ala.dto.FacetResultDTO;
+import org.ala.dto.FieldResultDTO;
+import org.ala.dto.SearchCollectionDTO;
+import org.ala.dto.SearchDTO;
+import org.ala.dto.SearchDataProviderDTO;
+import org.ala.dto.SearchDatasetDTO;
+import org.ala.dto.SearchInstitutionDTO;
+import org.ala.dto.SearchLayerDTO;
+import org.ala.dto.SearchRegionDTO;
+import org.ala.dto.SearchResultsDTO;
+import org.ala.dto.SearchTaxonConceptDTO;
+import org.ala.dto.SearchWordpressDTO;
 import org.ala.model.Rank;
-import org.ala.util.ClassificationRank;
-import org.ala.util.ColumnType;
 import org.ala.util.StatusType;
 import org.ala.vocabulary.Vocabulary;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.ORDER;
-import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.response.FacetField;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.SolrDocumentList;
-import org.apache.solr.common.SolrInputDocument;
 import org.gbif.ecat.model.ParsedName;
 import org.gbif.ecat.parser.NameParser;
 import org.gbif.ecat.parser.UnparsableException;
-import org.jsoup.helper.StringUtil;
 import org.springframework.stereotype.Component;
 
 import au.com.bytecode.opencsv.CSVWriter;
-import java.util.regex.Pattern;
 
+/**
+ * SOLR implementation of {@see org.ala.dao.FulltextSearchDao}. Used for searching against Lucene
+ * indexes created by {@see org.ala.dao.TaxonConceptDaoImpl}.
+ *
+ * @author "Nick dos Remedios <Nick.dosRemedios@csiro.au>"
+ */
 /**
  * SOLR implementation of {@see org.ala.dao.FulltextSearchDao}. Used for searching against Lucene
  * indexes created by {@see org.ala.dao.TaxonConceptDaoImpl}.
@@ -66,6 +78,10 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	
     /** log4 j logger */
     private static final Logger logger = Logger.getLogger(FulltextSearchDaoImplSolr.class);
+    
+	private static List<SearchTaxonConceptDTO> kingdomList = new ArrayList<SearchTaxonConceptDTO>();
+	private static List<SearchTaxonConceptDTO> pyhlumList = new ArrayList<SearchTaxonConceptDTO>();
+    
     /** field name for dataset */
     private static final String DATASET = "dataset";
 
@@ -75,19 +91,60 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     @Inject
     protected SolrUtils solrUtils;
     
-    @Inject
-    protected ClassificationRank classRank;
-    
     protected int maxResultsForChildConcepts = 5000;
     
     protected int maxDownloadForConcepts = 1000000;
+    
+    public void init() {
+    	SearchResultsDTO results;
+		try {
+			//NC: NEED to use DI to get the searchDao otherwise a complete scan is performed
+	    	//FulltextSearchDao searchDao = SpringUtils.getContext().getBean(FulltextSearchDao.class);
+			results = getAllRankItems("kingdom");
+			kingdomList = results.getResults();
+			Collections.sort(kingdomList, new SearchTaxonConceptComparator());
+	    	results = getAllRankItems("phylum"); 
+	    	pyhlumList = results.getResults();
+	    	Collections.sort(pyhlumList, new SearchTaxonConceptComparator());
+		} catch (Exception e) {
+			logger.error(e);
+		}
+    }
+    
+    public SearchTaxonConceptDTO getPhylum(Integer left, Integer right){
+    	SearchTaxonConceptDTO dto = null;
+    	SearchTaxonConceptDTO input =  new SearchTaxonConceptDTO();
+    	input.setLeft(left);
+    	input.setRight(right);
+    	if(pyhlumList != null && pyhlumList.size() > 0){
+    		int i = Collections.binarySearch(pyhlumList, input, new SearchTaxonConceptComparator());
+    		if(i >= 0){
+    			dto = pyhlumList.get(i);
+    		}
+    	}
+    	return dto;
+    }
+    
+    public SearchTaxonConceptDTO getKingdom(Integer left, Integer right){
+    	SearchTaxonConceptDTO dto = null;
+    	SearchTaxonConceptDTO input =  new SearchTaxonConceptDTO();
+    	input.setLeft(left);
+    	input.setRight(right);
+    	if(kingdomList != null && kingdomList.size() > 0){
+    		int i = Collections.binarySearch(kingdomList, input, new SearchTaxonConceptComparator());
+    		if(i >= 0){
+    			dto = kingdomList.get(i);
+    		}
+    	}
+    	return dto;
+    }        
     
 
 	@Override
 	public SearchResultsDTO getClassificationByLeftNS(int leftNSValue, int rightNSValue) throws Exception {
 		long cur = System.currentTimeMillis();
 		try {
-        	SearchTaxonConceptDTO phylum = classRank.getPhylum(leftNSValue, rightNSValue);
+        	SearchTaxonConceptDTO phylum = getPhylum(leftNSValue, rightNSValue);
 
             // set the query
         	String[] fq = new String[]{"left:[* TO " + leftNSValue + "]", "right:["+rightNSValue+" TO *]"};;
@@ -100,7 +157,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             SearchResultsDTO results = doSolrSearch(queryString.toString(), fq, 100, 0, "left", "asc");
             // add kingdom into first item of list
             if(phylum != null){
-            	SearchTaxonConceptDTO kingdom = classRank.getKingdom(leftNSValue, rightNSValue);
+            	SearchTaxonConceptDTO kingdom = getKingdom(leftNSValue, rightNSValue);
             	results.getResults().add(0, kingdom);
             }
             logger.debug("****** getClassificationByLeftNS: " + (System.currentTimeMillis() - cur));
@@ -902,7 +959,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}
     
     /**
-     * @see org.ala.dao.FulltextSearchDao#findAllByStatus(org.ala.util.StatusType, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String, java.lang.String) 
+     * @see org.ala.dao.FulltextSearchDao#findAllByStatus(au.org.ala.bie.util.StatusType, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String, java.lang.String) 
      */
     @Override
     public SearchResultsDTO findAllByStatus(StatusType statusType, String filterQuery, Integer startIndex, Integer pageSize,
@@ -1693,4 +1750,32 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         
         return solrQuery;
     }		
+
+	//==========
+	/**
+	 * comparator for classification tree.
+	 */
+	class SearchTaxonConceptComparator implements Comparator<SearchTaxonConceptDTO>{			
+		public int compare(SearchTaxonConceptDTO item, SearchTaxonConceptDTO input) {
+			if(item.getLeft() != null && item.getRight() != null && input.getLeft() != null && input.getRight() != null){
+				if(item.getLeft() < input.getLeft() && item.getRight() > input.getRight()){
+					return 0;
+				}
+				else if(item.getLeft() < input.getLeft()){
+					return -1;
+				}
+				else{
+					return 1;
+				}
+			}
+			else{
+				if(item.getLeft() == null && item.getRight() == null && input.getLeft() == null && input.getRight() == null){
+					return 0;
+				}
+				else {
+					return -1;
+				}
+			}
+		}
+	}
 }
