@@ -602,7 +602,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                     prefix = parts[0];
                     suffix = parts[1];
                 } else {
-                    prefix = ClientUtils.escapeQueryChars(parts[0]);
+                    prefix = parts[0].startsWith("-")? "-"+ClientUtils.escapeQueryChars(parts[0].substring(1)) : ClientUtils.escapeQueryChars(parts[0]);
                     suffix = ClientUtils.escapeQueryChars(parts[1]);
                 }
 
