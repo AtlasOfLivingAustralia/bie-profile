@@ -13,6 +13,16 @@
     <!-- Over-ride bean properties - including dataSource configs -->
     <context:property-override location="classpath:bie.properties" ignore-unresolvable="true" ignore-resource-not-found="true"/>
     
+
+  <!-- load properties file into the context -->
+  <context:property-placeholder location="classpath:repository.properties"/>
+
+  <!-- Also load properties into a messageSource bean for access in Java code -->
+  <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+        <property name="basename" value="repository"/>
+  </bean>
+    
+    
        <!-- data source -->
   <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
     <property name="driverClassName" value="${dataSource.driverClassName}"/>

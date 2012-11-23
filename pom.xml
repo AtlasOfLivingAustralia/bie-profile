@@ -20,7 +20,7 @@
     </properties>
     <dependencies>
             <!-- BIE Repository -->
-            <dependency>
+<!--             <dependency>
                 <groupId>au.org.ala</groupId>
                 <artifactId>bie-repository</artifactId>
                 <version>1.0-SNAPSHOT</version>
@@ -46,12 +46,20 @@
                         <artifactId>commons-dbcp</artifactId>
                     </exclusion>                    
                 </exclusions>
-            </dependency>
+            </dependency> -->
 <!--             <dependency>
                 <groupId>commons-dbcp</groupId>
                 <artifactId>commons-dbcp</artifactId>
                 <version>1.4</version>
-            </dependency>     -->       
+            </dependency>     -->   
+            
+         <!-- ALA logging -->
+		<dependency>
+			<groupId>au.org.ala</groupId>
+			<artifactId>ala-logger</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+                
             <!-- DwC Archive Reader -->
             <dependency>
                 <groupId>org.gbif</groupId>
@@ -161,6 +169,11 @@
                 <artifactId>commons-cli</artifactId>
                 <version>1.2</version>
             </dependency>
+            <dependency>
+				<groupId>org.apache.pdfbox</groupId>
+				<artifactId>pdfbox</artifactId>
+				<version>1.6.0</version>
+			</dependency>
             <!-- LUCENE -->
             <dependency>
                 <groupId>org.apache.lucene</groupId>
@@ -178,6 +191,23 @@
                 <groupId>org.apache.solr</groupId>
                 <version>3.4.0</version>
             </dependency>
+            <!-- HTML Mocker -->
+			<dependency>
+				<groupId>net.sourceforge.htmlunit</groupId>
+				<artifactId>htmlunit</artifactId>
+				<version>2.8</version>
+			</dependency>
+			<!-- PDF BOX -->
+			<dependency>
+				<groupId>pdfbox</groupId>
+				<artifactId>pdfbox</artifactId>
+				<version>0.7.3</version>
+			</dependency>
+			<dependency>
+				<groupId>net.sf.jacob-project</groupId>
+				<artifactId>jacob</artifactId>
+				<version>1.14.3</version>
+			</dependency>						
             <!-- CASSANDRA -->
 <!--             <dependency>
                 <groupId>org.apache.cassandra</groupId>
@@ -301,6 +331,11 @@
                 <artifactId>spring-oxm</artifactId>
                 <version>${spring.version}</version>
             </dependency>
+            <dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-jdbc</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
             <!-- Name matching APIs -->
             <dependency>
                 <groupId>au.org.ala</groupId>

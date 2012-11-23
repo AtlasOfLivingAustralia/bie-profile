@@ -40,6 +40,8 @@ public class TurtleUtils {
 	 * Read the triples from turtle. At this stage these triple *should* be flat in
 	 * nature i.e. no nested triples.
 	 * 
+	 * The Triples returned are immutable.
+	 * 
 	 * @param reader
 	 * @return
 	 * @throws Exception
@@ -66,4 +68,31 @@ public class TurtleUtils {
 		parser.parse(reader,defaultUriBase);
 		return triples;
 	}
+	
+	public static List<org.ala.repository.Triple<String,String,String>> readTurtle(Reader reader, boolean stopOnSubjectChange) throws Exception {
+
+		final List<org.ala.repository.Triple<String,String,String>> triples = new ArrayList<org.ala.repository.Triple<String,String,String>>();
+
+		 final TurtleParser parser = new TurtleParser();
+
+		 parser.setRDFHandler(new RDFHandlerBase(){
+
+			@Override
+			public void handleStatement(Statement st)
+					throws RDFHandlerException {
+//				System.out.println(st.getSubject()+"\t"+st.getPredicate()+"\t"+st.getObject());
+//				super.handleStatement(st);
+				org.ala.repository.Triple<String,String,String> triple = new org.ala.repository.Triple<String,String,String>(st.getSubject().stringValue(), st.getPredicate().stringValue(), st.getObject().stringValue());
+				triples.add(triple);
+                //System.out.println(triple);
+			}
+
+		 });
+		 parser.setVerifyData(true);
+		 parser.parse(reader,defaultUriBase);
+		 return triples;
+	}
+	
+
+	
 }
