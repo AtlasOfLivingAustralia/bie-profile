@@ -460,6 +460,36 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				textProperty);
 	}
 
+
+    /**
+     * Add text properties, clearing text properties already provided by this document.
+     *
+     * @param guid
+     * @param textProperties
+     * @return
+     * @throws Exception
+     */
+	public boolean addTextProperties(String guid, List<SimpleProperty> textProperties)
+			throws Exception {
+
+        List<SimpleProperty> sps = (List) storeHelper.getList(TC_TABLE, TC_COL_FAMILY,
+				ColumnType.TEXT_PROPERTY_COL.getColumnName(), guid, SimpleProperty.class);
+
+        if(textProperties.isEmpty()) return false;
+        String documentId = textProperties.get(0).getDocumentId();
+
+        //remove text properties for this document
+        for (Iterator<SimpleProperty> it = sps.iterator(); it.hasNext(); )
+            if (it.next().getDocumentId().equals(documentId))
+                it.remove();
+
+        sps.addAll(textProperties);
+
+		return storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
+				ColumnType.TEXT_PROPERTY_COL.getColumnName(), guid,
+				(List) sps, false);
+	}
+
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#addTextProperty(java.lang.String,
 	 *      org.ala.model.SimpleProperty)
@@ -622,6 +652,15 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		return (List) storeHelper.getList(TC_TABLE, TC_COL_FAMILY,
 				ColumnType.TEXT_PROPERTY_COL.getColumnName(), guid,
 				SimpleProperty.class);
+	}
+
+	/**
+	 * @see org.ala.dao.TaxonConceptDao
+     */
+	public void setTextPropertiesFor(String guid, List<SimpleProperty> simpleProperties)
+			throws Exception {
+        storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
+				ColumnType.TEXT_PROPERTY_COL.getColumnName(), guid, (List) simpleProperties, false);
 	}
 
 	/**
@@ -974,7 +1013,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 	public String findLsidByName(String scientificName, boolean useSoundEx) {
 		String lsid = null;
-                boolean homonym = false;
+        boolean homonym = false;
 		try {
 			lsid = cbIdxSearcher.searchForLSID(scientificName, useSoundEx);
 		} catch (SearchResultException e) {
@@ -982,7 +1021,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					+ e.getResults());
                         homonym = e instanceof HomonymException;
 		}
-                updateStats(lsid, homonym);
+        updateStats(lsid, homonym);
 		return lsid;
 	}
 	/**
@@ -1308,8 +1347,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	}
 
 	/**
-	 * @see org.ala.dao.TaxonConceptDao#syncTriples(org.ala.model.Document,
-	 *      java.util.List)
+	 * @see org.ala.dao.TaxonConceptDao
 	 */
 	public boolean syncTriples(org.ala.model.Document document,
 			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly)
@@ -1322,8 +1360,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	}
 	
 	/**
-	 * @see org.ala.dao.TaxonConceptDao#syncTriples(org.ala.model.Document,
-	 *      java.util.List)
+	 * @see org.ala.dao.TaxonConceptDao
 	 */
 	public String syncTriples(org.ala.model.Document document,
 			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly, boolean reindex)
@@ -1507,6 +1544,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		
 		if (guid != null) {
 
+            List<SimpleProperty> simpleProperties = new ArrayList<SimpleProperty>();
+
 			for (Triple triple : triples) {
 				// check for an empty object
 				String object = StringUtils.trimToNull(triple.object);
@@ -1596,13 +1635,13 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 							triple.predicate)) {
 
 						// FIXME - this feels mighty unscalable...
-						// essentially we are putting all other field values in
-						// one very
-						// large cell
-						// if this becomes a performance problem we should split
-						// on the predicate value. i.e. tc:hasHabitatText,
-						// this was the intention with the "raw:" column family
-						// namespace
+                        // essentially we are putting all other field values in
+                        // one very
+                        // large cell
+                        // if this becomes a performance problem we should split
+                        // on the predicate value. i.e. tc:hasHabitatText,
+                        // this was the intention with the "raw:" column family
+                        // namespace
 						SimpleProperty simpleProperty = new SimpleProperty();
 						simpleProperty.setName(triple.predicate);
 						simpleProperty.setValue(triple.object.trim());
@@ -1613,16 +1652,18 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						simpleProperty.setInfoSourceURL(dcSource);
 						simpleProperty.setTitle(dcTitle);
 						simpleProperty.setIdentifier(dcIdentifier);
-						addTextProperty(guid, simpleProperty);
+						//addTextProperty(guid, simpleProperty);
+					    simpleProperties.add(simpleProperty);
 					}
 				}
 			}
 
+            if(!simpleProperties.isEmpty()){
+                addTextProperties(guid, simpleProperties);
+            }
+
 			// retrieve the content type
 			if (document.getFilePath() != null) {
-
-				// FIXME - we should be able to copy images up to the parent
-				// is it an image ???
 				if (document != null
 						&& document.getMimeType() != null
 						&& MimeType.getImageMimeTypes().contains(
@@ -1800,7 +1841,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	}
 
 	/**
-	 * @see org.ala.dao.TaxonConceptDao#createIndex()
+	 * @see org.ala.dao.TaxonConceptDao
 	 */
 	public void createIndex(String startKey, boolean remove) throws Exception {
 		int max_loop_count = 100000;
@@ -2350,7 +2391,6 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 * Add field if the value is not null
 	 * 
 	 * @param doc
-	 * @param classification
 	 * @param fieldName
 	 */
 	private void addIfNotNull(SolrInputDocument doc, String fieldName,

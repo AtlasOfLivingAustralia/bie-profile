@@ -43,7 +43,7 @@ public class SimpleProperty extends AttributableObject implements Comparable<Sim
         if ((this.name == null) ? (other.name != null) : !this.name.equals(other.name)) {
             return false;
         }
-        if ((this.value == null) ? (other.value != null) : !this.value.equals(other.value)) {
+        if ((this.value == null) ? (other.value != null) : !this.value.equalsIgnoreCase(other.value)) {
             return false;
         }
         return true;

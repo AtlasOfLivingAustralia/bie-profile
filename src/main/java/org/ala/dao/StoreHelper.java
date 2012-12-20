@@ -23,8 +23,6 @@ import org.ala.util.ColumnType;
  * This is intended to hide the details of the underlying backend store in use
  * which maybe HBase, Cassandra or BerkeleyDB.
  * 
- * TODO Use generics properly.
- *
  * @author Dave Martin (David.Martin@csiro.au)
  */
 public interface StoreHelper {
@@ -91,19 +89,6 @@ public interface StoreHelper {
 	boolean put(String table, String columnFamily, String columnName, String guid, Comparable object) throws Exception;
 
 	/**
-	 * Put a single instance into this row, appending to a list if there is data already.
-	 * 
-	 * @param table
-	 * @param columnFamily
-	 * @param columnName
-	 * @param guid
-	 * @param object
-	 * @return true if successful
-	 * @throws Exception
-	 */
-	//boolean put(String table, String columnFamily, String superColumn, String columnName, String guid, Comparable object) throws Exception;
-	
-	/**
 	 * Put a list of instances into this row.
 	 * 
 	 * @param table
@@ -132,7 +117,6 @@ public interface StoreHelper {
 	 * Retrieve a map of subcolumns for the row with the supplied GUID.
 	 * 
 	 * @param columnFamily
-	 * @param superColName
 	 * @param guid
 	 * @return
 	 * @throws Exception
@@ -143,7 +127,6 @@ public interface StoreHelper {
 	 * Retrieve a page of sub columns using the supplied startGuid
 	 * 
 	 * @param tcColFamily
-	 * @param superColumn
 	 * @param startGuid the first object to return
 	 * @param pageSize the number of objects to return
 	 * @return a Map keys on record GUID
@@ -153,7 +136,6 @@ public interface StoreHelper {
 	/**
 	 * 
 	 * @param tcColFamily
-	 * @param superColumn
 	 * @param startGuid
 	 * @param pageSize
 	 */
@@ -162,7 +144,6 @@ public interface StoreHelper {
     /**
      *
      * @param columnFamily
-     * @param superColName
      * @param guids
      * @return
      */
@@ -171,7 +152,6 @@ public interface StoreHelper {
     /**
      *
      * @param columnFamily
-     * @param superColName
      * @param guids
      * @return
      */
@@ -202,16 +182,6 @@ public interface StoreHelper {
 	boolean updateStringValue(String table, String columnFamily, String columnName, String guid, String value) throws Exception;
 
     /**
-     * Retrieve a scanner for this column family.
-     * @param table
-     * @param columnFamily
-     * @return
-     * @throws Exception
-     */
-	//removed because the other method signature should handle this case...
-//	Scanner getScanner(String table, String columnFamily) throws Exception;
-
-    /**
      * Get the
      *
      * @param guid
@@ -225,7 +195,6 @@ public interface StoreHelper {
      * Retrieve a list of columns
      *
      * @param columnFamily
-     * @param superColumnName
      * @param guid
      * @param theClass
      * @return
@@ -236,6 +205,5 @@ public interface StoreHelper {
     /**
      * Delete the supplied column(s)
      */
-    
     boolean deleteColumns(String columnFamily, String guid, String... columns) throws Exception;
 }

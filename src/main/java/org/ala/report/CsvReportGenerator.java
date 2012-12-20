@@ -52,7 +52,6 @@ import au.org.ala.checklist.lucene.SearchResultException;
  * @author MOK011
  *
  */
-
 @Component
 public class CsvReportGenerator {
 	protected Logger logger = Logger.getLogger(this.getClass());

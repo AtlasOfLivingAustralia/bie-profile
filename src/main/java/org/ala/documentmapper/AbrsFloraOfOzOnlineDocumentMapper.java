@@ -70,7 +70,6 @@ public class AbrsFloraOfOzOnlineDocumentMapper extends XMLDocumentMapper {
 	@Override
 	protected void extractProperties(List<ParsedDocument> pds, Document xmlDocument) throws Exception {
 
-
 		ParsedDocument pd = pds.get(0);
 		List<Triple<String,String,String>> triples = pd.getTriples();
 		

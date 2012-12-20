@@ -35,7 +35,6 @@ public class EOLHarvester implements Harvester {
     protected Repository repository;
     protected DocumentMapper documentMapper;
     protected Map<String, String> connectionParams;
-
 	//create restful client with no connection timeout.
 	protected RestfulClient restfulClient = new RestfulClient(0);
     protected Map<String, String> hashTable;
@@ -75,11 +74,11 @@ public class EOLHarvester implements Harvester {
 		}
 		
 		try {
-	    	String eolSearchUrl = "http://www.eol.org/api/search/" + URLEncoder.encode(sciName.trim(), "utf-8") + ".json";
+	    	String eolSearchUrl = "http://www.eol.org/api/search/" + URLEncoder.encode(sciName.trim(), "UTF-8") + ".json";
 //	    	String eolSearchUrl = "http://www.eol.org/api/search/" + URLEncoder.encode("Eurytoma helena", "utf-8") + ".json";
 
 			resp = restfulClient.restGet(eolSearchUrl , hashTable);			
-			if((Integer)resp[0] == HttpStatus.SC_OK){
+			if((Integer) resp[0] == HttpStatus.SC_OK){
 				content = resp[1].toString();
 				if(content != null && content.length() > "[]".length()){
 					dynaBean = mapper.readValue(content, Map.class);
@@ -127,7 +126,7 @@ public class EOLHarvester implements Harvester {
     @Override
     public void start(int infosourceId, int timeGap) throws Exception {
     	InputStream csvIS = null; 
-    	String csvUrl = "//data/bie/nsl_species.csv";
+    	String csvUrl = "harvest-seed.txt";
     	HttpClient httpClient = new HttpClient();
     	CSVReader r = null;
     	
@@ -138,14 +137,16 @@ public class EOLHarvester implements Harvester {
             csvIS = getMethod.getResponseBodyAsStream();
         } else {
         	//read from file system
-        	csvIS = new FileInputStream(csvUrl);
+            csvIS = this.getClass().getClassLoader().getResourceAsStream(csvUrl);
+
+        	//csvIS = new FileInputStream(csvUrl);
         }
         Reader reader = new InputStreamReader(csvIS);
         r = new CSVReader(reader,';');
 		String[] fields = null;
 
     	try{	        	     
-			//traverse list of scienific name
+			//traverse list of scientific name
 			while((fields = r.readNext()) !=null){
 				String sciName = fields[0];
 				// get ids from eol

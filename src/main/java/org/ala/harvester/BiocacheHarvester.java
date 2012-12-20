@@ -243,7 +243,7 @@ public class BiocacheHarvester implements Harvester {
 	
 	String formatDateRangeQuery(){
 		if(this.endDate != null){
-			SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss'Z'");
+			SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 			StringBuffer sb = new StringBuffer("fq=first_loaded_date:%5B");
 			sb.append(sfd.format(this.getStartDate()));
 			sb.append("%20TO%20");
@@ -358,15 +358,12 @@ public class BiocacheHarvester implements Harvester {
             	h.setStartDate(DateUtils.addMonths(h.getEndDate(), -1));        			
         	} else if("-lastWeek".equals(args[0])){
         		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));        	
-        	} else if("-lastDay".equals(args[0])){
+        	} else {
         		h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));        		
         	}
         }
-        
-        //no infosourceId for biocache
-        h.start(-1); 
+        h.start(-1);
     }	
-    
 
 	public Date getStartDate() {
 		return startDate;

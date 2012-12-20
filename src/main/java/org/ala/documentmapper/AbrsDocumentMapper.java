@@ -93,9 +93,6 @@ public class AbrsDocumentMapper extends XMLDocumentMapper {
 		return super.map(uri, content);
 	}
 
-	/**
-	 * @see ala.documentmapper.XMLDocumentMapper#extractProperties(org.w3c.dom.Document)
-	 */
 	@Override
 	protected void extractProperties(List<ParsedDocument> pds, Document xmlDocument) throws Exception {
 		

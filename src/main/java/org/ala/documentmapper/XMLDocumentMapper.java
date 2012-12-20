@@ -70,7 +70,7 @@ public abstract class XMLDocumentMapper implements DocumentMapper {
 	protected Map<String, Licence> licencesMap;
 	
 	/**
-	 * @see ala.documentmapper.DocumentMapper#map(java.lang.String, byte[])
+	 * @see org.ala.documentmapper.DocumentMapper#map(java.lang.String, byte[])
 	 */
 	public List<ParsedDocument> map(String uri, byte[] content) throws Exception {
 
@@ -79,7 +79,7 @@ public abstract class XMLDocumentMapper implements DocumentMapper {
 		DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
 		dbFactory.setNamespaceAware(false);
 
-		InputSource is = new InputSource(new StringReader(new String(content)));
+		InputSource is = new InputSource(new StringReader(new String(content, "UTF-8")));
 		DocumentBuilder parser = dbFactory.newDocumentBuilder();
 		Document document = null;
 		

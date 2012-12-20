@@ -99,17 +99,6 @@ public interface TaxonConceptDao {
 	 */
 	boolean setLinkIdentifier(String guid, String linkIdentifier) throws Exception;
 	
-	
-//	/**
-//     * @see org.ala.dao.TaxonConceptDao#setInfosourceUid(java.lang.String, java.lang.String)
-//     */
-//    public boolean setInfosourceUid(String guid, String infosourceUid) throws Exception;
-//    
-//    /**
-//     * @see org.ala.dao.TaxonConceptDao#getInfosourceUid(java.lang.String, java.lang.String)
-//     */
-//    public String getInfosourceUid(String guid, String infosourceUid) throws Exception;
-	
 	/**
 	 * Retrieve the images associated with this taxon concept.
 	 *
@@ -221,7 +210,15 @@ public interface TaxonConceptDao {
 	 */
 	List<SimpleProperty> getTextPropertiesFor(String guid) throws Exception;
 
-	
+	/**
+	 * Replace the text properties for the Taxon Concept with the supplied guid.
+	 *
+	 * @param guid
+	 * @return
+	 * @throws Exception
+	 */
+	void setTextPropertiesFor(String guid, List<SimpleProperty> simpleProperties) throws Exception;
+
 	/**
 	 * Retrieve the references for this taxon concept.
 	 * 
@@ -325,15 +322,13 @@ public interface TaxonConceptDao {
 
 	
 	/**
-   * Add this category to the Taxon Concept.
-   *
-   * @param guid
-   * @param pestStatus
-   * @throws Exception
-   */
-  boolean addCategory(String guid, Category category) throws Exception;
-	
-	
+     * Add this category to the Taxon Concept.
+     *
+     * @param guid
+     * @throws Exception
+     */
+    boolean addCategory(String guid, Category category) throws Exception;
+
 	/**
 	 * Add extant status list to the Taxon Concept.
 	 *
@@ -450,6 +445,16 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	boolean addTextProperty(String guid, SimpleProperty textProperty) throws Exception;
+
+    /**
+     * Add text properties. This will remove existing properties already added for this document.
+     *
+     * @param guid
+     * @param textProperties
+     * @return
+     * @throws Exception
+     */
+    boolean addTextProperties(String guid, List<SimpleProperty> textProperties) throws Exception;
 
 	/**
 	 * Create a batch of taxon concepts.
@@ -839,7 +844,8 @@ public interface TaxonConceptDao {
     boolean setIsAustralian(String guid) throws Exception;
 	  
 	boolean setIsAustralian(String guid, boolean bool) throws Exception;
-	boolean setIsAustralian(String guid, boolean bool, boolean reindex) throws Exception;
+
+    boolean setIsAustralian(String guid, boolean bool, boolean reindex) throws Exception;
     /**
      * Is this concept Aussie ?
      * 
@@ -943,10 +949,13 @@ public interface TaxonConceptDao {
 	
 	String findLSIDByConcatName(String concatName);
 	
-	public boolean setRanking(String guid, ColumnType columnType, BaseRanking ir)throws Exception;
-	public boolean setRanking(String guid, ColumnType columnType, BaseRanking baseRanking, boolean reindex)throws Exception;
-	List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception;
-	List<SolrInputDocument> indexTaxonConcept(String guid,Scanner scanner) throws Exception;
+	boolean setRanking(String guid, ColumnType columnType, BaseRanking ir)throws Exception;
+
+    boolean setRanking(String guid, ColumnType columnType, BaseRanking baseRanking, boolean reindex)throws Exception;
+
+    List<SolrInputDocument> indexTaxonConcept(String guid) throws Exception;
+
+    List<SolrInputDocument> indexTaxonConcept(String guid,Scanner scanner) throws Exception;
 	
-	public void resetRanking(String guid, ColumnType columnType, Integer value)throws Exception;
+	void resetRanking(String guid, ColumnType columnType, Integer value)throws Exception;
 }
