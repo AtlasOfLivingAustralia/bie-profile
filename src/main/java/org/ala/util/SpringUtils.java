@@ -33,6 +33,6 @@ public class SpringUtils {
 	 * @return ApplicationContext
 	 */
 	public static ApplicationContext getContext(){
-		 return new ClassPathXmlApplicationContext(new String[]{"classpath*:spring-profiler.xml", "classpath:spring.xml"});
+		 return new ClassPathXmlApplicationContext(new String[]{"classpath*:spring.xml"});
 	}
 }

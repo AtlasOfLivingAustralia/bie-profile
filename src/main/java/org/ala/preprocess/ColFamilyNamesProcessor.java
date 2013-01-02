@@ -70,7 +70,7 @@ public class ColFamilyNamesProcessor {
 	
 	public static void main (String[] args) throws Exception {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[]{"classpath*:spring-profiler.xml", "classpath:spring.xml"});
+				new String[]{"classpath*:spring.xml"});
 		ColFamilyNamesProcessor p = new ColFamilyNamesProcessor();
 		p.setInfoSourceDAO((InfoSourceDAO) context.getBean("infoSourceDAO"));
 		p.setRepository((Repository) context.getBean("repository"));

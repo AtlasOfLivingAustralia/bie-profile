@@ -80,8 +80,6 @@ public class ExternalIndexLoader {
 	public static void main(String[] args) throws Exception {
 		
 		String[] locations = {
-				"classpath*:spring-profiler.xml",
-				"classpath*:spring-external-ds.xml",
 				"classpath*:spring.xml"
 		};
 		

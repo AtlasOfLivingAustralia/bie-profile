@@ -57,8 +57,6 @@ public class CreateWordPressIndex {
     public static void main(String[] args) throws Exception {
         // Spring config file locations
         String[] locations = {
-				"classpath*:spring-profiler.xml",
-				"classpath*:spring-external-ds.xml",
 				"classpath*:spring.xml"
 		};
         // initialise Spring ApplicationContext 

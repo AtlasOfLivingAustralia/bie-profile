@@ -77,8 +77,6 @@ public class GeoRegionLoader {
 	 */
 	private void init() {
 		String[] locations = {
-				"classpath:spring-external-ds.xml",
-				"classpath:spring-profiler.xml", 
 				"classpath:spring.xml"};
 		context = new ClassPathXmlApplicationContext(locations);
 		gisDataSource = (DataSource) context.getBean("gisDataSource");
