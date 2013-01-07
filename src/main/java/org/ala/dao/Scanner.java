@@ -50,7 +50,7 @@ public interface Scanner {
 	 * @return
 	 * @throws Exception
 	 */
-	Comparable getValue(String column, Class theClass)throws Exception;
+	Comparable getValue(String column, Class theClass) throws Exception;
 	
-	List<Comparable> getListValue(String column, Class theClass)throws Exception;
+	List<Comparable> getListValue(String column, Class theClass) throws Exception;
 }

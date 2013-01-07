@@ -30,9 +30,7 @@ public class CreateSearchIndex {
 	protected static Logger logger = Logger.getLogger(CreateSearchIndex.class);
 	
 	public static void main(String[] args) throws Exception {
-		
         ApplicationContext context = SpringUtils.getContext();
-
         if(args.length==0 || "-geo".equals(args[0])){
 	        logger.info("Loading geo regions into search indexes....");
 	        GeoRegionDao grDao = (GeoRegionDao) context.getBean(GeoRegionDao.class);
@@ -53,13 +51,6 @@ public class CreateSearchIndex {
 	        tcDao.createIndex(start, !replace);
 	        logger.info("Finished creating species indexes.");
         }
-		
 		System.exit(0);
-//        // Create the autocomplete indexes
-//		logger.info("Creating autocomplete indexes...");
-//        Autocompleter ac = new Autocompleter();
-//        ac.reIndex(FSDirectory.getDirectory(tcDao.getIndexLocation(), null), "scientificName", true);
-//        ac.reIndex(FSDirectory.getDirectory(tcDao.getIndexLocation(), null), "commonName", false);
-//        logger.info("Finished creating autocomplete indexes...");
 	}
 }

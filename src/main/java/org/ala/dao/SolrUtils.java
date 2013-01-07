@@ -49,8 +49,8 @@ public class SolrUtils {
     public SolrServer getSolrServer() throws Exception {
         if (this.server == null & solrHome != null) {
 	        System.setProperty("solr.solr.home", solrHome);
-	        System.out.println("SOLR HOME : " + solrHome);
-	         coreContainer = null;
+	        logger.info("SOLR HOME : " + solrHome);
+	        coreContainer = null;
 	        try {
 		        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
 		        coreContainer = initializer.initialize();
@@ -231,14 +231,16 @@ public class SolrUtils {
 	 */
 	public void stopIndexing() throws Exception {
 	    //wait until the queue is empty then stop all the threads
-	    while(queue.size()>0){
+	    while(!queue.isEmpty()){
 	        Thread.currentThread().sleep(100);
 	    }
 	    for(AddDocThread thread :threads){
 	        thread.stopRunning();
 	    }
 	    //issue the last commit
+        logger.info("stopIndexing - committing index");
 	    server.commit();
+        logger.info("stopIndexing - committed");
 	    threads = null;
 	    queue = null;
 	}

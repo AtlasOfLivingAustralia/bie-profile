@@ -148,7 +148,7 @@ public class CreateWordPressIndex {
                 // add to index
                 solrServer.add(doc);
                 
-                if (documentCount % 50 == 0) {
+                if (documentCount % 100 == 0) {
                     logger.info("Committing to SOLR (count = " + documentCount + ")...");
                     solrServer.commit();
                 }

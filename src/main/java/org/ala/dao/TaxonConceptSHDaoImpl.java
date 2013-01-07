@@ -57,10 +57,7 @@ import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
 import org.ala.model.Triple;
 import org.ala.repository.Predicates;
-import org.ala.util.ColumnType;
-import org.ala.util.FileType;
-import org.ala.util.MimeType;
-import org.ala.util.StatusType;
+import org.ala.util.*;
 import org.ala.vocabulary.Vocabulary;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -108,7 +105,6 @@ import au.org.ala.checklist.lucene.model.NameSearchResult;
 import au.org.ala.data.model.LinnaeanRankClassification;
 import au.org.ala.data.util.RankType;
 
-import org.ala.util.RankingType;
 /**
  * Database agnostic implementation if Taxon concept DAO.
  * 
@@ -128,7 +124,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 	/** FIXME To be moved to somewhere more maintainable */
 	protected static List<String> regionList = null;
-	protected static Set<String> fishTaxa = null;
+//	protected static Set<String> fishTaxa = null;
 	static {
 		regionList = new ArrayList<String>();
 		regionList.add("New South Wales");
@@ -141,11 +137,11 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		regionList.add("Western Australia");
 		regionList.add("Australia");
 		
-		fishTaxa = new HashSet<String>();
-		fishTaxa.add("Myxini".toLowerCase());
-		fishTaxa.add("Chondrichthyes".toLowerCase());
-		fishTaxa.add("Sarcopterygii".toLowerCase());
-		fishTaxa.add("Actinopterygii".toLowerCase());
+//		fishTaxa = new HashSet<String>();
+//		fishTaxa.add("Myxini".toLowerCase());
+//		fishTaxa.add("Chondrichthyes".toLowerCase());
+//		fishTaxa.add("Sarcopterygii".toLowerCase());
+//		fishTaxa.add("Actinopterygii".toLowerCase());
 	}
 
 	/** The location for the lucene index */
@@ -177,8 +173,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	@Inject
 	protected SolrUtils solrUtils;
 
+	@Inject
+	protected SpeciesGroupsUtil speciesGroupsUtil;
+
 	/* Final fields */
-	protected static final String DATASET = "dataset";
 	protected static final String SCI_NAME = "scientificName";
 	protected static final String SCI_NAME_RAW = "scientificNameRaw";
 	protected static final String SCI_NAME_TEXT = "scientificNameText";
@@ -1792,8 +1790,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public boolean deleteForInfosources(String[] infoSourceIds)
 			throws Exception {
 
-		Scanner scanner = storeHelper.getScanner(TC_TABLE, TC_COL_FAMILY,
-				ColumnType.TAXONCONCEPT_COL.getColumnName());
+		Scanner scanner = storeHelper.getScanner(TC_TABLE, TC_COL_FAMILY, ColumnType.TAXONCONCEPT_COL.getColumnName());
 
 		List<String> ids = new ArrayList<String>();
 		for (String id : infoSourceIds) {
@@ -1808,16 +1805,13 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// get common names
 			List<CommonName> commonNames = getCommonNamesFor(guid);
 			removeForInfosources((List) commonNames, ids);
-			storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
-					ColumnType.VERNACULAR_COL.getColumnName(),
-					guid, (List) commonNames, false);
+			storeHelper.putList(TC_TABLE, TC_COL_FAMILY,ColumnType.VERNACULAR_COL.getColumnName(),
+                guid, (List) commonNames, false);
 
 			// get common names
 			List<Image> images = getImages(guid);
 			removeForInfosources((List) images, ids);
-			storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
-					ColumnType.IMAGE_COL.getColumnName(), guid,
-					(List) images, false);
+			storeHelper.putList(TC_TABLE, TC_COL_FAMILY, ColumnType.IMAGE_COL.getColumnName(), guid, (List) images, false);
 			i++;
 
 			if (i % 1000 == 0) {
@@ -1846,11 +1840,6 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public void createIndex(String startKey, boolean remove) throws Exception {
 		int max_loop_count = 100000;
 		long start = System.currentTimeMillis();
-
-		// List<String> pestTerms =
-		// vocabulary.getTermsForStatusType(StatusType.PEST);
-		// List<String> consTerms =
-		// vocabulary.getTermsForStatusType(StatusType.CONSERVATION);
 
 		SolrServer solrServer = solrUtils.getSolrServer();
 
@@ -1892,18 +1881,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					// iw.commit();
 					logger.info(i + " " + guid + ", adding " + docs.size());
 					if (!docs.isEmpty()) {
-
 					    solrUtils.addDocs(docs);
 					    docs = new ArrayList<SolrInputDocument>();
-//						solrServer.add(docs);
-//						docs.clear();
-
 					}
 				}
-//				if (i > 0 && i % max_loop_count == 0) {
-//					logger.info("commit records: " + i + ", current guid: " + guid);
-//					solrServer.commit();
-//				}
 			}
 			catch(Exception e){
 				logger.error("*** Error indexing guid: " + guid, e);
@@ -1974,11 +1955,11 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// synonyms.addAll(congruentTcs);
 
 			// get common names
-			List<CommonName> commonNames = scanner!= null ?(List)scanner.getListValue(ColumnType.VERNACULAR_COL.getColumnName(),
+			List<CommonName> commonNames = scanner!= null ?(List) scanner.getListValue(ColumnType.VERNACULAR_COL.getColumnName(),
                 CommonName.class):getCommonNamesFor(guid);
 
 			// add the parent id to enable tree browsing with this index
-			List<TaxonConcept> children = scanner != null ? (List)scanner.getListValue(ColumnType.IS_PARENT_COL_OF.getColumnName(),
+			List<TaxonConcept> children = scanner != null ? (List) scanner.getListValue(ColumnType.IS_PARENT_COL_OF.getColumnName(),
 	                TaxonConcept.class):getChildConceptsFor(guid);
 
 			// add conservation and pest status'
@@ -2125,20 +2106,6 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				    addToSetSafely(infoSourceUids, category.getInfoSourceUid());
 				}
 
-				// for (PestStatus ps : pestStatuses) {
-				// // for (String psTerm : pestTerms) {
-				// if
-				// (ps.getStatus().toLowerCase().contains(psTerm.toLowerCase()))
-				// {
-				// // Field f = new Field("pestStatus", psTerm, Store.YES,
-				// Index.NOT_ANALYZED);
-				// // f.setBoost(0.6f);
-				// doc.addField("pestStatus", psTerm, 0.6f);
-				// addToSetSafely(infoSourceIds, ps.getInfoSourceId());
-				// }
-				// // }
-				// }
-
 				for (SimpleProperty sp : simpleProperties) {
 					// index *Text properties
 					if (sp.getName().endsWith("Text")) {
@@ -2170,7 +2137,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						
 						// push CAAB preferred common name up
 						if(cn.getRanking() != null && cn.getRanking() > 90000){
-							logger.info("\n**********: " + cn.getNameString() + " , " + cn.getRanking() + "\n");
+							logger.debug("**********: " + cn.getNameString() + " , " + cn.getRanking() + "\n");
 							doc.addField("preferredName", cn.getNameString().trim().toLowerCase());
 						}
 					}
@@ -2244,21 +2211,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					}
 				}
 
-				// add the regions this species has occurred in
-				//I think that this now taken care of within the work that MArk was doing
-//				List<OccurrencesInGeoregion> regions = getRegions(guid);
-//				for (OccurrencesInGeoregion region : regions) {
-//					if (region.getRegionTypeId() != null) {
-//						RegionTypes rt = RegionTypes.getRegionType(region
-//								.getRegionTypeId());
-//						if (rt != null) {
-//							doc.addField(rt.toString(), region.getName());
-//						}
-//					}
-//				}
-
 				List<Classification> classifications = scanner != null ? (List)scanner.getListValue(ColumnType.CLASSIFICATION_COL.getColumnName(),
 		                Classification.class):getClassifications(guid);
+
 				for (Classification classification : classifications) {
 					addIfNotNull(doc, "kingdom", classification.getKingdom());
 					addIfNotNull(doc, "phylum", classification.getPhylum());
@@ -2266,43 +2221,44 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					addIfNotNull(doc, "bioOrder", classification.getOrder());
 					addIfNotNull(doc, "family", classification.getFamily());
 					addIfNotNull(doc, "genus", classification.getGenus());
-					
-					//speciesGroup
-					if(StringUtils.isNotBlank(classification.getPhylum())){
-    					if("arthropoda".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Arthropods");
-    					if("mollusca".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Molluscs");
-    					if("magnoliophyta".equals(classification.getPhylum().toLowerCase())) doc.addField("speciesGroup", "Flowering plants");
-					}
-					if(StringUtils.isNotBlank(classification.getClazz())){
-    					if("reptilia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Reptiles");
-    					if("amphibia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Frogs");
-    					if("aves".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Birds");
-    					if("mammalia".equals(classification.getClazz().toLowerCase())) doc.addField("speciesGroup", "Mammals");
-					}
-					if(StringUtils.isNotBlank(classification.getKingdom())){
-    					if("plantae".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Plants");
-    					if("animalia".equals(classification.getKingdom().toLowerCase())) doc.addField("speciesGroup", "Animals");
-					}
-					if(classification.getClazz()!=null && fishTaxa.contains(classification.getClazz().toLowerCase())){
-						doc.addField("speciesGroup", "Fish");
-					}
+
+                    //if we have something higher than a genus, add groups
+                    if(classification.getRankId()!=null && classification.getRankId()> 6000){
+                        List<String> speciesGroups = speciesGroupsUtil.getSpeciesGroup(classification);
+                        for (String g: speciesGroups) { doc.addField("speciesGroup", g); }
+                        List<String> speciesSubgroups = speciesGroupsUtil.getSpeciesSubgroup(classification);
+                        for (String g: speciesSubgroups) { doc.addField("speciesSubgroup", g); }
+                    }
 				}
 				
 				//check valid image (not blacklisted)
-				List<Image> images = scanner != null ? (List)scanner.getListValue(ColumnType.IMAGE_COL.getColumnName(), 
-		                Image.class): getImages(guid);
+				List<Image> images = scanner != null ? (List) scanner.getListValue(ColumnType.IMAGE_COL.getColumnName(), Image.class) : getImages(guid);
+
 				boolean hasImages = false;
 				int firstValidImage = -1;
+                int imageCount = 0;
+                Set<String> imageSources = new HashSet<String>();
 				if(!images.isEmpty()){
 					for(int i = 0; i < images.size(); i++){
 						Image image = images.get(i);
 						if(!image.getIsBlackListed()){
-							hasImages = true;
-							firstValidImage = i;
-							break;
+                            if(firstValidImage < 0) {
+                                firstValidImage = i;
+                                hasImages = true;
+                            }
+                            imageCount++;
+							imageSources.add(image.getInfoSourceUid());
 						}
 					}
 				}
+
+                //get image count (non-blacklisted sources only)
+                doc.addField("imageCount", imageCount);
+                //get infosource count  (non-blacklisted sources only)
+                doc.addField("imagesSourceCount", imageSources.size());
+                //get infosource count  (non-blacklisted sources only)
+                for(String imageSource : imageSources)
+                    doc.addField("imageSources", imageSource);
 
 				if (hasImages && firstValidImage >= 0) {
 					// FIXME should be replaced by the highest ranked image
@@ -2311,7 +2267,6 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						doc.addField("image", image.getRepoLocation());
 						try {
 						    String imageInfosourceId = getImageInfosourceId(image.getRepoLocation());
-						
 						    logger.debug("!!!" + imageInfosourceId);
 						    infoSourceIds.add(imageInfosourceId);
 						    addToSetSafely(infoSourceUids, image.getInfoSourceUid());
@@ -2321,10 +2276,12 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						// Change to adding this in earlier
 						String thumbnail = image.getRepoLocation().replace("raw", "thumbnail");
 						doc.addField("thumbnail", thumbnail);
+                        doc.addField("imageSource", image.getInfoSourceUid());
 					} else {
 						logger.error("Error adding image to concept: " + image);
 					}
 				}
+
 				doc.addField("hasImage", hasImages);
 
 				Boolean isAustralian = australian == null ?isAustralian(guid):australian;
@@ -2346,26 +2303,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				//Add all the dataset id's individually so that they can be searched indivdually
 				for(String iid : infoSourceIds){
 				    doc.addField("dataset", iid);
-//				    String uid = infosourceIdUIDMap.get(iid);
-//				    if(StringUtils.isNotBlank(uid)){
-//				        doc.addField("uid", uid);
-//				    }
 				}
 				for(String uid : infoSourceUids){
 				  doc.addField("uid", uid);
 				}
-				
-//				Iterator it = infoSourceIds.iterator();
-//				
-//				while (it.hasNext()) {
-//				    String uid = infosourceIdUIDMap.get((String) it.next());
-//				    
-//				    if (uid != null && !"".equals(uid)) {
-//				        doc.addField("uid", uid);
-//				        logger.info("uid added: " + uid);
-//				    }
-//				}
-
 				docsToAdd.add(doc);
 			}
 		}

@@ -617,6 +617,8 @@
    <field name="family" type="string" indexed="true" stored="true" multiValued="false" omitNorms="false" />
    <field name="genus" type="string" indexed="true" stored="true" multiValued="false" omitNorms="false" />
    <field name="speciesGroup" type="string" indexed="true" stored="true" multiValued="true" omitNorms="true" />
+   <field name="speciesSubgroup" type="string" indexed="true" stored="true" multiValued="true" omitNorms="true" />
+
    <!-- Australian states, supports the region functionality -->
    <field name="state" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="ibra" type="string" indexed="true" stored="true" multiValued="true" omitNorms="false" />
@@ -625,6 +627,13 @@
    <!-- Multimedia -->
    <field name="hasImage" type="boolean" indexed="true" stored="true" multiValued="true" omitNorms="false" />
    <field name="image" type="string" indexed="false" stored="true" multiValued="false" omitNorms="true" />
+   <!-- the resource UID of the preferrred image -->
+   <field name="imageSource" type="string" indexed="true" stored="true" multiValued="false" omitNorms="true" />
+   <!-- the resource UIDs of the images for this taxon -->
+   <field name="imageSources" type="string" indexed="true" stored="true" multiValued="true" omitNorms="true" />
+   <!-- the number of resource UIDs of the images for this taxon -->
+   <field name="imagesSourceCount" type="int" indexed="true" stored="true" multiValued="false" omitNorms="true" />
+   <field name="imageCount" type="int" indexed="true" stored="true" multiValued="false" omitNorms="true" />
    <field name="thumbnail" type="string" indexed="false" stored="true" multiValued="false" omitNorms="true" />
    
    <!-- Collection / Institution -->
@@ -731,6 +740,8 @@
    <copyField source="guid" dest="text"/>
    <copyField source="otherGuid" dest="text"/>
    <copyField source="name" dest="text"/>
+   <copyField source="speciesGroup" dest="text"/>
+   <copyField source="speciesSubgroup" dest="text"/>
    <copyField source="acronym" dest="text"/>
    <copyField source="scientificName" dest="text"/>
    <copyField source="scientificNameRaw" dest="text"/>
