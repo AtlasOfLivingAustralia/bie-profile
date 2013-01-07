@@ -37,7 +37,7 @@ import org.springframework.stereotype.Component;
  *
  * @author Nick dos Remedios (Nick.dosRemedios@csiro.au)
  */
-@Component
+@Component("createWordPressIndex")
 public class CreateWordPressIndex {
 
     protected static Logger logger = Logger.getLogger(CreateWordPressIndex.class);
@@ -62,11 +62,16 @@ public class CreateWordPressIndex {
         // initialise Spring ApplicationContext 
         ApplicationContext context = new ClassPathXmlApplicationContext(locations);
 		CreateWordPressIndex cwpi = (CreateWordPressIndex) context.getBean(CreateWordPressIndex.class);
-        logger.info("Start of crawling and indexing WP pages.");
-        cwpi.loadSitemap();
-        int pagesLoaded = cwpi.indexPages();
-        logger.info("Crawled and indexed "+ pagesLoaded + " pages.");
+        cwpi.loadWordpress();
         System.exit(0);
+    }
+
+    public int loadWordpress() throws Exception {
+        logger.info("Start of crawling and indexing WP pages.");
+        loadSitemap();
+        int pagesLoaded = indexPages();
+        logger.info("Crawled and indexed "+ pagesLoaded + " pages.");
+        return pagesLoaded;
     }
 
     /**
@@ -162,7 +167,7 @@ public class CreateWordPressIndex {
         solrServer.commit();
         //logger.info("Optimising SOLR index...");
         //solrServer.optimize(); // throws errors on my machine??
-        
+        logger.info("Committed to SOLR. Final document count: " + documentCount);
         return documentCount;
     }
 }
