@@ -1168,18 +1168,18 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
 	private SearchTaxonConceptDTO createTaxonConceptFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchTaxonConceptDTO taxonConcept = new SearchTaxonConceptDTO();
-		taxonConcept.setScore((Float)doc.getFirstValue("score"));
 		taxonConcept.setIdxType(IndexedTypes.TAXON.toString());
+		taxonConcept.setScore((Float)doc.getFirstValue("score"));
 		taxonConcept.setGuid((String) doc.getFirstValue("guid"));
 		taxonConcept.setParentGuid((String) doc.getFirstValue("parentGuid"));
 		taxonConcept.setName((String) doc.getFirstValue("scientificNameRaw"));
 		taxonConcept.setAcceptedConceptName((String) doc.getFirstValue("acceptedConceptName"));
-		String hasChildrenAsString = (String) doc.getFirstValue("hasChildren");
 		taxonConcept.setCommonName((String) doc.getFirstValue("commonNameDisplay"));
 		taxonConcept.setCommonNameSingle((String) doc.getFirstValue("commonNameSingle"));
 		taxonConcept.setImage((String) doc.getFirstValue("image"));
+        taxonConcept.setImageSource((String) doc.getFirstValue("imageSource"));
+        taxonConcept.setImageCount((Integer) doc.getFirstValue("imageCount"));
 		taxonConcept.setThumbnail((String) doc.getFirstValue("thumbnail"));
-		taxonConcept.setHasChildren(Boolean.parseBoolean(hasChildrenAsString));
         taxonConcept.setScore((Float) doc.getFirstValue("score"));
         taxonConcept.setRank((String) doc.getFirstValue("rank"));
         taxonConcept.setRawRank((String)doc.getFirstValue("rawRank"));
@@ -1198,6 +1198,9 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         taxonConcept.setConservationStatusVIC((String) doc.getFirstValue("conservationStatusVIC"));
         taxonConcept.setConservationStatusWA((String) doc.getFirstValue("conservationStatusWA"));
         taxonConcept.setIsAustralian((String) doc.getFirstValue("australian_s"));
+
+		String hasChildrenAsString = (String) doc.getFirstValue("hasChildren");
+		taxonConcept.setHasChildren(Boolean.parseBoolean(hasChildrenAsString));
 //        taxonConcept.setLinkIdentifier((String) doc.getFirstValue("linkIdentifier"));
 		try {
 			taxonConcept.setLinkIdentifier(java.net.URLEncoder.encode((String) doc.getFirstValue("linkIdentifier"), "UTF-8"));

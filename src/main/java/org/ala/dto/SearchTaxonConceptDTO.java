@@ -74,6 +74,8 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     protected String author;
     protected String linkIdentifier;
     protected Integer occCount;
+    protected String imageSource;
+    protected Integer imageCount;
 
     //image properties
     String imageUrl;
@@ -121,8 +123,7 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
             return null;
         }
     }
-    
-    
+
     public String getLargeImageUrl(){
         this.largeImageUrl = getImageUrl(image, "/largeRaw.");
         return this.largeImageUrl;
@@ -525,7 +526,7 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     }
 
     /**
-	 * @param isAustralian the isAustralian to set
+	 * @param australian the isAustralian to set
 	 */
     public void setIsAustralian(String australian) {
         this.isAustralian = australian;
@@ -566,6 +567,20 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     public void setRawRank(String rawRank) {
         this.rawRank = rawRank;
     }	
-	
-	
+
+    public String getImageSource() {
+        return imageSource;
+    }
+
+    public void setImageSource(String imageSource) {
+        this.imageSource = imageSource;
+    }
+
+    public Integer getImageCount() {
+        return imageCount;
+    }
+
+    public void setImageCount(Integer imageCount) {
+        this.imageCount = imageCount;
+    }
 }
