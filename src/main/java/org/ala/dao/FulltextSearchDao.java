@@ -55,7 +55,8 @@ public interface FulltextSearchDao {
 	/**
 	 * Retrieves a classification used nested set logic.
 	 * 
-	 * @param leftNSValue
+	 * @param left
+     * @parma right
 	 * @return
 	 * @throws Exception
 	 */
@@ -163,8 +164,6 @@ public interface FulltextSearchDao {
     /**
      * Generic Search with name.
      *
-     * @param input
-     * @param limit
      * @return
      * @throws Exception
      */
@@ -181,7 +180,7 @@ public interface FulltextSearchDao {
 
     /**
      * Perform a full text search across all object types.
-     * 
+     *
      * @param query
      * @param filterQuery
      * @param startIndex
@@ -191,7 +190,7 @@ public interface FulltextSearchDao {
      * @return
      * @throws Exception
      */
-    SearchResultsDTO<SearchDTO> doFullTextSearch(String query, String[] filterQuery, Integer startIndex, Integer pageSize, 
+    SearchResultsDTO<SearchDTO> doFullTextSearch(String query, String[] filterQuery, String[] facets, Integer startIndex, Integer pageSize,
     		String sortField, String sortDirection) throws Exception;
     
     /**

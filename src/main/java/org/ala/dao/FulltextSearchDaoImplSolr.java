@@ -154,7 +154,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             	fq = new String[]{"left:[" + phylum.getLeft()  + " TO "+leftNSValue+"]", "right:["+rightNSValue+" TO " + phylum.getRight() + "]"};
             }
             logger.debug("search query: "+queryString.toString());
-            SearchResultsDTO results = doSolrSearch(queryString.toString(), fq, 100, 0, "left", "asc");
+            SearchResultsDTO results = doSolrSearch(queryString.toString(), fq, (String[]) null, 100, 0, "left", "asc");
             // add kingdom into first item of list
             if(phylum != null){
             	SearchTaxonConceptDTO kingdom = getKingdom(leftNSValue, rightNSValue);
@@ -178,7 +178,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             queryString.append("idxtype:"+IndexedTypes.TAXON + " AND rank:" + rank);
             String[] fq = new String[]{};
             logger.debug("search query: "+queryString.toString());
-            return doSolrSearch(queryString.toString(), fq, 200, 0, "left", "asc");
+            return doSolrSearch(queryString.toString(), fq, (String[]) null, 200, 0, "left", "asc");
         } catch (SolrServerException ex) {
         	SearchResultsDTO searchResults = new SearchResultsDTO();
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
@@ -188,7 +188,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     }
 	
     /**
-	 * @see org.ala.dao.FulltextSearchDao#getChildConcepts(int)
+	 * @see org.ala.dao.FulltextSearchDao#getChildConceptsByNS
 	 */
 	@Override
 	public List<SearchTaxonConceptDTO> getChildConceptsByNS(int leftNS, int rightNS, Integer rankId, int maxResults) throws Exception {
@@ -202,7 +202,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             }
             String[] fq = new String[]{"left:["+leftNS+" TO "+rightNS+"]"};
             logger.debug("search query: "+queryString.toString());
-            SearchResultsDTO<SearchTaxonConceptDTO> tcs =  doSolrSearch(queryString.toString(), fq, maxResults, 0, "name", "asc");
+            SearchResultsDTO<SearchTaxonConceptDTO> tcs =  doSolrSearch(queryString.toString(), fq, (String[]) null, maxResults, 0, "name", "asc");
             List<SearchTaxonConceptDTO> stds = tcs.getResults();
             Collections.sort(stds);
             return stds;
@@ -219,7 +219,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}
 	
     /**
-	 * @see org.ala.dao.FulltextSearchDao#getChildConcepts(int)
+	 * @see org.ala.dao.FulltextSearchDao#getChildConceptsParentId
 	 */
 	@Override
 	public List<SearchTaxonConceptDTO> getChildConceptsParentId(String parentId) throws Exception {
@@ -229,7 +229,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             queryString.append("idxtype:"+IndexedTypes.TAXON);
             String[] fq = new String[]{"parentId:"+parentId};
             logger.debug("search query: "+queryString.toString());
-            SearchResultsDTO<SearchTaxonConceptDTO> tcs =  doSolrSearch(queryString.toString(), fq, maxResultsForChildConcepts, 0, "name", "asc");
+            SearchResultsDTO<SearchTaxonConceptDTO> tcs =  doSolrSearch(queryString.toString(), fq, (String[]) null, maxResultsForChildConcepts, 0, "name", "asc");
             List<SearchTaxonConceptDTO> stds = tcs.getResults();
             Collections.sort(stds);
             return stds;
@@ -259,12 +259,12 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
     @Override
     public List<SearchTaxonConceptDTO> findByScientificName(String input, int limit) throws Exception {
-        SearchResultsDTO<SearchTaxonConceptDTO> sr = findByScientificName(input, null, 0, limit, "score", "asc");
+        SearchResultsDTO<SearchTaxonConceptDTO> sr = findByScientificName(input, (String[]) null, 0, limit, "score", "asc");
         return sr.getResults();
     }
 
     /**
-	 * @see org.ala.dao.FulltextSearchDao#findByScientificName(java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String, java.lang.String)
+	 * @see org.ala.dao.FulltextSearchDao#findByScientificName
 	 */
     @Override
     public SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
@@ -297,7 +297,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 queryString.append(")");
             }
             logger.info("search query: "+queryString.toString());
-            return doSolrSearch(queryString.toString(), filterQuery, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryString.toString(), filterQuery, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
         	SearchResultsDTO searchResults = new SearchResultsDTO();
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
@@ -307,7 +307,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     }
     
     /**
-     * @see org.ala.dao.FulltextSearchDao#findAllRegionsByType(java.lang.String)
+     * @see org.ala.dao.FulltextSearchDao#findAllRegionsByType
      */
     @Override
 	public SearchResultsDTO<SearchRegionDTO> findAllRegionsByType(RegionTypes regionType) throws Exception {
@@ -317,7 +317,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             String[] fq = new String[]{"regionTypeId:["+regionType.getLowerId() +" TO "+regionType.getHigherId()+"]"};
 //            String[] fq = new String[]{};
             logger.debug("search query: "+queryString.toString());
-            return doSolrSearch(queryString.toString(), fq, 1000, 0, "name", "asc");
+            return doSolrSearch(queryString.toString(), fq, (String[]) null, 1000, 0, "name", "asc");
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
     		SearchResultsDTO searchResults = new SearchResultsDTO();
@@ -330,7 +330,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         String query = "idxtype:TAXON AND (id:\"" +StringUtils.join(guids, "\" OR id:\"") + "\")";        
         try{
             logger.debug("search query: "+query);
-            return doSolrSearch(query, null, guids.length, 0, "score", "desc");
+            return doSolrSearch(query, null, (String[]) null, guids.length, 0, "score", "desc");
         }
         catch(SolrServerException ex){
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
@@ -341,7 +341,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     }
 
 	/**
-	 * @see org.ala.dao.FulltextSearchDao#findByName(java.lang.String, int)
+	 * @see org.ala.dao.FulltextSearchDao#findByName
 	 */
 	@Override
 	public SearchResultsDTO<SearchDTO> findByName(IndexedTypes indexType, String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
@@ -373,7 +373,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	            queryString.append(")");
             }
             logger.debug("search query: "+queryString.toString());
-            return doSolrSearch(queryString.toString(), filterQuery, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryString.toString(), filterQuery, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
     		SearchResultsDTO searchResults = new SearchResultsDTO();
@@ -383,7 +383,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}
 	
 	/**
-     * @see org.ala.dao.FulltextSearchDao#findByName(java.lang.String, int)
+     * @see org.ala.dao.FulltextSearchDao#findByUid
      */
     @Override
     public SearchResultsDTO<SearchDTO> findByUid(IndexedTypes indexType, String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
@@ -401,7 +401,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 queryString.append(")");
             }
             logger.debug("search query: "+queryString.toString());
-            return doSolrSearch(queryString.toString(), filterQuery, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryString.toString(), filterQuery, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             SearchResultsDTO searchResults = new SearchResultsDTO();
@@ -461,17 +461,17 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     	return queryString.toString();
 	}
 		
-	public SearchResultsDTO<SearchDTO> doFullTextSearch(String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
+	public SearchResultsDTO<SearchDTO> doFullTextSearch(String query, String[] filterQuery, String[] facets, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
 		SearchResultsDTO<SearchDTO> dto = null;
 		
 		//parse scientific name into a canonical form, strip authorships etc
 		//construct a searchable form of the sci name
         try {
         	String queryString = buildQuery(query, false);
-            dto = doSolrSearch(queryString, filterQuery, pageSize, startIndex, sortField, sortDirection);
+            dto = doSolrSearch(queryString, filterQuery, facets, pageSize, startIndex, sortField, sortDirection);
             if(dto == null || dto.getResults() == null || dto.getResults().size() < 1){
             	queryString = buildQuery(query, true);
-            	dto = doSolrSearch(queryString, filterQuery, pageSize, startIndex, sortField, sortDirection);
+            	dto = doSolrSearch(queryString, filterQuery, facets, pageSize, startIndex, sortField, sortDirection);
             }
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
@@ -519,7 +519,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         try {
         	if(query!=null && query.length()>0){
 	        	String queryString = " exact_text:\"" + query.toLowerCase().trim() + "\"";
-	            dto = doSolrSearch(queryString, filterQuery, pageSize, startIndex, sortField, sortDirection); 
+	            dto = doSolrSearch(queryString, filterQuery, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         	}
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
@@ -562,9 +562,9 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
      * @return
      * @throws SolrServerException
      */
-    private SearchResultsDTO doSolrSearch(String queryString, String filterQuery[], Integer pageSize,
+    private SearchResultsDTO doSolrSearch(String queryString, String filterQuery[], String[] facets, Integer pageSize,
           Integer startIndex, String sortField, String sortDirection) throws Exception {
-        SolrQuery solrQuery = initSolrQuery(); // general search settings
+        SolrQuery solrQuery = initSolrQuery(facets); // general search settings
         solrQuery.setFields("*","score");
         solrQuery.setQuery(queryString);
         return doSolrQuery(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
@@ -582,32 +582,36 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
      */
     private QueryResponse  doSolrSearchForQueryResponse(String queryString, String filterQuery[], String[] fields, Integer pageSize,
             Integer startIndex, String sortField,  String sortDirection) throws Exception {
-          SolrQuery solrQuery = initSolrQuery(); // general search settings
+          SolrQuery solrQuery = initSolrQuery(null); // general search settings
           solrQuery.setFields(fields);
           solrQuery.setQuery(queryString);
           return getSolrQueryResponse(solrQuery, filterQuery, pageSize, startIndex, sortField, sortDirection);
-      }
-    private void addFqs(SolrQuery solrQuery,String[] filterQuery){
+    }
+
+    private void addFqs(SolrQuery solrQuery, String[] filterQuery){
         if (filterQuery != null) {
             for (String fq : filterQuery) {
                 // pull apart fq. E.g. Rank:species and then sanitize the string parts
                 // so that special characters are escaped appropriately
-                if (fq == null || fq.isEmpty()) continue;
-                String[] parts = fq.split(":", 2); // separate query field from query text
-                logger.debug("fq split into: "+parts.length+" parts: "+parts[0]+" & "+parts[1]);
-                String prefix = null;
-                String suffix = null;
-                // don't escape range queries
-                if (parts[1].contains(" TO ")) {
-                    prefix = parts[0];
-                    suffix = parts[1];
-                } else {
-                    prefix = parts[0].startsWith("-")? "-"+ClientUtils.escapeQueryChars(parts[0].substring(1)) : ClientUtils.escapeQueryChars(parts[0]);
-                    suffix = ClientUtils.escapeQueryChars(parts[1]);
+                if (fq != null || !fq.isEmpty()){
+                    String[] parts = fq.split(":", 2); // separate query field from query text
+                    logger.debug("fq split into: " + parts.length + " parts: " + parts[0] + " & " + parts[1]);
+                    String prefix = null;
+                    String suffix = null;
+                    // don't escape range queries
+                    if (parts[1].contains(" TO ")) {
+                        prefix = parts[0];
+                        suffix = parts[1];
+                    } else if (parts[1].contains(" OR ") || (parts[1].startsWith("(") && parts[1].endsWith(")") ) ) {
+                        prefix = parts[0];
+                        suffix = parts[1];
+                    } else {
+                        prefix = parts[0].startsWith("-") ? "-" + ClientUtils.escapeQueryChars(parts[0].substring(1)) : ClientUtils.escapeQueryChars(parts[0]);
+                        suffix = ClientUtils.escapeQueryChars(parts[1]);
+                    }
+                    solrQuery.addFilterQuery(prefix + ":" + suffix); // solrQuery.addFacetQuery(facetQuery)
+                    logger.debug("adding filter query: " + prefix + ":" + suffix);
                 }
-
-                solrQuery.addFilterQuery(prefix + ":" + suffix); // solrQuery.addFacetQuery(facetQuery)
-                logger.debug("adding filter query: " + prefix + ":" + suffix);
             }
         }
     }
@@ -626,8 +630,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         solrQuery.setSortField(sortField, ORDER.valueOf(sortDirection));
         
         // do the Solr search
-        QueryResponse qr = solrUtils.getSolrServer().query(solrQuery); // can throw exception
-        return qr;        
+        return solrUtils.getSolrServer().query(solrQuery); // can throw exception
     }
 
     /**
@@ -650,7 +653,6 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         //process results
         SolrDocumentList sdl = qr.getResults();
         List<FacetField> facets = qr.getFacetFields();
-//        Map<String, Map<String, List<String>>> highlights = qr.getHighlighting();
         List<SearchDTO> results = new ArrayList<SearchDTO>();
         List<FacetResultDTO> facetResults = new ArrayList<FacetResultDTO>();
         searchResults.setTotalRecords(sdl.getNumFound());
@@ -694,8 +696,6 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 if ((facetEntries != null) && (facetEntries.size() > 0)) {
                     ArrayList<FieldResultDTO> r = new ArrayList<FieldResultDTO>();
                     for (FacetField.Count fcount : facetEntries) {
-                        //String msg = fcount.getName() + ": " + fcount.getCount();
-                        //logger.trace(fcount.getName() + ": " + fcount.getCount());
                         r.add(new FieldResultDTO(fcount.getName(), fcount.getCount()));
                     }
                     FacetResultDTO fr = new FacetResultDTO(facet.getName(), r);
@@ -723,7 +723,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         StringBuffer queryBuffer = constructQueryForRegion(regionType, regionName, rank, higherTaxa, withImages);
         String[] filterQueries =  new String[]{ filterQuery };
         try {
-            return doSolrSearch(queryBuffer.toString(), filterQueries, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryBuffer.toString(), filterQueries, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             return  new SearchResultsDTO();
@@ -756,7 +756,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         String[] filterQueries = { filterQuery };
 
         try {
-            return doSolrSearch(sb.toString(), filterQueries, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(sb.toString(), filterQueries, (String[]) null,pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             return  new SearchResultsDTO();
@@ -781,7 +781,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         try {
             StringBuffer queryBuffer = constructQueryForRegion(regionType, regionName, rank, higherTaxa, withImages);
             String[] filterQueries = new String[]{ filterQuery };
-            return doSolrSearch(queryBuffer.toString(), filterQueries, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryBuffer.toString(), filterQueries, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             return  new SearchResultsDTO();
@@ -827,7 +827,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             int startIndex = 0;
             int pageSize = 1000;
             
-            SearchResultsDTO results = doSolrQuery(solrQuery, null, pageSize, startIndex, "score", "asc");
+            SearchResultsDTO results = doSolrQuery(solrQuery, (String[]) null, pageSize, startIndex, "score", "asc");
             CSVWriter csvWriter = new CSVWriter(new OutputStreamWriter(output), '\t', '"');
             
             csvWriter.writeNext(new String[]{
@@ -959,7 +959,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}
     
     /**
-     * @see org.ala.dao.FulltextSearchDao#findAllByStatus(au.org.ala.bie.util.StatusType, java.lang.String, java.lang.Integer, java.lang.Integer, java.lang.String, java.lang.String) 
+     * @see org.ala.dao.FulltextSearchDao#findAllByStatus
      */
     @Override
     public SearchResultsDTO findAllByStatus(StatusType statusType, String filterQuery, Integer startIndex, Integer pageSize,
@@ -979,7 +979,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         String[] filterQueries = {filterQuery};
         
         try {
-            return doSolrSearch(queryString, filterQueries, pageSize, startIndex, sortField, sortDirection);
+            return doSolrSearch(queryString, filterQueries, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             return  new SearchResultsDTO();
@@ -1074,8 +1074,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
 	private SearchWordpressDTO createWordpressFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchWordpressDTO wordpress = new SearchWordpressDTO();
-		wordpress.setScore((Float) doc.getFirstValue("score"));
         wordpress.setIdxType(IndexedTypes.WORDPRESS.toString());
+		wordpress.setScore((Float) doc.getFirstValue("score"));
         wordpress.setGuid((String) doc.getFirstValue("guid"));
 		wordpress.setName((String) doc.getFirstValue("name"));
 		wordpress.setScore((Float) doc.getFirstValue("score"));
@@ -1111,8 +1111,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
 	private SearchDatasetDTO createDatasetFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchDatasetDTO dataset = new SearchDatasetDTO();
+        dataset.setIdxType(IndexedTypes.DATASET.toString());
 		dataset.setScore((Float)doc.getFirstValue("score"));
-                dataset.setIdxType(IndexedTypes.DATASET.toString());
 		dataset.setGuid((String) doc.getFirstValue("guid"));
 		dataset.setName((String) doc.getFirstValue("name"));
 		dataset.setDescription((String) doc.getFirstValue("description"));
@@ -1123,8 +1123,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 
     private SearchLayerDTO createLayerFromIndex(QueryResponse qr, SolrDocument doc) {
         SearchLayerDTO dataset = new SearchLayerDTO();
-        dataset.setScore((Float)doc.getFirstValue("score"));
         dataset.setIdxType(IndexedTypes.LAYERS.toString());
+        dataset.setScore((Float)doc.getFirstValue("score"));
         dataset.setGuid((String) doc.getFirstValue("guid"));
         dataset.setName((String) doc.getFirstValue("name"));
         dataset.setDescription((String) doc.getFirstValue("description"));
@@ -1135,8 +1135,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 
     private SearchDTO createSearchDTOFromIndex(QueryResponse qr, SolrDocument doc) {
         SearchDTO dataset = new SearchDTO();
-        dataset.setScore((Float) doc.getFirstValue("score"));
         dataset.setIdxType(IndexedTypes.SEARCH.toString());
+        dataset.setScore((Float) doc.getFirstValue("score"));
         dataset.setGuid((String) doc.getFirstValue("guid"));
         dataset.setName((String) doc.getFirstValue("name"));
         dataset.setScore((Float) doc.getFirstValue("score"));
@@ -1151,8 +1151,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
 	private SearchDataProviderDTO createDataProviderFromIndex(QueryResponse qr, SolrDocument doc) {
 		SearchDataProviderDTO provider = new SearchDataProviderDTO();
+        provider.setIdxType(IndexedTypes.DATAPROVIDER.toString());
 		provider.setScore((Float)doc.getFirstValue("score"));
-                provider.setIdxType(IndexedTypes.DATAPROVIDER.toString());
 		provider.setGuid((String) doc.getFirstValue("guid"));
 		provider.setName((String) doc.getFirstValue("name"));
 		provider.setDescription((String) doc.getFirstValue("description"));
@@ -1237,37 +1237,42 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
      *
      * @return solrQuery the SolrQuery
      */
-    protected SolrQuery initSolrQuery() {
+    protected SolrQuery initSolrQuery(String[] facets) {
         SolrQuery solrQuery = new SolrQuery();
         solrQuery.setQueryType("standard");
-        solrQuery.setFacet(true);
-        solrQuery.addFacetField("idxtype");
-
-        solrQuery.addFacetField("australian_s");
-        solrQuery.addFacetField("speciesGroup");
-        //solrQuery.addFacetField("kingdom");
-        solrQuery.addFacetField("rank");
-        //solrQuery.addFacetField("rankId");
-        //solrQuery.addFacetField("pestStatus");
-//        solrQuery.addFacetField("conservationStatus");
-        solrQuery.addFacetField("conservationStatusAUS");
-        solrQuery.addFacetField("conservationStatusACT");
-        solrQuery.addFacetField("conservationStatusNSW");
-        solrQuery.addFacetField("conservationStatusNT");
-        solrQuery.addFacetField("conservationStatusQLD");
-        solrQuery.addFacetField("conservationStatusSA");
-        solrQuery.addFacetField("conservationStatusTAS");
-        solrQuery.addFacetField("conservationStatusVIC");
-        solrQuery.addFacetField("conservationStatusWA");
-        solrQuery.addFacetField("category_m_s");
-        solrQuery.addFacetField("category_NSW_m_s");
-        solrQuery.addFacetField("category_ACT_m_s");
-        solrQuery.addFacetField("category_QLD_m_s");
-        solrQuery.addFacetField("category_SA_m_s");
-        solrQuery.addFacetField("category_NT_m_s");
-        solrQuery.addFacetField("category_TAS_m_s");
-        solrQuery.addFacetField("category_WA_m_s");
-        solrQuery.addFacetField("category_VIC_m_s");
+        if(facets == null){
+            //use the default set
+            solrQuery.setFacet(true);
+            solrQuery.addFacetField("idxtype");
+            solrQuery.addFacetField("australian_s");
+            solrQuery.addFacetField("speciesGroup");
+            solrQuery.addFacetField("speciesSubgroup");
+            //solrQuery.addFacetField("kingdom");
+            solrQuery.addFacetField("rank");
+            //solrQuery.addFacetField("rankId");
+            //solrQuery.addFacetField("pestStatus");
+    //        solrQuery.addFacetField("conservationStatus");
+            solrQuery.addFacetField("conservationStatusAUS");
+            solrQuery.addFacetField("conservationStatusACT");
+            solrQuery.addFacetField("conservationStatusNSW");
+            solrQuery.addFacetField("conservationStatusNT");
+            solrQuery.addFacetField("conservationStatusQLD");
+            solrQuery.addFacetField("conservationStatusSA");
+            solrQuery.addFacetField("conservationStatusTAS");
+            solrQuery.addFacetField("conservationStatusVIC");
+            solrQuery.addFacetField("conservationStatusWA");
+            solrQuery.addFacetField("category_m_s");
+            solrQuery.addFacetField("category_NSW_m_s");
+            solrQuery.addFacetField("category_ACT_m_s");
+            solrQuery.addFacetField("category_QLD_m_s");
+            solrQuery.addFacetField("category_SA_m_s");
+            solrQuery.addFacetField("category_NT_m_s");
+            solrQuery.addFacetField("category_TAS_m_s");
+            solrQuery.addFacetField("category_WA_m_s");
+            solrQuery.addFacetField("category_VIC_m_s");
+        } else {
+            solrQuery.addFacetField(facets);
+        }
 
         solrQuery.setFacetMinCount(1);
         solrQuery.setRows(10);
@@ -1475,7 +1480,6 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     }
 
     /**
-     * @see org.ala.dao.FulltextSearchDao#getAutoCompleteList(String, String[], int)
      */
     @Deprecated
     public List<AutoCompleteDTO> _getAutoCompleteList(String value, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
@@ -1554,7 +1558,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
     }
     
     /**
-     * @see org.ala.dao.FulltextSearchDao#getAutoCompleteList(String, String[], int)
+     * @see org.ala.dao.FulltextSearchDao#getAutoCompleteList
      */
     public List<AutoCompleteDTO> getAutoCompleteList(String value,String[] filterQuery, IndexedTypes indexType, boolean gsOnly, int maxTerms) {      
         if (StringUtils.trimToNull(value) != null && value.length() >= 3) {
