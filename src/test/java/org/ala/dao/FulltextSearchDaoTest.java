@@ -17,35 +17,35 @@ public class FulltextSearchDaoTest extends TestCase {
 		
 		FulltextSearchDao searchDao = (FulltextSearchDao) SpringUtils.getContext().getBean("fulltextSearchDaoImplSolr");
 		
-		SearchResultsDTO<SearchDTO> rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red kangaroo", null, 0, 10, "name", "asc");
+		SearchResultsDTO<SearchDTO> rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red kangaroo", null, (String[]) null, 0, 10, "name", "asc");
 		System.out.println("red kangaroo: " + rs.getResults().size());
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("kangaroos", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("kangaroos", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("kangaroos: " + rs.getResults().size());
 
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("kangaroo", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("kangaroo", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("kangaroo: " + rs.getResults().size());
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red *", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red *", null, (String[]) null, 0, 10, "name", "asc");
 		System.out.println("red *: " + rs.getResults().size());
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red*", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red*", null,(String[]) null, 0, 10, "name", "asc");
 		System.out.println("red*: " + rs.getResults().size());
 
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red k*", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red k*", null, (String[]) null, 0, 10, "name", "asc");
 		System.out.println("red k*: " + rs.getResults().size());
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("redk*", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("redk*", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("redk*: " + rs.getResults().size());
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("* kangaroo", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("* kangaroo", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("* kangaroo: " + rs.getResults().size());
 
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("*kangaroo", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("*kangaroo", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("*kangaroo: " + rs.getResults().size());
 
 		
-		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red k", null, 0, 10, "name", "asc");
+		rs = (SearchResultsDTO<SearchDTO>) searchDao.doFullTextSearch("red k", null, (String[]) null,0, 10, "name", "asc");
 		System.out.println("red k: " + rs.getResults().size());		
 	}
 	
@@ -135,8 +135,6 @@ public class FulltextSearchDaoTest extends TestCase {
 	
 	/**
 	 * Test find all in region.
-	 * 
-	 * @param args
 	 */
 	public void testFindAllInRegion() throws Exception {
 
