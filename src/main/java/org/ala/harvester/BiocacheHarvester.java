@@ -359,7 +359,14 @@ public class BiocacheHarvester implements Harvester {
         	} else if("-lastWeek".equals(args[0])){
         		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));        	
         	} else {
-        		h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));        		
+        	  //attempt to parse the date down to an acceptable date
+        	  try{
+        	      Date startDate =DateUtils.parseDate(args[0], new String[]{"yyyy-MM-dd"});
+        	      h.setStartDate(startDate);
+        	  }
+        	  catch(java.text.ParseException e){
+        	      h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));
+        	  }
         	}
         }
         h.start(-1);
