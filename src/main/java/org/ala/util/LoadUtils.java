@@ -15,7 +15,9 @@
 package org.ala.util;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -50,6 +52,8 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+
+import au.com.bytecode.opencsv.CSVReader;
 /**
  * This class provides utilities for loading data from source files.
  * This includes creating temporary lucene indexes for loading
@@ -493,15 +497,15 @@ public class LoadUtils {
 		try {
 	    	long start = System.currentTimeMillis();
 	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/acceptedConcepts.txt",false);
+	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"ala-names/ala_accepted_concepts_dump.txt",true);
 	    	String[] keyValue = null;
 	    	
 	    	while((keyValue=tr.readNext())!=null){
-	    		if(keyValue.length==2){
+	    		if(keyValue.length>=31){
 	    			i++;
 			    	Document doc = new Document();
-			    	doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-			    	doc.add(new Field("authority", keyValue[1], Store.YES, Index.ANALYZED));
+			    	doc.add(new Field("guid", keyValue[2], Store.YES, Index.ANALYZED));
+			    	doc.add(new Field("authority", keyValue[30], Store.YES, Index.ANALYZED));
 			    	iw.addDocument(doc);
 	    		}
 			}
@@ -532,34 +536,65 @@ public class LoadUtils {
     	iw.setMaxFieldLength(Integer.MAX_VALUE);    			
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 		try {
-	    	long start = System.currentTimeMillis();
-	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/relationships.txt",false);
-	    	String[] keyValue = null;
-	    	
-	    	while((keyValue=tr.readNext())!=null){
-	    		if(keyValue.length==6 && keyValue[2] != null && keyValue[1] != null){
-	    			i++;
-			    	Document doc = new Document();
-			    	doc.add(new Field("fromTaxon", keyValue[2], Store.YES, Index.ANALYZED));
-			    	
-			    	doc.add(new Field("toTaxon", keyValue[1], Store.YES, Index.ANALYZED));
-			    	
-			    	addToDocSafely(doc,"relationship", keyValue[3], Store.YES, Index.ANALYZED);
-			    	addToDocSafely(doc,"description",keyValue[5], Store.YES, Index.ANALYZED);
-			    	iw.addDocument(doc);
-	    		}
-	    		else{
-	    		    //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
-	    		    logger.info("Unable to index: " + StringUtils.join(keyValue,","));
-	    		}
-			}
-	    	tr.close();
-			long finish = System.currentTimeMillis();
-	    	logger.info(i+" loaded relationships, Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+		    loadRelationshipFile(BIE_STAGING_DIR+"anbg/ALA_AFD_RELATIONSHIP.csv", iw);
+		    loadRelationshipFile(BIE_STAGING_DIR+"anbg/ALA_APNI_RELATIONSHIP.csv", iw);
+//	    	long start = System.currentTimeMillis();
+//	    	//add the relationships
+//	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/relationships.txt",false);
+//	    	String[] keyValue = null;
+//	    	
+//	    	while((keyValue=tr.readNext())!=null){
+//	    		if(keyValue.length==6 && keyValue[2] != null && keyValue[1] != null){
+//	    			i++;
+//			    	Document doc = new Document();
+//			    	doc.add(new Field("fromTaxon", keyValue[2], Store.YES, Index.ANALYZED));
+//			    	
+//			    	doc.add(new Field("toTaxon", keyValue[1], Store.YES, Index.ANALYZED));
+//			    	
+//			    	addToDocSafely(doc,"relationship", keyValue[3], Store.YES, Index.ANALYZED);
+//			    	addToDocSafely(doc,"description",keyValue[5], Store.YES, Index.ANALYZED);
+//			    	iw.addDocument(doc);
+//	    		}
+//	    		else{
+//	    		    //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+//	    		    logger.info("Unable to index: " + StringUtils.join(keyValue,","));
+//	    		}
+//			}
+//	    	tr.close();
+//			long finish = System.currentTimeMillis();
+//	    	logger.info(i+" loaded relationships, Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
 		} finally {
 			iw.close();
 		}
+	}
+	
+	private void loadRelationshipFile(String file, IndexWriter iw) throws Exception{
+	    CSVReader reader = new CSVReader(new FileReader(file), ',','"','\\', 1);//Reader reader, char separator, char quotechar, char escape, int line
+	    String[] keyValue;
+	    int i =0,j=0;
+	    long start = System.currentTimeMillis();
+	    while((keyValue = reader.readNext()) != null){
+	        j++;
+	        if(keyValue.length>=6 && StringUtils.isNotBlank(keyValue[1]) && StringUtils.isNotBlank(keyValue[2]) ){
+	          i++;
+            Document doc = new Document();
+            doc.add(new Field("fromTaxon", keyValue[2], Store.YES, Index.ANALYZED));
+            
+            doc.add(new Field("toTaxon", keyValue[1], Store.YES, Index.ANALYZED));
+            
+            addToDocSafely(doc,"relationship", keyValue[3], Store.YES, Index.ANALYZED);
+            addToDocSafely(doc,"description",keyValue[5], Store.YES, Index.ANALYZED);
+            iw.addDocument(doc);
+	        }
+	        else{
+            //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+            logger.info("Unable to index line " + j +": " + StringUtils.join(keyValue,","));
+	          //logger.info("Unable to index: " + keyValue.length + "#" + keyValue[1] + "@" + keyValue[2] + "LINE:"+new Integer(j).toString());
+        }
+	    }
+	    reader.close();
+	    long finish = System.currentTimeMillis();
+      logger.info(i+" loaded relationships from " + file+ ", Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
 	}
 	
 	public void loadTaxonNames() throws Exception{
@@ -577,47 +612,52 @@ public class LoadUtils {
         IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
         int i = 0;
         
-        //names files to index
-        TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonNames.txt",false);
-        String[] keyValue = null;
-        while((keyValue=tr.readNext())!=null){
-            
-            if(keyValue.length>19 && keyValue[2] != null){
-
-                Document doc = new Document();
-                doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-                doc.add(new Field("name", keyValue[2], Store.YES, Index.NO));
-                
-                addToDocSafely(doc,"rank", keyValue[4], Store.YES, Index.NO);
-                addToDocSafely(doc,"author", keyValue[5], Store.YES, Index.NO);
-                addToDocSafely(doc,"year", keyValue[7], Store.YES, Index.NO);
-                addToDocSafely(doc, "publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED);
-                addToDocSafely(doc,"microReference", keyValue[9], Store.YES, Index.NO);
-                addToDocSafely(doc,"nomenCode", keyValue[10], Store.YES, Index.NO);
-                addToDocSafely(doc,"typification", keyValue[19], Store.YES, Index.NO);
-//              if(keyValue[6]!=null){
-//                  doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
-//              }
-                //LuceneUtils.addScientificNameToIndex(doc, keyValue[3], keyValue[2]);
-                
-                //add relationships between concepts
-//              addRels(is,keyValue[0], doc);
-                
-                //add to index
-                iw.addDocument(doc, analyzer);
-            }
-            else{
-                logger.info("Unable to index: " + StringUtils.join(keyValue,","));
-            }
-            i++;
+        //names files to index        
+        try{
+            loadTaxonNameFile(BIE_STAGING_DIR+"anbg/ALA_AFD_NAME.csv",iw);
+            loadTaxonNameFile(BIE_STAGING_DIR+"anbg/ALA_APNI_NAME.csv",iw);
         }
-        tr.close();
-        iw.close();
-        
+        finally{
+            iw.close();
+        }
         long finish = System.currentTimeMillis();
         logger.info(i+" indexed taxon names in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
 
 	}
+	
+	private void loadTaxonNameFile(String file, IndexWriter iw) throws Exception{
+      CSVReader reader = new CSVReader(new FileReader(file), ',','"','\\', 1);//Reader reader, char separator, char quotechar, char escape, int line
+      String[] keyValue;
+      int i =0;
+      long start = System.currentTimeMillis();
+      while((keyValue = reader.readNext()) != null){
+          i++;
+          Document doc = new Document();
+          doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+          doc.add(new Field("name", keyValue[2], Store.YES, Index.NO));
+          
+          addToDocSafely(doc,"rank", keyValue[4], Store.YES, Index.NO);
+          addToDocSafely(doc,"author", keyValue[5], Store.YES, Index.NO);
+          addToDocSafely(doc,"year", keyValue[7], Store.YES, Index.NO);
+          addToDocSafely(doc, "publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED);
+          addToDocSafely(doc,"microReference", keyValue[9], Store.YES, Index.NO);
+          addToDocSafely(doc,"nomenCode", keyValue[10], Store.YES, Index.NO);
+          addToDocSafely(doc,"typification", keyValue[19], Store.YES, Index.NO);
+  //      if(keyValue[6]!=null){
+  //          doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
+  //      }
+          //LuceneUtils.addScientificNameToIndex(doc, keyValue[3], keyValue[2]);
+          
+          //add relationships between concepts
+  //      addRels(is,keyValue[0], doc);
+          
+          //add to index
+          iw.addDocument(doc);
+      }
+      long finish = System.currentTimeMillis();
+      logger.info(i+" indexed taxon names from " + file+" in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+	}
+	
 	private void addToDocSafely(Document doc, String field, String value, Store store, Index index){
 	    if(StringUtils.isNotEmpty(value)){
 	        doc.add(new Field(field, value, store, index));
@@ -651,41 +691,49 @@ public class LoadUtils {
     	int i = 0;
     	
     	//names files to index
-    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonConcepts.txt",false);
-    	String[] keyValue = null;
-    	while((keyValue=tr.readNext())!=null){
-    		
-    		if(keyValue.length>3){
-
-    			Document doc = new Document();
-		    	doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-		    	
-		    	addToDocSafely(doc,"nameGuid", keyValue[4], Store.YES, Index.ANALYZED);
-		    	
-		    	
-		    	if(keyValue[8]!=null){
-		    		doc.add(new Field("publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED));
-		    	}
-//		    	if(keyValue[6]!=null){
-//		    		doc.add(new Field("publishedIn", keyValue[6], Store.YES, Index.NO));
-//		    	}
-		    	//LuceneUtils.addScientificNameToIndex(doc, keyValue[3], keyValue[2]);
-		    	
-		    	//add relationships between concepts
-//		    	addRels(is,keyValue[0], doc);
-		    	
-		    	//add to index
-		    	iw.addDocument(doc, analyzer);
-			}
-	    	i++;
-		}
-    	
-    	//close taxonConcept stream
-    	tr.close();
-    	iw.close();
+    	//TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/taxonConcepts.txt",false);
+    	try{
+    	    loadTaxonConceptFile(BIE_STAGING_DIR+"anbg/ALA_AFD_TAXON.csv", iw);
+    	    loadTaxonConceptFile(BIE_STAGING_DIR+"anbg/ALA_APNI_TAXON.csv", iw);
+    	}
+    	finally{
+    	   iw.close();
+    	}
     	
     	long finish = System.currentTimeMillis();
-    	logger.info(i+" indexed taxon concepts in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+
+	}
+	
+	private void loadTaxonConceptFile(String file, IndexWriter iw) throws Exception {
+      CSVReader reader = new CSVReader(new FileReader(file), ',','"','\\', 1);//Reader reader, char separator, char quotechar, char escape, int line
+      String[] keyValue;
+      int i =0;
+      long start = System.currentTimeMillis();
+      while((keyValue = reader.readNext()) != null){
+        if(keyValue.length>=9){
+
+            Document doc = new Document();
+            doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+            
+            addToDocSafely(doc,"nameGuid", keyValue[4], Store.YES, Index.ANALYZED);
+            
+            
+            if(keyValue[8]!=null){
+              doc.add(new Field("publishedInCitation", keyValue[8], Store.YES, Index.ANALYZED));
+            }
+
+            iw.addDocument(doc);
+        }
+        else{
+          //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+          logger.info("Unable to index: " + StringUtils.join(keyValue,","));
+        }
+          i++;
+      }
+      
+      long finish = System.currentTimeMillis();
+      logger.info(i+" indexed taxon concepts from "+ file+ " in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+      reader.close();
 	}
 	
 	public void loadReferences() throws Exception {
@@ -701,30 +749,38 @@ public class LoadUtils {
         try {
             long start = System.currentTimeMillis();
             //add the relationships
-            TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/references.txt",false);
-            String[] keyValue = null;
+            loadReferenceFile(BIE_STAGING_DIR+"anbg/ALA_AFD_REFERENCE.csv", iw);
+            loadReferenceFile(BIE_STAGING_DIR+"anbg/ALA_APNI_REFERENCE.csv", iw);
             
-            while((keyValue=tr.readNext())!=null){
-                if(keyValue.length==4 && keyValue[2] != null){
-                    i++;
-                    Document doc = new Document();
-                    doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-                    doc.add(new Field("title", keyValue[2], Store.YES, Index.NO));
-                    if(keyValue[3] != null) doc.add(new Field("containedIn", keyValue[3], Store.YES, Index.NO));
-                    
-                    iw.addDocument(doc);
-                }
-                else{
-                    //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
-                    logger.info("Unable to index: " + StringUtils.join(keyValue,","));
-                }
-            }
-            tr.close();
-            long finish = System.currentTimeMillis();
-            logger.info(i+" loaded relationships, Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
         } finally {
             iw.close();
         }
+	}
+	private void loadReferenceFile(String file, IndexWriter iw) throws Exception {
+      CSVReader reader = new CSVReader(new FileReader(file), ',','"','\\', 1);//Reader reader, char separator, char quotechar, char escape, int line
+      String[] keyValue;
+      int i =0;
+      long start = System.currentTimeMillis();
+      while((keyValue = reader.readNext()) != null){
+          if(keyValue.length>=4 && keyValue[2] != null){
+              i++;
+              Document doc = new Document();
+              doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+              doc.add(new Field("title", keyValue[2], Store.YES, Index.NO));
+              if(StringUtils.isNotBlank(keyValue[3])) doc.add(new Field("containedIn", keyValue[3], Store.YES, Index.NO));
+              
+              iw.addDocument(doc);
+          }
+          else{
+              //System.out.println(keyValue.length + " " + (keyValue[2] != null) + " " + (keyValue[1] != null));
+              logger.info("Unable to index: " + StringUtils.join(keyValue,","));
+          }
+
+      }
+      reader.close();
+      long finish = System.currentTimeMillis();
+      logger.info(i+" loaded referecnes from " + file+ ", Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+
 	}
 
 	/**
@@ -744,33 +800,41 @@ public class LoadUtils {
     	iw.setMaxFieldLength(Integer.MAX_VALUE);    			
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 		try {
-	    	long start = System.currentTimeMillis();
-	    	//add the relationships
-	    	TabReader tr = new TabReader(BIE_STAGING_DIR+"anbg/publications.txt",false);
-	    	String[] keyValue = null;
-	    	
-	    	while((keyValue=tr.readNext())!=null){
-	    		if(keyValue.length==10){
-	    			i++;
-			    	Document doc = new Document();
-			    	doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
-			    	if(keyValue[2]!=null) doc.add(new Field("title", keyValue[2], Store.YES, Index.NO));
-			    	//missing in new dumps as of 20111205
-			    	//if(keyValue[2]!=null) doc.add(new Field("authorship", keyValue[2], Store.YES, Index.NO));
-			    	if(keyValue[3]!=null) doc.add(new Field("year", keyValue[3], Store.YES, Index.NO));
-			    	if(keyValue[4]!=null) doc.add(new Field("datePublished", keyValue[4], Store.YES, Index.NO));
-			    	if(keyValue[5]!=null) doc.add(new Field("citation", keyValue[5], Store.YES, Index.NO));
-			    	if(keyValue[6]!=null) doc.add(new Field("containedIn", keyValue[6], Store.YES, Index.ANALYZED));
-			    	//missing in new dumps
-			    	//if(keyValue[4]!=null) doc.add(new Field("publicationType", keyValue[4], Store.YES, Index.NO));
-			    	iw.addDocument(doc);
-	    		}
-			}
-	    	tr.close();
-			long finish = System.currentTimeMillis();
-	    	logger.info(i+" loaded relationships, Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+	    	loadPublicationFile(BIE_STAGING_DIR+"anbg/ALA_AFD_PUBLICATION.csv", iw);
+	    	loadPublicationFile(BIE_STAGING_DIR+"anbg/ALA_APNI_PUBLICATION.csv", iw);
 		} finally {
 			iw.close();
 		}
+	}
+	
+	private void loadPublicationFile(String file, IndexWriter iw) throws Exception{
+      CSVReader reader = new CSVReader(new FileReader(file), ',','"','\\', 1);//Reader reader, char separator, char quotechar, char escape, int line
+      String[] keyValue;
+      int i =0;
+      long start = System.currentTimeMillis();
+      while((keyValue = reader.readNext()) != null){
+          if(keyValue.length>=10){
+              i++;
+              Document doc = new Document();
+              doc.add(new Field("guid", keyValue[0], Store.YES, Index.ANALYZED));
+              if(StringUtils.isNotEmpty(keyValue[2])) doc.add(new Field("title", keyValue[2], Store.YES, Index.NO));
+              //missing in new dumps as of 20111205
+              //if(keyValue[2]!=null) doc.add(new Field("authorship", keyValue[2], Store.YES, Index.NO));
+              if(StringUtils.isNotEmpty(keyValue[3])) doc.add(new Field("year", keyValue[3], Store.YES, Index.NO));
+              if(StringUtils.isNotEmpty(keyValue[4])) doc.add(new Field("datePublished", keyValue[4], Store.YES, Index.NO));
+              if(StringUtils.isNotEmpty(keyValue[5])) doc.add(new Field("citation", keyValue[5], Store.YES, Index.NO));
+              if(StringUtils.isNotEmpty(keyValue[6])) doc.add(new Field("containedIn", keyValue[6], Store.YES, Index.ANALYZED));
+              if(StringUtils.isNotEmpty(keyValue[7])) doc.add(new Field("edition", keyValue[7], Store.YES, Index.ANALYZED));
+              if(StringUtils.isNotEmpty(keyValue[8])) doc.add(new Field("shortTitle", keyValue[8], Store.YES, Index.ANALYZED));
+              if(StringUtils.isNotEmpty(keyValue[9])) doc.add(new Field("publisher", keyValue[9], Store.YES, Index.ANALYZED));
+              //missing in new dumps
+              //if(keyValue[4]!=null) doc.add(new Field("publicationType", keyValue[4], Store.YES, Index.NO));
+              iw.addDocument(doc);
+          }
+      }
+      reader.close();
+      long finish = System.currentTimeMillis();
+      logger.info(i+" publications loaded from " + file+ ", Time taken "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+
 	}
 }

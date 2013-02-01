@@ -97,10 +97,7 @@ import org.gbif.ecat.parser.NameParser;
 import org.gbif.ecat.parser.UnparsableException;
 import org.springframework.stereotype.Component;
 
-import au.org.ala.checklist.lucene.CBCreateLuceneIndex;
-import au.org.ala.checklist.lucene.CBIndexSearch;
-import au.org.ala.checklist.lucene.HomonymException;
-import au.org.ala.checklist.lucene.SearchResultException;
+import au.org.ala.checklist.lucene.*;
 import au.org.ala.checklist.lucene.model.NameSearchResult;
 import au.org.ala.data.model.LinnaeanRankClassification;
 import au.org.ala.data.util.RankType;
@@ -930,7 +927,18 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// ", and rank: " + taxonRank);
 			lsid = cbIdxSearcher.searchForLSID(scientificName, classification,
 					RankType.getForName(taxonRank), useSoundEx);
-		} catch (SearchResultException e) {
+		}
+		catch(ExcludedNameException e){
+		    if(e.getNonExcludedName() != null)
+		        lsid = e.getNonExcludedName().getLsid();
+		    else
+		        lsid = e.getExcludedName().getLsid();
+		}
+		catch(ParentSynonymChildException e){
+		    //the child is the one we want
+		    lsid = e.getChildResult().getLsid();
+		}
+		catch (SearchResultException e) {
 			logger.warn("Checklist Bank lookup exception (" + scientificName
 					+ ") - " + e.getMessage() + e.getResults());
                         homonym = e instanceof HomonymException;
@@ -996,7 +1004,18 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		try {
 			lsid = cbIdxSearcher.searchForLSID(scientificName,
 					RankType.getForName(taxonRank));
-		} catch (SearchResultException e) {
+		} 
+    catch(ExcludedNameException e){
+        if(e.getNonExcludedName() != null)
+            lsid = e.getNonExcludedName().getLsid();
+        else
+            lsid = e.getExcludedName().getLsid();
+    }
+    catch(ParentSynonymChildException e){
+        //the child is the one we want
+        lsid = e.getChildResult().getLsid();
+    }
+		catch (SearchResultException e) {
 			logger.warn("Checklist Bank lookup exception - " + e.getMessage()
 					+ e.getResults());
                         homonym = e instanceof HomonymException;
@@ -1014,7 +1033,18 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         boolean homonym = false;
 		try {
 			lsid = cbIdxSearcher.searchForLSID(scientificName, useSoundEx);
-		} catch (SearchResultException e) {
+		}
+    catch(ExcludedNameException e){
+        if(e.getNonExcludedName() != null)
+            lsid = e.getNonExcludedName().getLsid();
+        else
+            lsid = e.getExcludedName().getLsid();
+    }
+    catch(ParentSynonymChildException e){
+        //the child is the one we want
+        lsid = e.getChildResult().getLsid();
+    }
+		catch (SearchResultException e) {
 			logger.warn("Checklist Bank lookup exception - " + e.getMessage()
 					+ e.getResults());
                         homonym = e instanceof HomonymException;
@@ -1039,6 +1069,16 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
             NameSearchResult nsr = findCBDataByName(scientificName, null, null);
             if(nsr != null)
                 lsid =  nsr.getLsid();
+        }
+        catch(ExcludedNameException e){
+            if(e.getNonExcludedName() != null)
+                lsid = e.getNonExcludedName().getLsid();
+            else
+                lsid = e.getExcludedName().getLsid();
+        }
+        catch(ParentSynonymChildException e){
+            //the child is the one we want
+            lsid = e.getChildResult().getLsid();
         }
         catch(Exception e){
             if(e instanceof HomonymException){
@@ -1069,8 +1109,23 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public NameSearchResult findCBDataByName(String scientificName,
 			LinnaeanRankClassification classification, String rank)
 			throws SearchResultException {
-		return cbIdxSearcher.searchForRecord(scientificName, classification,
-				RankType.getForName(rank));
+	  
+	    NameSearchResult nsr = null;
+  	  try{
+  	      nsr = cbIdxSearcher.searchForRecord(scientificName, classification,
+  	            RankType.getForName(rank));
+  	  }
+  	  catch(ExcludedNameException e){
+         if(e.getNonExcludedName() != null)
+             nsr = e.getNonExcludedName();
+         else
+             nsr = e.getExcludedName();
+     }
+     catch(ParentSynonymChildException e){
+           //the child is the one we want
+           nsr = e.getChildResult();
+     }
+  	 return nsr; 
 	}
 
     public void reportStats(java.io.OutputStream output, String prefix) throws Exception{
@@ -2005,6 +2060,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			    if(australian == null)
 			        australian = false;
 			}
+			Boolean isAustralian = australian == null ?isAustralian(guid):australian;
 			boolean isIconic = iconic == null ?isIconic(guid):iconic;
 			// does this taxon have occurrence records associated with it?
 			Integer count = scanner != null ? (Integer)scanner.getValue(ColumnType.OCCURRENCE_RECORDS_COUNT_COL.getColumnName(), 
@@ -2200,6 +2256,13 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 						//add the synonym author
 						synonymDoc.addField("author", synonym.getAuthor());
 						
+						//set the concept as australian if the "accepted" concept is australian
+						if (isAustralian != null && isAustralian) {
+		          synonymDoc.addField("australian_s", "recorded");
+		          synonymDoc.addField("aus_s", "yes");
+		        }
+						
+						
 						// add the synonym as a separate document
 						docsToAdd.add(synonymDoc);
 						// store the source
@@ -2284,7 +2347,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 				doc.addField("hasImage", hasImages);
 
-				Boolean isAustralian = australian == null ?isAustralian(guid):australian;
+			
 				if (isAustralian != null && isAustralian) {
 					doc.addField("australian_s", "recorded");
 					doc.addField("aus_s", "yes");
@@ -2517,6 +2580,12 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		return storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
 				ColumnType.PUBLICATION_REFERENCE_COL
 						.getColumnName(), guid, (List) references, false);
+	}
+	
+	public boolean addPublicationReference(String guid, Reference reference) throws Exception{
+	   return storeHelper.put(TC_TABLE, TC_COL_FAMILY,
+	        ColumnType.PUBLICATION_REFERENCE_COL.getColumnName(), guid,
+	        reference);
 	}
 
 	/**

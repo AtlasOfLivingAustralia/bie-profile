@@ -40,6 +40,7 @@ import org.scale7.cassandra.pelops.Cluster;
 import org.scale7.cassandra.pelops.Mutator;
 import org.scale7.cassandra.pelops.OperandPolicy;
 import org.scale7.cassandra.pelops.Pelops;
+import org.scale7.cassandra.pelops.RowDeletor;
 import org.scale7.cassandra.pelops.Selector;
 import org.scale7.cassandra.pelops.pool.CommonsBackedPool;
 import org.springframework.stereotype.Component;
@@ -90,7 +91,7 @@ public class CassandraPelopsHelper implements StoreHelper  {
 	    logger.info("Connecting to host: " + host);
 		Pelops.addPool(pool, new Cluster(host,port,thriftTimeout,false), keySpace,policy, operandPolicy);
 
-	    logger.info("Initialising Pelops connection pool to " +host + " with min connections " + minPool + " target connections: " + targetConnections + " max connections " + maxPool);
+	    logger.info("Initialising Pelops connection pool to " +host + " with min connections " + minPool + " target connections: " + targetConnections + " max connections " + maxPool + " thriftTimeout " + thriftTimeout);
 	}
 	
 	public void shutdown(){
@@ -693,6 +694,11 @@ public class CassandraPelopsHelper implements StoreHelper  {
         return true;
     }
     
+    public boolean deleteRecord(String columnFamily, String guid) throws Exception {
+        RowDeletor d = Pelops.createRowDeletor(pool);
+        d.deleteRow(columnFamily, guid, ConsistencyLevel.ONE);
+        return true;
+    }
 
 
     public static void main(String[] args) throws Exception {
@@ -777,7 +783,16 @@ public class CassandraPelopsHelper implements StoreHelper  {
 		this.host = host;
 	}
 
+	
+	
 	/**
+   * @return the host
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
 	 * @param pool the pool to set
 	 */
 	public void setPool(String pool) {
@@ -812,6 +827,22 @@ public class CassandraPelopsHelper implements StoreHelper  {
      */
     public void setMaxPool(int maxPool) {
         this.maxPool = maxPool;
+    }
+    
+    
+
+    /**
+     * @return the thriftTimeout
+     */
+    public int getThriftTimeout() {
+      return thriftTimeout;
+    }
+
+    /**
+     * @param thriftTimeout the thriftTimeout to set
+     */
+    public void setThriftTimeout(int thriftTimeout) {
+      this.thriftTimeout = thriftTimeout;
     }
 
     /**

@@ -777,6 +777,8 @@ public interface TaxonConceptDao {
      * @throws Exception
      */
     boolean addPublicationReference(String guid, List<Reference> reference) throws Exception;
+    
+    boolean addPublicationReference(String guid, Reference reference) throws Exception;
 
 	/**
 	 * Add a publication to the profile.

@@ -48,6 +48,8 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	protected boolean isPreferred=false;//stores whether or not the concept is preferred
 	protected boolean isDraft=false;
 	protected boolean isProtologue=false;
+	/** Indicates that this concept is excluded.  These are concepts that are usually excluded from an Australian Context. */
+	protected boolean isExcluded=false;
 	
 
 	/**
@@ -55,6 +57,11 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	 */
 	@Override
 	public int compareTo(TaxonConcept o) {
+	  //taxonConcept always takes precendence over a synonym
+	  
+	  if(o instanceof SynonymConcept)
+	      return -1;
+	  
 		//check the infosources
 	    if(o.isPreferred != isPreferred){
 	        if(isPreferred)
@@ -390,6 +397,22 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
      */
     public void setRawRankString(String rawRankString) {
         this.rawRankString = rawRankString;
+    }
+    
+    
+
+    /**
+     * @return the isExcluded
+     */
+    public boolean getIsExcluded() {
+      return isExcluded;
+    }
+
+    /**
+     * @param isExcluded the isExcluded to set
+     */
+    public void setIsExcluded(boolean isExcluded) {
+      this.isExcluded = isExcluded;
     }
 
     /**

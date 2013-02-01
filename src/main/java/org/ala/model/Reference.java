@@ -35,6 +35,7 @@ public class Reference extends AttributableObject implements Comparable<Referenc
 	protected String volume;
 	protected String scientificName;
 	protected String year;
+	protected String containedIn;
 	protected List<String> pageIdentifiers = new ArrayList<String>();
 
 	/**
@@ -206,4 +207,19 @@ public class Reference extends AttributableObject implements Comparable<Referenc
 	public void setVolume(String volume) {
 		this.volume = volume;
 	}
+
+  /**
+   * @return the containedIn
+   */
+  public String getContainedIn() {
+      return containedIn;
+  }
+
+  /**
+   * @param containedIn the containedIn to set
+   */
+  public void setContainedIn(String containedIn) {
+      this.containedIn = containedIn;
+  }
+	
 }

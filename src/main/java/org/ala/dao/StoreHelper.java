@@ -206,4 +206,13 @@ public interface StoreHelper {
      * Delete the supplied column(s)
      */
     boolean deleteColumns(String columnFamily, String guid, String... columns) throws Exception;
+    
+    /**
+     * Deletes the supplied record from the supplied table.
+     * @param columnFamily
+     * @param guid
+     * @return
+     * @throws Exception
+     */
+    boolean deleteRecord(String columnFamily, String guid) throws Exception;
 }

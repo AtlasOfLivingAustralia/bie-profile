@@ -62,22 +62,23 @@ public class ALANamesLoader {
     protected TaxonConceptDao taxonConceptDao;
     
     private static final String IDENTIFIERS_FILE = "/data/bie-staging/ala-names/identifiers.txt";
-    private static final String COL_IDENTIFIERS_FILE = "/data/bie-staging/ala-names/col_identifiers.txt";
+    //private static final String COL_IDENTIFIERS_FILE = "/data/bie-staging/ala-names/col_identifiers.txt";
     
     private static final String AFD_COMMON_NAMES = "/data/bie-staging/anbg/AFD-common-names.csv";
     private static final String APNI_COMMON_NAMES = "/data/bie-staging/anbg/APNI-common-names.csv";
-    public static  String ALA_NAMES_FILE = "/data/bie-staging/ala-names/ala_concepts_dump.txt";
+    public static  String ALA_NAMES_FILE = "/data/bie-staging/ala-names/ala_accepted_concepts_dump.txt";
+    public static final String ALA_SYNONYMS_FILE ="/data/bie-staging/ala-names/ala_synonyms_dump.txt";
     
     public static final String COL_HOME = "http://www.catalogueoflife.org/";
     public static final String APNI_HOME = "http://www.anbg.gov.au/apni/";
     public static final String APC_HOME = "http://www.anbg.gov.au/chah/apc/";
     public static final String AFD_HOME = "http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/home";
-    
+    public static final String CAAB_HOME ="http://www.marine.csiro.au/caab/";
     
   //lucene indexes
     private static final String NAMES_LOADING_IDX_DIR= "/data/lucene/alanames/tc";
     private static final String NAMES_LOADING_ID_IDX_DIR= "/data/lucene/alanames/id";
-    protected IndexSearcher tcIdxSearcher;
+    //protected IndexSearcher tcIdxSearcher;
     protected IndexSearcher identifierIdxSearcher;
 
     public static void main(String[] args) throws Exception {
@@ -114,20 +115,21 @@ public class ALANamesLoader {
             //IDENTIFIERS are not being loaded separately because they will be loaded as taxonConcept "sameAs" in during the ANBG loading phase.
             //logger.info("Loading identifiers....");
             //l.loadIdentifiers();
+                //-update /data/names/Version2011/ala_concepts_dump_missing.txt
         }
         
         if(args.length == 0 || "-sci".equals(args[0]) || "-id".equals(args[0])){
             logger.info("Loading identifiers....");
             l.loadIdentifiers(IDENTIFIERS_FILE, 1,2);
-            l.loadIdentifiers(COL_IDENTIFIERS_FILE, 0, 1);
+            //l.loadIdentifiers(COL_IDENTIFIERS_FILE, 0, 1);
         }
 
         if (args.length == 0 || "-common".equals(args[0])) {
             logger.info("Loading afd common names....");
-            l.loadCommonNames(AFD_COMMON_NAMES);
+            l.loadCommonNames(AFD_COMMON_NAMES,'\t');
 
             logger.info("Loading apni common names....");
-            l.loadCommonNames(APNI_COMMON_NAMES);
+            l.loadCommonNames(APNI_COMMON_NAMES,',');
         }
 
         long finish = System.currentTimeMillis();
@@ -189,7 +191,7 @@ public class ALANamesLoader {
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
-        CSVReader tr = new CSVReader(new FileReader(ALA_NAMES_FILE), '\t', '"', '\\');
+        CSVReader tr = new CSVReader(new FileReader(ALA_SYNONYMS_FILE), '\t', '"', '\\');
 //      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/checklistbank/cb_name_usages.txt"), '\t', '"', '\\');
         String[] cols = tr.readNext(); //first line contains headers - ignore
         int numberRead = 0;
@@ -197,24 +199,25 @@ public class ALANamesLoader {
         long start = System.currentTimeMillis();
         while((cols=tr.readNext())!=null){
             numberRead++;
-            if(cols.length==36){
+            if(cols.length==11){
                 String identifier = cols[0];
-                String parentNameUsageID = cols[1];
-                final String guid = cols[2] != null ?cols[2]: identifier; //TaxonID
-                String nameLsid = cols[5];
-                String nameString =  cols[6];
+                //String parentNameUsageID = cols[1];
+                final String guid = cols[1] != null ?cols[1]: identifier; //TaxonID
+                String nameLsid = cols[2];
+                String nameString =  cols[5];
                 
-                String scientificNameAuthorship = StringUtils.trimToNull(cols[10]);
-                String authorYear = StringUtils.trimToNull(cols[11]);
+                String scientificNameAuthorship = StringUtils.trimToNull(cols[6]);
+                String year = StringUtils.trimToNull(cols[7]);
+                //String authorYear = StringUtils.trimToNull(cols[11]);
                 Integer rankID = null;
-                if(StringUtils.isNotEmpty(cols[12])) rankID = NumberUtils.createInteger(cols[12]);
-                String rankString =  cols[13];
-                String acceptedGuid =  cols[4];
-                String dataset = cols[30];
+                //if(StringUtils.isNotEmpty(cols[12])) rankID = NumberUtils.createInteger(cols[12]);
+                //String rankString =  cols[13];
+                String acceptedGuid =  cols[3];
+                
                 Integer synonymType = null;
-                if(StringUtils.isNotEmpty(cols[32])) synonymType = NumberUtils.createInteger(cols[32]);
-                String synonymRelationship = cols[33];
-                String synonymDescription = cols[34];
+                if(StringUtils.isNotEmpty(cols[9])) synonymType = NumberUtils.createInteger(cols[9]);
+                String synonymRelationship = cols[10];
+                String synonymDescription = cols[11];
                 
                
                 
@@ -240,32 +243,29 @@ public class ALANamesLoader {
                             tc = (SynonymConcept)existing;
                     }
                     tc.setId(Integer.parseInt(identifier));
-                    tc.setGuid(guid);
-                    tc.setParentId(parentNameUsageID);
+                    tc.setGuid(guid);                    
                     tc.setNameString(nameString);
                     tc.setNameGuid(nameLsid);
                     tc.setAuthor(scientificNameAuthorship);
-                    tc.setAuthorYear(authorYear);
-                    tc.setRankString(rankString);
+                    tc.setAuthorYear(year);
                     tc.setRankID(rankID);
                     tc.setType(synonymType);
                     tc.setRelationship(synonymRelationship);
                     tc.setDescription(synonymDescription);
                     tc.setIsPreferred(true);
                     
-                    
-                    if("APNI".equalsIgnoreCase(dataset)){
+                    if(guid.startsWith("urn:lsid:biodiversity.org.au:apni")){
                         tc.setInfoSourceId(Integer.toString(apc.getId()));
-                        tc.setInfoSourceName(apc.getName());
+                        tc.setInfoSourceName(apc.getName());                        
                         if(isLSID(guid)){
                             String internalId = guid.substring(guid.lastIndexOf(":")+1);
                             tc.setInfoSourceURL("http://biodiversity.org.au/apni.taxon/"+internalId);
                         }                     
-                    } else if("COL".equalsIgnoreCase(dataset)){
+                    } else if(acceptedGuid.startsWith("urn:lsid:catalogueoflife.org:taxon")){
                         tc.setInfoSourceId(Integer.toString(col.getId()));
                         tc.setInfoSourceName(col.getName());
-                        tc.setInfoSourceURL("http://www.catalogueoflife.org");// can't link to synonym as id's in CoL are not final/details/species/"+guid);
-                    } else if("AFD".equalsIgnoreCase(dataset)){
+                        tc.setInfoSourceURL("http://www.catalogueoflife.org/annual-checklist/2012/details/"+guid);// can't link to synonym as id's in CoL are not final/details/species/"+guid);
+                    } else if(acceptedGuid.startsWith("urn:lsid:biodiversity.org.au:afd")){
                         tc.setInfoSourceId(Integer.toString(afd.getId()));
                         tc.setInfoSourceName(afd.getName());
                         
@@ -304,6 +304,7 @@ public class ALANamesLoader {
         InfoSource apc = infoSourceDAO.getByUri(APC_HOME);
         InfoSource apni = infoSourceDAO.getByUri(APNI_HOME);
         InfoSource col = infoSourceDAO.getByUri(COL_HOME);
+        InfoSource caab = infoSourceDAO.getByUri(CAAB_HOME);
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
@@ -312,10 +313,11 @@ public class ALANamesLoader {
         
         String[] cols = tr.readNext(); //first line contains headers - ignore
         int lineNumber = 1;
+        
         while((cols=tr.readNext())!=null){
             try {
-                if(cols.length==36){
-                    
+                if(cols.length==38){
+                    boolean isAustralian =false;
                     String identifier = cols[0];
                     String parentNameUsageID = cols[1];
                     String guid = cols[2]; //TaxonID
@@ -329,6 +331,8 @@ public class ALANamesLoader {
                     String genusOrHigher = cols[7];
                     String specificEpithet = cols[8];
                     String infraspecificEpithet = cols[9];
+                    String excluded = cols[36];
+                    String colId = cols[37];
                     
                     String scientificNameAuthorship = StringUtils.trimToNull(cols[10]);
                     String authorYear = StringUtils.trimToNull(cols[11]);
@@ -397,45 +401,56 @@ public class ALANamesLoader {
                         tc.setIsPreferred(true);
                         tc.setNameGuid(nameLsid);
                         tc.setRawRankString(rawRank);
+                        tc.setIsExcluded("T".equals(excluded) || "Y".equals(excluded));
                         
                         //set the parent source  - indicates how the parent for the term was identified.
-                        if(StringUtils.isNotEmpty(parentSrc)){
-                            String parentSource =null;
-                            int psrc = NumberUtils.createInteger(parentSrc);
-                            switch(psrc){
-                            case 50:parentSource = "Direct NSL parent"; break;
-                            case 60: parentSource ="Direct NSL parent in same Taxon Name";break;
-                            case 70: parentSource ="Another NSL concept with the same Taxon Name";break;
-                            case 80: parentSource ="Parent calculated from genus and specific epithet";break;
-                            case 90: parentSource = "CoL";break;
-                              
-                            }
-                            tc.setParentSrc(parentSource);
-                            tc.setParentSrcId(psrc);
-                        }
+                        //parents are not based on this anymore...
+//                        if(StringUtils.isNotEmpty(parentSrc)){
+//                            String parentSource =null;
+//                            int psrc = NumberUtils.createInteger(parentSrc);
+//                            switch(psrc){
+//                            case 50:parentSource = "Direct NSL parent"; break;
+//                            case 60: parentSource ="Direct NSL parent in same Taxon Name";break;
+//                            case 70: parentSource ="Another NSL concept with the same Taxon Name";break;
+//                            case 80: parentSource ="Parent calculated from genus and specific epithet";break;
+//                            case 90: parentSource = "CoL";break;
+//                              
+//                            }
+//                            tc.setParentSrc(parentSource);
+//                            tc.setParentSrcId(psrc);
+//                        }
                         
                         if("APC".equalsIgnoreCase(dataset)){
                             tc.setInfoSourceId(Integer.toString(apc.getId()));
-                            tc.setInfoSourceName(apc.getName());
+                            tc.setInfoSourceName(apc.getName()); 
+                            isAustralian =true;
                             if(isLSID(guid)){
                                 String internalId = guid.substring(guid.lastIndexOf(":")+1);
                                 tc.setInfoSourceURL("http://biodiversity.org.au/apni.taxon/"+internalId);
                             }
                         } else if("APNI".equalsIgnoreCase(dataset)){
                             tc.setInfoSourceId(Integer.toString(apni.getId()));
-                            tc.setInfoSourceName(apni.getName());
+                            tc.setInfoSourceName(apni.getName());                            
                             if(isLSID(guid)){
                                 String internalId = guid.substring(guid.lastIndexOf(":")+1);
                                 tc.setInfoSourceURL("http://biodiversity.org.au/apni.taxon/"+internalId);
                             }
+                        } else if("CAAB".equalsIgnoreCase(dataset)){
+                            tc.setInfoSourceId(Integer.toString(caab.getId()));
+                            tc.setInfoSourceName(caab.getName());
+                            isAustralian=true;
+                            if(!guid.startsWith("CAAB")){
+                                tc.setInfoSourceURL("http://www.marine.csiro.au/caabsearch/caab_search.caab_report?spcode=" + guid);
+                            }
                         } else if("COL".equalsIgnoreCase(dataset)){
                             tc.setInfoSourceId(Integer.toString(col.getId()));
                             tc.setInfoSourceName(col.getName());
-                            tc.setInfoSourceURL(col.getWebsiteUrl());
+                            tc.setInfoSourceURL("http://www.catalogueoflife.org/annual-checklist/2012/details/species/id/");
                         } else if("AFD".equalsIgnoreCase(dataset)){
                             tc.setInfoSourceId(Integer.toString(afd.getId()));
                             tc.setInfoSourceName(afd.getName());
                             tc.setInfoSourceURL(afd.getWebsiteUrl());
+                            isAustralian = true;
 //                          if(isLSID(guid)){
 //                              String internalId = guid.substring(guid.lastIndexOf(":")+1);
                             TaxonName tn = taxonConceptDao.getTaxonNameFor(guid);
@@ -492,6 +507,9 @@ public class ALANamesLoader {
                         
                         //add the link identifier for the taxon
                         lil.updateLinkIdentifier(guid,scientificName);
+                        //add the australian if necessary
+                        if(isAustralian)
+                            taxonConceptDao.setIsAustralian(guid);
                         
                     } else {
                         if(StringUtils.isEmpty(acceptedGuid)){
@@ -589,29 +607,29 @@ public class ALANamesLoader {
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/ala-names/ala_concepts_dump.txt", true);
-      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/ala-names/ala_concepts_dump.txt"), '\t', '"', '\\');
+      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/ala-names/ala_synonyms_dump.txt"), '\t', '"', '\\');
         String[] cols = tr.readNext(); //first line contains headers - ignore
         
         while((cols=tr.readNext())!=null){
             
-            if(cols.length==36){
+            if(cols.length==12){
             
                 String identifier = cols[0];
-                String parentNameUsageID = cols[1];
-                String guid = cols[2]; //TaxonID
-                String acceptedGuid = cols[4]; //The accepted concept.
+                
+                String guid = cols[1]; //TaxonID
+                String acceptedGuid = cols[3]; //The accepted concept.
                 
                 Document doc = new Document();
                 doc.add(new Field("id", cols[0], Store.YES, Index.ANALYZED));
-                if(StringUtils.isNotEmpty(parentNameUsageID)){
-                    doc.add(new Field("parentId", parentNameUsageID, Store.YES, Index.ANALYZED));
-                }
+//                if(StringUtils.isNotEmpty(parentNameUsageID)){
+//                    doc.add(new Field("parentId", parentNameUsageID, Store.YES, Index.ANALYZED));
+//                }
                 if(StringUtils.isNotEmpty(guid)){
                     doc.add(new Field("guid", guid, Store.YES, Index.NOT_ANALYZED));
                 } else {
                     doc.add(new Field("guid", identifier, Store.YES, Index.NOT_ANALYZED));
                 }
-                doc.add(new Field("nameString", cols[6], Store.YES, Index.ANALYZED));
+                doc.add(new Field("nameString", cols[5], Store.YES, Index.ANALYZED));
                 if(StringUtils.isNotEmpty(acceptedGuid)){
                     doc.add(new Field("acceptedGuid", acceptedGuid, Store.YES, Index.ANALYZED));
                 }
@@ -653,7 +671,7 @@ public class ALANamesLoader {
      * @throws Exception
      */
     public void initIndexes() throws Exception {
-        this.tcIdxSearcher = new IndexSearcher(FSDirectory.open(new File(NAMES_LOADING_IDX_DIR)), true);
+        //this.tcIdxSearcher = new IndexSearcher(FSDirectory.open(new File(NAMES_LOADING_IDX_DIR)), true);
         this.identifierIdxSearcher = new IndexSearcher(FSDirectory.open(new File(NAMES_LOADING_ID_IDX_DIR)), true);
     }
 
@@ -668,7 +686,7 @@ private String getPreferredGuid(String taxonConceptGuid) throws Exception {
         return taxonConceptGuid;
     }
 
-    public void loadCommonNames(String dataFile) throws Exception {
+    public void loadCommonNames(String dataFile,char sep) throws Exception {
         
         InfoSource afd = infoSourceDAO.getByUri(AFD_HOME);
         InfoSource apni = infoSourceDAO.getByUri(APNI_HOME);
@@ -680,7 +698,7 @@ private String getPreferredGuid(String taxonConceptGuid) throws Exception {
         // add the taxon concept regions
         //NC A TabReader can not be used because quoted fields can contain a comma
         //TabReader tr = new TabReader(dataFile, true, ',');
-        CSVReader tr = new CSVReader(new FileReader(dataFile), '\t', '"',1);
+        CSVReader tr = new CSVReader(new FileReader(dataFile), sep, '"','\\',1);
         String[] values = null;
         Pattern p = Pattern.compile(",");
         int namesAdded = 0;
