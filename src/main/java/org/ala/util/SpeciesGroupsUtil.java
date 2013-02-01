@@ -108,26 +108,5 @@ public class SpeciesGroupsUtil {
         public void setTaxa( List<Map<String,String>> taxa) {
             this.taxa = taxa;
         }
-        //
-//        public List<SubgroupElement> getTaxa() {
-//            return taxa;
-//        }
-//
-//        public void setTaxa(List<SubgroupElement> taxa) {
-//            this.taxa = taxa;
-//        }
     }
-//
-//    public class SubgroupElement {
-//        public String name;
-//        public String common;
-//
-//        public String getName() {
-//            return name;
-//        }
-//
-//        public void setName(String name) {
-//            this.name = name;
-//        }
-//    }
 }

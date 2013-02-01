@@ -128,7 +128,7 @@ public class CSVHarvester implements Harvester {
 	        	csvIS = new FileInputStream(siteMapUrl);
 	        }
             
-            Reader reader = new InputStreamReader(csvIS);
+            Reader reader = new InputStreamReader(csvIS, "UTF-8");
             
 			CSVReader r = new CSVReader(reader,'\t','"');
 			String[] fields = r.readNext();

@@ -290,12 +290,14 @@ public class LocalCSVHarvester implements Harvester {
         if(filePath.startsWith("http://")){
             HttpClient c = new HttpClient();
             GetMethod g = new GetMethod(filePath);
+            g.setRequestHeader("Accept-Charset","utf-8");
+            g.setRequestHeader("Accept","text/plain");
             int status = c.executeMethod(g);
             reader = new InputStreamReader(g.getResponseBodyAsStream(), "UTF-8");
         } else {
             reader = new InputStreamReader(new FileInputStream(filePath), "UTF-8");
         }
-        return  new CSVReader(reader,',','"');
+        return new CSVReader(reader,',','"');
     }
 
     private static int getIdxForField(String[] fields, String header) {
