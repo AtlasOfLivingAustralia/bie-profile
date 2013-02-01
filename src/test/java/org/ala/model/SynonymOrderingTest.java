@@ -23,7 +23,7 @@ public class SynonymOrderingTest extends TestCase{
     
     public void testOrder(){
         SynonymConcept sc1 = createSynonym("Pachyseris gemmae", "Nemenzo, 1955", null);
-        SynonymConcept sc2 = createSynonym("Pachyseris carinata", "Brüggeman, 1879","1879");
+        SynonymConcept sc2 = createSynonym("Pachyseris carinata", "Bruggeman, 1879","1879");
         SynonymConcept sc3 = createSynonym("Agaricia rugosa", "Lamarck, 1816", "1816");
         SynonymConcept sc4 = createSynonym("Pachyseris torresiana","Vaughan, 1918",null);
         SynonymConcept sc5 = createSynonym("Pachyseris valenciennesi", "Milne-Edwards & Haime", "1918"); //this is the incorrect year for this name just using it to test alphabetical order after year
