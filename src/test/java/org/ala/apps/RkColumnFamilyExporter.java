@@ -89,9 +89,10 @@ public class RkColumnFamilyExporter {
 		byte[] guidAsBytes = null;		
 		while ((guidAsBytes = scanner.getNextGuid())!=null) {			
 			String guid = new String(guidAsBytes);
+			String taxonGuid = guid.substring(0,guid.indexOf("|"));
 			String sciName = "";
 			try{
-				ExtendedTaxonConceptDTO etc = taxonConceptDao.getExtendedTaxonConceptByGuid(guid, false);
+				ExtendedTaxonConceptDTO etc = taxonConceptDao.getExtendedTaxonConceptByGuid(taxonGuid, false);
 				if(etc != null && etc.getTaxonConcept() != null){
 					sciName = etc.getTaxonConcept().getNameString();
 				}
@@ -114,7 +115,7 @@ public class RkColumnFamilyExporter {
 							String key = itr.next();	
 							List rankingList = columnList.get(key);
 							csvOut.write((guid + "; " + sciName + "; "  + superColumnName + "; " + key + "; " + mapper.writeValueAsString(rankingList) + "\n").getBytes());
-							logger.info("Indexed records: "+j+", current guid: "+guid);							
+							logger.debug("Indexed records: "+j+", current guid: "+guid);							
 						}
 					}
 					catch(Exception ex){
