@@ -142,13 +142,13 @@ public class IrmngDataLoader {
                         taxonConceptDao.addExtantStatus(guid, extantStatusList);
                     }
                     if(StringUtils.isNotBlank(habitatCode)){
-                        List<Habitat> habitatList = new ArrayList<Habitat>();
+                        //List<Habitat> habitatList = new ArrayList<Habitat>();
                         Habitat h = new Habitat(habitatCode);
                         h.setInfoSourceId(Integer.toString(infosource.getId()));
                         h.setInfoSourceName(infosource.getName());
                         h.setInfoSourceURL(baseUrl+identifier);
-                        habitatList.add(h);
-                        taxonConceptDao.addHabitat(guid, habitatList, true);
+                        //habitatList.add(h);
+                        taxonConceptDao.addHabitat(guid, h);
                     }
                     
                     logger.trace("Adding guid=" + guid + " SciName=" + currentScientificName + " Extant=" + extantCode + " Habitat=" + habitatCode);
