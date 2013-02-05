@@ -44,7 +44,11 @@ public abstract class GenericCSVLoader {
 
     public abstract void processLine(Map resourceMap, String[] row, String[] header);
 
-    public void load(String dataResource) {
+    public void load(String dataResource){
+        load(dataResource,0);
+    }
+    
+    public void load(String dataResource, int skipLine) {
 
         System.out.println("Starting to load...");
         Map<String, Object> colMap = getDetailsFromCollectory(dataResource);
@@ -54,9 +58,14 @@ public abstract class GenericCSVLoader {
             String fileUrl = (String) connParams.get("url");
             System.out.println("using file: " + fileUrl);
             char separator = ((String) connParams.get("csv_delimiter")).charAt(0);
-            InputStream csvData = WebUtils.getUrlContent(fileUrl);
+            InputStream csvData = WebUtils.getUrlContent(fileUrl.replaceAll(" ", "%20"));
             CSVReader reader = new CSVReader(new InputStreamReader(csvData), separator);
             reindexOut = FileUtils.openOutputStream(new File(reindexFile));
+            int i =0;
+            while (i<skipLine){
+                i++;
+                reader.readNext();
+            }
             String[] header = reader.readNext();
             System.out.println("The header " + header[0]);
             //to do map the header row to valid DWC field names.

@@ -30,6 +30,8 @@ public class CategoryCSVLoader extends GenericCSVLoader {
         GenericCSVLoader loader = (GenericCSVLoader) context.getBean("categoryCSVLoader");
         if(args.length == 1){
             loader.load(args[0]);
+        } else if(args.length == 2){
+            loader.load(args[0], Integer.parseInt(args[1]));
         } else {
             System.out.println("Please supply data resource UID");
         }
