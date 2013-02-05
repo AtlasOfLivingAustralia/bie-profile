@@ -55,14 +55,11 @@ public class RawFileHarvester implements Harvester {
 	protected String defaultMimeType = MimeType.HTML.getMimeType();
 	private Integer infoSourceId = null;
 	private String rootDirectory = File.separator+"data"+File.separator+"bie";
-	
 	private static final String URL_PATTERN = "\\w\\d:#@%/;$()~_?\\+-=\\.\\&";
-
-	private final List<String> TARGET_FILE_NAMES; 
-		
+	private final List<String> TARGET_FILE_NAMES;
 
 	/**
-	 * Contructor to set repository
+	 * Constructor to set repository
 	 *
 	 * @param repository
 	 */
@@ -94,11 +91,7 @@ public class RawFileHarvester implements Harvester {
 		this.infoSourceId = infoSId;
 
 		try {
-			String infoSourceDirLoc = null;
-			//        	String mimeType = null;
-			//        	String classPath = this.getClass().getClassLoader().getResource("").toString();
-			//        	System.out.println("CCCCC" + classPath);
-			infoSourceDirLoc = rootDirectory + File.separator + String.valueOf(this.infoSourceId);
+			String infoSourceDirLoc = rootDirectory + File.separator + String.valueOf(this.infoSourceId);
 			logger.info("File location: "+infoSourceDirLoc);
 
 			File infoSourceDir = new File(infoSourceDirLoc);
@@ -107,7 +100,6 @@ public class RawFileHarvester implements Harvester {
 
 			for (File rawFile : rawFiles) {
 				try {
-//					System.out.println(rawFile.getAbsolutePath());
 					harvestDoc(infoSourceId, rawFile);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -118,10 +110,6 @@ public class RawFileHarvester implements Harvester {
 			logger.error("start() error: "+e.getMessage(), e);
 			e.printStackTrace();
 		}
-		//		logger.info("CSV Harvester completed for infosource: "+infosourceId
-		//				+". Request made: "+urlsHarvested
-		//				+", Successfully processed: "+urlsProcessed
-		//				+", Urls skipped: "+urlsSkipped);
 	}
 
 
@@ -154,8 +142,6 @@ public class RawFileHarvester implements Harvester {
 	 * Harvest a document and update the repository.
 	 * 
 	 * @param infosourceId
-	 * @param url
-	 * @param mimeType
 	 * @throws Exception
 	 */
 	private void harvestDoc(int infosourceId, File rawFile) throws Exception {
@@ -168,12 +154,10 @@ public class RawFileHarvester implements Harvester {
 		String contentAsString = FileUtils.readFileToString(rawFile);
 		if(contentAsString!=null){
 			url = getGuidFromRawFile(contentAsString);
-			
 			content = contentAsString.getBytes();
 		} else {
 			logger.info("NULL " + path);
 		}
-		//		}
 
 		if(content!=null){
 			//map the document 
@@ -189,7 +173,6 @@ public class RawFileHarvester implements Harvester {
 			//store the results
 			for(ParsedDocument pd: pds){
 				repository.storeDocument(infosourceId, pd);
-//				debugParsedDoc(pd);
 			}
 		} else {
 			logger.warn("Unable to process url: "+url);

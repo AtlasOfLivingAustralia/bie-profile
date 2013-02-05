@@ -22,34 +22,28 @@ public class AusmothsDocumentMapper extends XMLDocumentMapper {
 
 		addDCMapping("//title/text()", subject, Predicates.DC_IDENTIFIER);
 
-		addTripleMapping("//title/text()", 
-				subject, Predicates.SCIENTIFIC_NAME);
+//		addTripleMapping("//title/text()",
+//				subject, Predicates.SCIENTIFIC_NAME);
 		
 		addTripleMapping("//img[@id=\"IFid1\"]/attribute::src", 
 				subject, Predicates.IMAGE_PAGE_URL);
 		
-		addTripleMapping("//a[@class=\"BreadCrumb-2\"]/text()", 
-				subject, Predicates.FAMILY);
+//		addTripleMapping("//a[@class=\"BreadCrumb-2\"]/text()",
+//				subject, Predicates.FAMILY);
 
 	}
 	
 	@Override
 	public List<ParsedDocument> map(String uri, byte[] content)
 		throws Exception {
-		
 		String documentStr = new String(content);
-
-		documentStr = documentStr.replaceAll("// ]]>", "");;		
-		
-		//System.out.println(documentStr);
-		
+		documentStr = documentStr.replaceAll("// ]]>", "");;
 		content = documentStr.getBytes();
-		
 		return super.map(uri, content);
 	}
 	
 	/**
-	 * @see ala.documentmapper.XMLDocumentMapper#extractProperties(org.w3c.dom.Document)
+	 * @see ala.documentmapper.XMLDocumentMapper
 	 */
 	@Override
 	protected void extractProperties(List<ParsedDocument> pds, Document xmlDocument) throws Exception {
@@ -74,12 +68,12 @@ public class AusmothsDocumentMapper extends XMLDocumentMapper {
 				if(! "".equals(newObj)) {
 					triple.setObject(newObj);
 				} 
-			} else if(predicate.endsWith("hasScientificName")) {
-				String currentObj = (String) triple.getObject();
-				String newObj = currentObj.split("\\(")[0].trim();
-				if(! "".equals(newObj)) {
-					triple.setObject(newObj);
-				} 
+//			} else if(predicate.endsWith("hasScientificName")) {
+//				String currentObj = (String) triple.getObject();
+//				String newObj = currentObj.split("\\(")[0].trim();
+//				if(! "".equals(newObj)) {
+//					triple.setObject(newObj);
+//				}
 			} else if(predicate.endsWith("hasImagePageUrl")) {
 				String imageUrl = (String) triple.getObject();
 				imageUrl = source + imageUrl;
@@ -88,6 +82,7 @@ public class AusmothsDocumentMapper extends XMLDocumentMapper {
 				//retrieve the image and create new parsed document
 				ParsedDocument imageDoc = MappingUtils.retrieveImageDocument(pd, imageUrl);
 				if(imageDoc!=null){
+                    imageDoc.getTriples().add(new Triple(subject, Predicates.ORDER.toString(), "Lepidoptera"));
 					pds.add(imageDoc);
 				}
 
@@ -95,7 +90,7 @@ public class AusmothsDocumentMapper extends XMLDocumentMapper {
 			} 
 		}
 		
-		triples.add(new Triple(subject, Predicates.KINGDOM.toString(), "Animalia"));
+		triples.add(new Triple(subject, Predicates.ORDER.toString(), "Lepidoptera"));
 	
 		//remove the triple from the triples
 		for (Triple tri : tmpTriple) {

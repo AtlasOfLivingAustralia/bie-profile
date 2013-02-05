@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import org.ala.documentmapper.DocumentMapper;
 import org.ala.model.Document;
 import org.ala.repository.ParsedDocument;
+import org.ala.repository.Predicates;
 import org.ala.repository.Repository;
 import org.ala.repository.Triple;
 import org.ala.util.MimeType;
@@ -133,6 +134,9 @@ public class CSVHarvester implements Harvester {
 			CSVReader r = new CSVReader(reader,'\t','"');
 			String[] fields = r.readNext();
 			int idx = getIdxForField(fields, "URI");
+			int scientificNameIdx = getIdxForField(fields, "scientificName");
+            int familyIdx = getIdxForField(fields, "family");
+
 			
 			if(idx<0){
 				logger.error("Unable to locate URI in site map.");
@@ -143,9 +147,16 @@ public class CSVHarvester implements Harvester {
 				
 				// allow a gap between requests. This will stop us bombarding smaller sites.
 				Thread.sleep(timeGap);
-				
+
+                Map<String,String> properties = new HashMap<String,String>();
 				String url = fields[idx];
-				
+                if(scientificNameIdx>=0){
+                    properties.put("scientificName", fields[scientificNameIdx]);
+                }
+                if(familyIdx>=0){
+                    properties.put("family", fields[familyIdx]);
+                }
+
                 try {
                 	if(System.getProperty("skip.harvested")!=null){
                 		//only harvest if not already in the system
@@ -153,7 +164,7 @@ public class CSVHarvester implements Harvester {
                 		if(doc==null){
                 			logger.debug("Harvesting ("+url+") ");
     	                	urlsHarvested++;
-    						harvestDoc(infosourceId,url, mimeType);
+    						harvestDoc(infosourceId,url, mimeType, properties);
                 		} else {
                 			logger.debug("Skipping ("+url+") ");
                 			urlsSkipped++;
@@ -161,7 +172,7 @@ public class CSVHarvester implements Harvester {
                 	} else {
                 		logger.debug("Harvesting URL: "+url);
 	                	urlsHarvested++;
-						harvestDoc(infosourceId,url, mimeType);
+						harvestDoc(infosourceId,url, mimeType, properties);
                 	}
 					urlsProcessed++;
                 } catch (Exception ex) {
@@ -187,7 +198,7 @@ public class CSVHarvester implements Harvester {
 	 * @param mimeType
 	 * @throws Exception
 	 */
-	private void harvestDoc(int infosourceId, String url, String mimeType) throws Exception {
+	private void harvestDoc(int infosourceId, String url, String mimeType, Map<String, String> properties) throws Exception {
 		
 		byte[] content = null;
 		if (mimeType.equals(MimeType.PDF.getMimeType()) || mimeType.equals(MimeType.XML.getMimeType()) || infosourceId == 1051) {
@@ -205,20 +216,22 @@ public class CSVHarvester implements Harvester {
 				content = contentAsString.getBytes();
 			}
 		}
-//		logger.info("harvesting");
+
 		if(content!=null){
 			//map the document 
 			List<ParsedDocument> pds = documentMapper.map(url, content);
-//			for(ParsedDocument pd: pds){
-//			    debugParsedDoc(pd);
-//			}
 			Collections.sort(pds, new DocumentComparator());
 			
 			//store the results
 			for(ParsedDocument pd: pds){
-//				debugParsedDoc(pd);
-				repository.storeDocument(infosourceId, pd);
-				logger.debug("Parent guid for stored doc: " + pd.getParentGuid());
+                if(!pd.getTriples().isEmpty()){
+                String subject = pd.getTriples().get(0).getSubject();
+                    for(Map.Entry<String,String> kv : properties.entrySet()){
+                        pd.getTriples().add(new Triple(subject, Predicates.getForPredicate(kv.getKey()).toString(), kv.getValue()));
+                    }
+                    repository.storeDocument(infosourceId, pd);
+                    logger.debug("Parent guid for stored doc: " + pd.getParentGuid());
+                }
 			}
 		} else {
 			logger.warn("Unable to process url: "+url);
@@ -227,13 +240,12 @@ public class CSVHarvester implements Harvester {
 	
 	/**
 	 * @param fields
-	 * @param string
 	 * @return
 	 */
-	private int getIdxForField(String[] fields, String string) {
+	private int getIdxForField(String[] fields, String fieldToFind) {
 		int i=0;
 		for(String field: fields){
-			if("URI".equalsIgnoreCase(field))
+			if(fieldToFind.equalsIgnoreCase(field))
 				return i;
 			i++;
 		}
