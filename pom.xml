@@ -16,9 +16,11 @@
         <openrdf.sesame.version>2.2</openrdf.sesame.version>
         <!-- <spring.version>3.0.0.RELEASE</spring.version> -->
         <spring.version>3.1.0.RELEASE</spring.version>
+        <solr.version>4.1.0</solr.version>
      <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
     </properties>
     <dependencies>
+    
             <!-- BIE Repository -->
 <!--             <dependency>
                 <groupId>au.org.ala</groupId>
@@ -188,19 +190,25 @@
             <dependency>
                 <groupId>org.apache.lucene</groupId>
                 <artifactId>lucene-core</artifactId>
-                <version>3.4.0</version>
+                <version>${solr.version}</version>
             </dependency>
             <!-- SOLR -->
             <dependency>
                 <artifactId>solr-core</artifactId>
                 <groupId>org.apache.solr</groupId>
-                <version>3.4.0</version>
+                <version>${solr.version}</version>
             </dependency>
             <dependency>
                 <artifactId>solr-solrj</artifactId>
                 <groupId>org.apache.solr</groupId>
-                <version>3.4.0</version>
+                <version>${solr.version}</version>
             </dependency>
+            <!--  Dependency that comes through SOLR that is no longer available in V4 -->
+            <dependency>
+				<groupId>commons-validator</groupId>
+				<artifactId>commons-validator</artifactId>
+				<version>1.4.0</version>
+			</dependency>
             <!-- HTML Mocker -->
 			<dependency>
 				<groupId>net.sourceforge.htmlunit</groupId>

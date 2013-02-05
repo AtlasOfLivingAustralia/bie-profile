@@ -44,7 +44,7 @@ import org.ala.model.TaxonName;
 import org.ala.model.Triple;
 import org.ala.util.ColumnType;
 import org.ala.util.StatusType;
-import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.solr.common.SolrInputDocument;
 
 import au.org.ala.checklist.lucene.CBIndexSearch;

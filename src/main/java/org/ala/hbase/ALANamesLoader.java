@@ -24,20 +24,23 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+//import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 import org.gbif.dwc.text.UnsupportedArchiveException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -545,7 +548,9 @@ public class ALANamesLoader {
         
         KeywordAnalyzer analyzer = new KeywordAnalyzer();
         //initialise lucene
-        IndexWriter iw = new IndexWriter(FSDirectory.open(file), analyzer, MaxFieldLength.UNLIMITED);
+        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_34, analyzer);
+        
+        IndexWriter iw = new IndexWriter(FSDirectory.open(file), config);
         
         int i = 0;
         
@@ -601,7 +606,7 @@ public class ALANamesLoader {
         
         KeywordAnalyzer analyzer = new KeywordAnalyzer();
         //initialise lucene
-        IndexWriter iw = new IndexWriter(FSDirectory.open(file), analyzer, MaxFieldLength.UNLIMITED);
+        IndexWriter iw = new IndexWriter(FSDirectory.open(file), new IndexWriterConfig(Version.LUCENE_34, analyzer));
         
         int i = 0;
         
@@ -672,7 +677,7 @@ public class ALANamesLoader {
      */
     public void initIndexes() throws Exception {
         //this.tcIdxSearcher = new IndexSearcher(FSDirectory.open(new File(NAMES_LOADING_IDX_DIR)), true);
-        this.identifierIdxSearcher = new IndexSearcher(FSDirectory.open(new File(NAMES_LOADING_ID_IDX_DIR)), true);
+        this.identifierIdxSearcher = new IndexSearcher(IndexReader.open(FSDirectory.open(new File(NAMES_LOADING_ID_IDX_DIR))));
     }
 
 private String getPreferredGuid(String taxonConceptGuid) throws Exception {

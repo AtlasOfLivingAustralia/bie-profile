@@ -23,9 +23,12 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.Query;
 import org.gbif.ecat.model.ParsedName;
 import org.gbif.ecat.parser.NameParser;
 import org.gbif.ecat.parser.UnparsableException;
+import org.apache.lucene.search.BooleanClause;
 /**
  * Reusable methods for lucene searching or index creation.
  *
@@ -36,6 +39,15 @@ public class LuceneUtils {
     public static final String SCI_NAME_RAW = "scientificNameRaw";
     public static final String SCI_NAME_TEXT = "scientificNameText";
     private final static Logger logger = Logger.getLogger(LuceneUtils.class);
+    
+    
+   public static Query combineQueries(Query[] queries){
+     BooleanQuery result = new BooleanQuery(true);
+     for (final Query query : queries)
+       result.add(query, BooleanClause.Occur.SHOULD);
+     return result;
+   }
+    
 	/**
 	 * Adds a scientific name to the lucene index in multiple forms to increase
 	 * chances of matches

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,23 +32,27 @@ import org.ala.dao.TaxonConceptDao;
 import org.ala.util.SpringUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.ISOLatin1AccentFilter;
-import org.apache.lucene.analysis.LowerCaseFilter;
-import org.apache.lucene.analysis.StopFilter;
+//import org.apache.lucene.analysis.core.ISOLatin1AccentFilter;
+import org.apache.lucene.analysis.Analyzer.TokenStreamComponents;
+import org.apache.lucene.analysis.core.KeywordTokenizer;
+import org.apache.lucene.analysis.core.LowerCaseFilter;
+import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.ngram.EdgeNGramTokenFilter;
 import org.apache.lucene.analysis.ngram.EdgeNGramTokenFilter.Side;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+//import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -58,6 +63,7 @@ import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.spell.LuceneDictionary;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 import org.apache.solr.client.solrj.util.ClientUtils;
 import org.springframework.context.ApplicationContext;
 
@@ -99,7 +105,7 @@ public final class Autocompleter {
 
     private Directory autoCompleteDirectory;
 
-    private IndexReader autoCompleteReader;
+    private DirectoryReader autoCompleteReader;
 
     private IndexSearcher autoCompleteSearcher;
 
@@ -129,7 +135,7 @@ public final class Autocompleter {
     public List<String> suggestTermsFor(String term, Integer maxHits) throws IOException {
         // get the top 5 terms for query
         Query query = new TermQuery(new Term(GRAMMED_WORDS_FIELD, ClientUtils.escapeQueryChars(term)));
-        SortField sf = new SortField(COUNT_FIELD, SortField.INT, true);
+        SortField sf = new SortField(COUNT_FIELD, SortField.Type.INT, true);
         Sort sort = new Sort(sf);
 
         TopDocs docs = autoCompleteSearcher.search(query, null, maxHits, sort);
@@ -157,17 +163,33 @@ public final class Autocompleter {
 
         // use a custom analyzer so we can do EdgeNGramFiltering
     	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, new Analyzer() {
-            public TokenStream tokenStream(String fieldName, Reader reader) {
-				TokenStream result = new StandardTokenizer(SolrUtils.BIE_LUCENE_VERSION, reader);
-				
-				result = new StandardFilter(SolrUtils.BIE_LUCENE_VERSION, result);
-				result = new LowerCaseFilter(SolrUtils.BIE_LUCENE_VERSION, result);
-				result = new ISOLatin1AccentFilter(result);
-				result = new StopFilter(SolrUtils.BIE_LUCENE_VERSION, result, new HashSet<String>(Arrays.asList(ENGLISH_STOP_WORDS)));
-				result = new EdgeNGramTokenFilter(result, Side.FRONT,1, 20);
-				
-				return result;
-		    }
+    	  protected TokenStreamComponents createComponents(String fieldName,
+    	      Reader reader){
+    	      final StandardTokenizer src = new StandardTokenizer(SolrUtils.BIE_LUCENE_VERSION, reader);
+    	      TokenStream result = new StandardTokenizer(SolrUtils.BIE_LUCENE_VERSION, reader);
+    	      result = new StandardFilter(SolrUtils.BIE_LUCENE_VERSION, result);
+    	      result = new LowerCaseFilter(SolrUtils.BIE_LUCENE_VERSION, result);
+    	      result = new StopFilter(SolrUtils.BIE_LUCENE_VERSION, result, new  CharArraySet(SolrUtils.BIE_LUCENE_VERSION, new HashSet<String>(Arrays.asList(ENGLISH_STOP_WORDS)), true));
+    	      result = new EdgeNGramTokenFilter(result, Side.FRONT,1, 20);
+    	      return new TokenStreamComponents(src, result){
+    	                @Override
+    	                protected void  setReader(final Reader reader) throws IOException {    	                     
+    	                     super.setReader(reader);
+    	                }
+    	      
+    	      };
+    	  }
+//            public TokenStream tokenStream(String fieldName, Reader reader) {
+//				TokenStream result = new StandardTokenizer(SolrUtils.BIE_LUCENE_VERSION, reader);
+//				
+//				result = new StandardFilter(SolrUtils.BIE_LUCENE_VERSION, result);
+//				result = new LowerCaseFilter(SolrUtils.BIE_LUCENE_VERSION, result);
+//				//result = new ISOLatin1AccentFilter(result);
+//				result = new StopFilter(SolrUtils.BIE_LUCENE_VERSION, result, new HashSet<String>(Arrays.asList(ENGLISH_STOP_WORDS)));
+//				result = new EdgeNGramTokenFilter(result, Side.FRONT,1, 20);
+//				
+//				return result;
+//		    }
     	});
     	if(createNewIndex){
     		indexWriterConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE);
@@ -218,7 +240,7 @@ public final class Autocompleter {
         sourceReader.close();
 
         // close writer
-        writer.optimize();
+        writer.forceMerge(1);
         writer.close();
 
         // re-open our reader
@@ -227,9 +249,12 @@ public final class Autocompleter {
 
     private void reOpenReader() throws CorruptIndexException, IOException {
         if (autoCompleteReader == null) {
-            autoCompleteReader = IndexReader.open(autoCompleteDirectory);
+            autoCompleteReader = DirectoryReader.open(autoCompleteDirectory);
         } else {
-            autoCompleteReader.reopen();
+            //autoCompleteReader.reopen();
+          DirectoryReader newReader = DirectoryReader.openIfChanged(autoCompleteReader);
+          if(newReader != null)
+            autoCompleteReader = newReader;
         }
 
         autoCompleteSearcher = new IndexSearcher(autoCompleteReader);

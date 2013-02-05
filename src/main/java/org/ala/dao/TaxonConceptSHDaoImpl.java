@@ -32,6 +32,7 @@ import org.ala.dto.ExtendedTaxonConceptDTO;
 import org.ala.dto.SearchResultsDTO;
 import org.ala.dto.SearchTaxonConceptDTO;
 import org.ala.dto.SpeciesProfileDTO;
+import org.ala.lucene.LuceneUtils;
 import org.ala.model.AttributableObject;
 import org.ala.model.BaseRanking;
 import org.ala.model.Category;
@@ -63,16 +64,18 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.WordUtils;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.KeywordAnalyzer;
-import org.apache.lucene.analysis.SimpleAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.SimpleAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
@@ -177,6 +180,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	protected static final String SCI_NAME = "scientificName";
 	protected static final String SCI_NAME_RAW = "scientificNameRaw";
 	protected static final String SCI_NAME_TEXT = "scientificNameText";
+	protected static final String SINGLE_SCI_NAME = "singleScientificName";
 
     /* stores the statistics to write to file */
     protected int anbgMatched;
@@ -781,12 +785,16 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		Query guidQuery = new TermQuery(new Term("guid", input));
 		Query otherGuidQuery = new TermQuery(new Term("otherGuid", input));
 
-		// combine the query terms
-		scientificNameQuery = scientificNameQuery
-				.combine(new Query[] { scientificNameQuery, guidQuery,
-						otherGuidQuery, commonNameQuery });
+		// combine the query terms - this method is removed from version 4.0 - apparently it did not work as expected in situations.
+//		scientificNameQuery = scientificNameQuery
+//				.combine(new Query[] { scientificNameQuery, guidQuery,
+//						otherGuidQuery, commonNameQuery });
+		
+		Query finalQuery = LuceneUtils.combineQueries(new Query[] { scientificNameQuery, guidQuery,
+            otherGuidQuery, commonNameQuery });
+		
 		// run the search
-		return sortPageSearch(scientificNameQuery, startIndex, pageSize,
+		return sortPageSearch(finalQuery, startIndex, pageSize,
 				sortField, sortDirection);
 	}
 
@@ -809,7 +817,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		Query otherGuidQuery = new TermQuery(new Term("otherGuid", input));
 
 		// combine the query terms
-		Query fullQuery = guidQuery.combine(new Query[] { guidQuery,
+		Query fullQuery = LuceneUtils.combineQueries(new Query[] { guidQuery,
 				otherGuidQuery });
 		// run the search
 		return sortPageSearch(fullQuery, startIndex, pageSize, sortField,
@@ -841,7 +849,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		Sort sort = new Sort();
 
 		if (sortField != null && !sortField.isEmpty() && !sortField.equalsIgnoreCase("score")) {
-			SortField sf = new SortField(sortField, SortField.STRING, direction);
+			SortField sf = new SortField(sortField, SortField.Type.STRING, direction);
 			sort.setSort(sf);
 		} else {
 			sort = Sort.RELEVANCE;
@@ -1304,7 +1312,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			if (file.exists()) {
 				Directory dir = FSDirectory.open(file); 
 				try {
-					this.tcIdxSearcher = new IndexSearcher(dir);
+					this.tcIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 				} catch (Exception e) {
 		        	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, new StandardAnalyzer(SolrUtils.BIE_LUCENE_VERSION));
 					new IndexWriter(dir, indexWriterConfig);
@@ -2047,6 +2055,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			if(guid.startsWith("ALA"))
 			    doc.addField("is_ala_b", "true");
 			
+			//add the "isExcluded" value
+			doc.addField("is_excluded_b", taxonConcept.getIsExcluded());
+			
 			doc.addField("idxtype", IndexedTypes.TAXON);
 
 			// is this species iconic
@@ -2114,8 +2125,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 				// add multiple forms of the scientific name to the index]
 				try{
-				addScientificNameToIndex(doc, taxonConcept.getNameString(),
-						taxonConcept.getRankString(), taxonConcept.getRankID());
+				    addScientificNameToIndex(doc, taxonConcept.getNameString(),
+				        taxonConcept.getRankString(), taxonConcept.getRankID());
+				    //now add the supplied name string as the "sortable" singleScientificName
+				    doc.addField(SINGLE_SCI_NAME, taxonConcept.getNameString());
 				}
 				catch(NullPointerException e){
 				    System.out.println("TAXONCONCEPT WITH NPE: " + taxonConcept);

@@ -31,7 +31,7 @@ import org.springframework.stereotype.Component;
  */
 @Component("solrUtils")
 public class SolrUtils {
-	public static final Version BIE_LUCENE_VERSION = Version.LUCENE_34;
+	public static final Version BIE_LUCENE_VERSION = Version.LUCENE_41;
 	static Logger logger = Logger.getLogger(SolrUtils.class);
 	private String solrHome = "/data/solr/bie";
 	
