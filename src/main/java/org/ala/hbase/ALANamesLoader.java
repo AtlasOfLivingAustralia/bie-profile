@@ -90,7 +90,7 @@ public class ALANamesLoader {
         ALANamesLoader l = context.getBean(ALANamesLoader.class);
         LinkIdentifierLoader lil = context.getBean(LinkIdentifierLoader.class);
         long start = System.currentTimeMillis();
-
+        
         logger.info("Creating checklist bank loading index....");
 
         String skipIndexes = System.getProperty("skipIndexes");
@@ -202,7 +202,7 @@ public class ALANamesLoader {
         long start = System.currentTimeMillis();
         while((cols=tr.readNext())!=null){
             numberRead++;
-            if(cols.length==11){
+            if(cols.length>=12){
                 String identifier = cols[0];
                 //String parentNameUsageID = cols[1];
                 final String guid = cols[1] != null ?cols[1]: identifier; //TaxonID
