@@ -35,8 +35,6 @@ import org.apache.log4j.Logger;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-import com.ctc.wstx.util.StringUtil;
-
 import au.com.bytecode.opencsv.CSVReader;
 
 /**
