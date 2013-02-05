@@ -90,13 +90,13 @@ public class AusmothsDocumentMapper extends XMLDocumentMapper {
 			} 
 		}
 		
-		triples.add(new Triple(subject, Predicates.ORDER.toString(), "Lepidoptera"));
-	
 		//remove the triple from the triples
 		for (Triple tri : tmpTriple) {
 			triples.remove(tri);
 		}
-		
+
+        triples.add(new Triple(subject, Predicates.ORDER.toString(), "Lepidoptera"));
+
 		//replace the list of triples
 		pd.setTriples(triples);
 	}
