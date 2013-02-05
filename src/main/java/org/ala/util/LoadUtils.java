@@ -31,22 +31,23 @@ import org.ala.model.TaxonName;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.Field.Index;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.index.IndexWriter.MaxFieldLength;
+//import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.Searcher;
+//import org.apache.lucene.search.Searcher;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.BooleanClause.Occur;
@@ -298,7 +299,7 @@ public class LoadUtils {
 			File file = new File(REL_INDEX_DIR);
 			if (file.exists()) {
 				Directory dir = FSDirectory.open(file); 
-				this.relIdxSearcher = new IndexSearcher(dir);
+				this.relIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 			}
 		}
 		return this.relIdxSearcher;
@@ -309,7 +310,7 @@ public class LoadUtils {
 			File file = new File(ACC_INDEX_DIR);
 			if (file.exists()) {
 				Directory dir = FSDirectory.open(file); 
-				this.accIdxSearcher = new IndexSearcher(dir);
+				this.accIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 			}
 		}
 		return this.accIdxSearcher;
@@ -320,7 +321,7 @@ public class LoadUtils {
 			File file = new File(TC_INDEX_DIR);
 			if (file.exists()) {
 				Directory dir = FSDirectory.open(file); 
-				this.tcIdxSearcher = new IndexSearcher(dir);
+				this.tcIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 			}
 		}
 		return this.tcIdxSearcher;
@@ -331,7 +332,7 @@ public class LoadUtils {
 	            File file = new File(TN_INDEX_DIR);
 	            if (file.exists()) {
 	                Directory dir = FSDirectory.open(file); 
-	                this.tnIdxSearcher = new IndexSearcher(dir);
+	                this.tnIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 	            }
 	        }
 	        return this.tnIdxSearcher;
@@ -342,7 +343,7 @@ public class LoadUtils {
 			File file = new File(PUB_INDEX_DIR);
 			if (file.exists()) {
 				Directory dir = FSDirectory.open(file); 
-				this.pubIdxSearcher = new IndexSearcher(dir);
+				this.pubIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
 			}			
 		}
 		return this.pubIdxSearcher;
@@ -353,7 +354,7 @@ public class LoadUtils {
             File file = new File(REF_INDEX_DIR);
             if (file.exists()) {
                 Directory dir = FSDirectory.open(file); 
-                this.refIdxSearcher = new IndexSearcher(dir);
+                this.refIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
             }           
         }
         return this.refIdxSearcher;
@@ -364,7 +365,7 @@ public class LoadUtils {
             File file = new File(ID_INDEX_DIR);
             if (file.exists()) {
                 Directory dir = FSDirectory.open(file); 
-                this.idIdxSearcher = new IndexSearcher(dir);
+                this.idIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
             }           
         }
         return this.idIdxSearcher;
@@ -375,7 +376,7 @@ public class LoadUtils {
             File file = new File(ALA_NAMES_INDEX_DIR);
             if (file.exists()) {
                 Directory dir = FSDirectory.open(file);
-                this.alaNameIdxSearcher = new IndexSearcher(dir);
+                this.alaNameIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
             }
         }
         return this.alaNameIdxSearcher;
@@ -492,7 +493,7 @@ public class LoadUtils {
 		KeywordAnalyzer analyzer = new KeywordAnalyzer();
     	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
     	IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
-    	iw.setMaxFieldLength(Integer.MAX_VALUE);    	
+    	//iw.setMaxFieldLength(Integer.MAX_VALUE);    	
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 		try {
 	    	long start = System.currentTimeMillis();
@@ -533,7 +534,7 @@ public class LoadUtils {
 		KeywordAnalyzer analyzer = new KeywordAnalyzer();
     	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
     	IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
-    	iw.setMaxFieldLength(Integer.MAX_VALUE);    			
+    	//iw.setMaxFieldLength(Integer.MAX_VALUE);    			
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 		try {
 		    loadRelationshipFile(BIE_STAGING_DIR+"anbg/ALA_AFD_RELATIONSHIP.csv", iw);
@@ -684,7 +685,7 @@ public class LoadUtils {
         //initialise lucene
     	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
     	IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
-    	iw.setMaxFieldLength(Integer.MAX_VALUE);    	    	
+    	//iw.setMaxFieldLength(Integer.MAX_VALUE);    	    	
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 //    	IndexSearcher is = new IndexSearcher(REL_INDEX_DIR);
     	
@@ -797,7 +798,7 @@ public class LoadUtils {
 		KeywordAnalyzer analyzer = new KeywordAnalyzer();
     	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(SolrUtils.BIE_LUCENE_VERSION, analyzer);
     	IndexWriter iw = new IndexWriter(FSDirectory.open(file), indexWriterConfig); 
-    	iw.setMaxFieldLength(Integer.MAX_VALUE);    			
+    	//iw.setMaxFieldLength(Integer.MAX_VALUE);    			
 //    	IndexWriter iw = new IndexWriter(file, analyzer, MaxFieldLength.UNLIMITED);
 		try {
 	    	loadPublicationFile(BIE_STAGING_DIR+"anbg/ALA_AFD_PUBLICATION.csv", iw);

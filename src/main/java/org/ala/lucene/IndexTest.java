@@ -21,12 +21,14 @@ import java.util.List;
 
 import org.ala.dao.SolrUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.lucene.analysis.KeywordAnalyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Fieldable;
+//import org.apache.lucene.document.Fieldable;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -57,7 +59,7 @@ public class IndexTest {
 				input = StringUtils.trimToNull(input).toLowerCase();
 //				IndexSearcher is = new IndexSearcher("/data/lucene/taxonConcept");
 				Directory dir = FSDirectory.open(new File("/data/lucene/taxonConcept")); 
-				IndexSearcher is = new IndexSearcher(dir);
+				IndexSearcher is = new IndexSearcher(DirectoryReader.open(dir));
 				
 				QueryParser qp  = new QueryParser(SolrUtils.BIE_LUCENE_VERSION, "scientificName", new KeywordAnalyzer());
 				Query scientificNameQuery = qp.parse("\""+input+"\"");
@@ -67,15 +69,15 @@ public class IndexTest {
 				
 				Query guidQuery = new TermQuery(new Term("guid", input));
 				
-				scientificNameQuery = scientificNameQuery.combine(new Query[]{scientificNameQuery,guidQuery, commonNameQuery});
+				scientificNameQuery = LuceneUtils.combineQueries(new Query[]{scientificNameQuery,guidQuery, commonNameQuery});
 				
 				TopDocs topDocs = is.search(scientificNameQuery, 20);
 				
 				for(ScoreDoc scoreDoc: topDocs.scoreDocs){
 					Document doc = is.doc(scoreDoc.doc);
 					
-					List<Fieldable> fields = doc.getFields();
-					for(Fieldable field: fields){
+					List<IndexableField> fields = doc.getFields();
+					for(IndexableField field: fields){
 						System.out.println(field.name()+": "+field.stringValue());
 					}
 					System.out.println("---------------------------------------------");
