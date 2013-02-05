@@ -215,6 +215,11 @@
 				<artifactId>htmlunit</artifactId>
 				<version>2.8</version>
 			</dependency>
+            <dependency>
+                <groupId>org.apache.james</groupId>
+                <artifactId>apache-mime4j</artifactId>
+                <version>0.6.1</version>
+            </dependency>
 			<!-- PDF BOX -->
 			<dependency>
 				<groupId>pdfbox</groupId>
