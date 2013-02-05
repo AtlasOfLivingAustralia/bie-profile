@@ -115,7 +115,7 @@ public class StandardNameLoader {
             CommonName cn = new CommonName();
             cn.setNameString(WordUtils.capitalizeFully(commonName));
             cn.setIsPreferred(true);
-            //cn.setRanking(100000);
+            cn.setRanking(100000);
             cn.setInfoSourceURL(is.getWebsiteUrl());
             cn.setInfoSourceId(Integer.toString(is.getId()));
             cn.setInfoSourceName(is.getName());
