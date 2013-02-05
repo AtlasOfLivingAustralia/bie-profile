@@ -119,7 +119,7 @@ public class ExternalIndexLoader {
 
         HttpClient httpClient = new HttpClient();
         GetMethod gm = new GetMethod("http://spatial.ala.org.au/layers-service/layers.json");
-        logger.debug("Response code for get method: " +httpClient.executeMethod(gm));
+        logger.debug("Response code for get method: " + httpClient.executeMethod(gm));
         String layerJson = gm.getResponseBodyAsString();
         ObjectMapper om = new ObjectMapper();
         List<Map<String,Object>> layers = om.readValue(layerJson, new TypeReference<List<Map<String,Object>>>() {});
@@ -140,6 +140,7 @@ public class ExternalIndexLoader {
             doc.addField("id", layer.get("id"));
             doc.addField("idxtype", IndexedTypes.LAYERS);
             doc.addField("australian_s", "recorded"); // so they appear in default QF search
+            doc.addField("image", "http://spatial.ala.org.au/output/layerthumbs/ALA:" + layer.get("name") + ".jpg"); // so they appear in default QF search
             solrServer.add(doc);
         }
         logger.info("Finished syncing layer information with the collectory.");
