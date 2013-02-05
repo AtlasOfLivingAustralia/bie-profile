@@ -76,6 +76,7 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     protected Integer occCount;
     protected String imageSource;
     protected Integer imageCount;
+    protected Boolean isExcluded; //whether or not the taxon concept has been marked as excluded in Australia
 
     //image properties
     String imageUrl;
@@ -582,5 +583,19 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
 
     public void setImageCount(Integer imageCount) {
         this.imageCount = imageCount;
+    }
+
+    /**
+     * @return the isExcluded
+     */
+    public Boolean getIsExcluded() {
+        return isExcluded;
+    }
+
+    /**
+     * @param isExcluded the isExcluded to set
+     */
+    public void setIsExcluded(Boolean isExcluded) {
+        this.isExcluded = isExcluded;
     }
 }

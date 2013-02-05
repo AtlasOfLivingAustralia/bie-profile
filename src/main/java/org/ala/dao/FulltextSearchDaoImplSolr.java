@@ -1198,6 +1198,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         taxonConcept.setConservationStatusVIC((String) doc.getFirstValue("conservationStatusVIC"));
         taxonConcept.setConservationStatusWA((String) doc.getFirstValue("conservationStatusWA"));
         taxonConcept.setIsAustralian((String) doc.getFirstValue("australian_s"));
+        taxonConcept.setIsExcluded((Boolean)doc.getFirstValue("is_excluded_b"));
 
 		String hasChildrenAsString = (String) doc.getFirstValue("hasChildren");
 		taxonConcept.setHasChildren(Boolean.parseBoolean(hasChildrenAsString));
