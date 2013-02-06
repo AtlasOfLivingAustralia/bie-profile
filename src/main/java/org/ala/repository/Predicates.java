@@ -14,8 +14,6 @@
  ***************************************************************************/
 package org.ala.repository;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -141,7 +139,7 @@ public enum Predicates {
 
     static {
          for (Predicates p : EnumSet.allOf(Predicates.class)) {
-             predicateLookup.put(p.name().toString().toLowerCase().replaceAll("_",""), p);
+             predicateLookup.put(p.toString(), p);
          }
     }
 
@@ -171,10 +169,7 @@ public enum Predicates {
      * @return
      */
     public static Predicates getForPredicate(String predicate) {
-        Predicates p =  predicateLookup.get(predicate.toLowerCase().replaceAll("_",""));
-        if(p != null) return p;
-        else p = predicateLookup.get("has" + predicate.toLowerCase().replaceAll("_",""));
-        return p;
+        return predicateLookup.get(predicate);
     }
 
 	/**
