@@ -17,6 +17,7 @@ import org.ala.model.Rank;
 import org.ala.model.SynonymConcept;
 import org.ala.model.TaxonConcept;
 import org.ala.model.TaxonName;
+import org.ala.util.LoadUtils;
 import org.ala.util.SpringUtils;
 import org.ala.util.TabReader;
 import org.apache.commons.collections.CollectionUtils;
@@ -152,8 +153,11 @@ public class ALANamesLoader {
      */
     private void loadIdentifiers(String fileName, int accIdx, int extraIdx) throws Exception {
         
+        LoadUtils loadUtils = new LoadUtils();
+      
         //read the identifiers file
-        CSVReader reader = new CSVReader(new FileReader(fileName),'\t', '\n');
+        //CSVReader reader = new CSVReader(new FileReader(fileName),'\t', '\n');
+        CSVReader reader = new CSVReader(new FileReader(fileName), '\t', '"', '\\');
         String[] line = null;
         int numberRead = 0;
         int numberAdded = 0;
@@ -162,7 +166,10 @@ public class ALANamesLoader {
             numberRead++;
             if(line[accIdx]!=null && line[extraIdx]!=null){
                 //add this guid somewhere
-                if(taxonConceptDao.addIdentifier(line[accIdx], line[extraIdx])){
+                String guid = loadUtils.getAlaAcceptedConcept(line[accIdx]);
+                guid = guid == null? line[accIdx]:guid;
+                //At the moment we are adding the extra synonym identifiers to the accepted concept.  This can be changed if necessary
+                if(taxonConceptDao.addIdentifier(guid, line[extraIdx])){
                     numberAdded++;
                     if(numberAdded % 1000 == 0){
                         long current = System.currentTimeMillis();
@@ -690,6 +697,7 @@ private String getPreferredGuid(String taxonConceptGuid) throws Exception {
         }
         return taxonConceptGuid;
     }
+    
 
     public void loadCommonNames(String dataFile,char sep) throws Exception {
         
