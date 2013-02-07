@@ -65,6 +65,10 @@ public class ExtendedTaxonConceptDTO {
 	protected List<Category> categories;
     protected Boolean isAustralian;
     protected String linkIdentifier;
+    /**
+     * The GUID for this taxon concept in the previous BIE.  Allows linkages to biocache to exist without updating biocache...
+     */
+  protected String previousGuid;
 	
 	/**
 	 * @return the publicationReference
@@ -382,6 +386,18 @@ public class ExtendedTaxonConceptDTO {
      */
     public void setCategories(List<Category> categories) {
         this.categories = categories;
+    }
+    /**
+     * @return the previousGuid
+     */
+    public String getPreviousGuid() {
+      return previousGuid;
+    }
+    /**
+     * @param previousGuid the previousGuid to set
+     */
+    public void setPreviousGuid(String previousGuid) {
+      this.previousGuid = previousGuid;
     }
     
 }

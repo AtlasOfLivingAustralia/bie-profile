@@ -99,6 +99,9 @@ public interface TaxonConceptDao {
 	 */
 	boolean setLinkIdentifier(String guid, String linkIdentifier) throws Exception;
 	
+	boolean setPreviousVersionGuid(String guid, String previous) throws Exception;
+	String getPreviousVersionGuid(String guid) throws Exception;
+	
 	/**
 	 * Retrieve the images associated with this taxon concept.
 	 *
@@ -618,6 +621,8 @@ public interface TaxonConceptDao {
 	 * @return 
 	 */
 	NameSearchResult findCBDataByName(String scientificName, LinnaeanRankClassification classification, String rank) throws Exception;
+	
+	NameSearchResult getNameResultByGuid(String guid);
 	
 	/**
 	 * Attempts to find the lsid for the supplied species in the name matching. This method should only be used for 

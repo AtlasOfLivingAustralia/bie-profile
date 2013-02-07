@@ -78,6 +78,7 @@ public enum ColumnType {
     IS_ICONIC("IsIconic", Boolean.class, false),
     IS_AUSTRALIAN("IsAustralian", Boolean.class, false),
     LINK_IDENTIFIER("linkIdentifier", String.class, false),
+    PREVIOUS_VERSION_GUID("previousGuid", String.class,false), //Stores the guid for the taxon concept in the old bie if it is different from this one. 
 //    INFOSOURCE_UID("infosourceUid", String.class, false),
     OCCURRENCE_RECORDS_COUNT_COL("hasOccurrenceRecords", Integer.class, false),
     GEOREF_RECORDS_COUNT_COL("hasGeoReferencedRecords", Integer.class, false),

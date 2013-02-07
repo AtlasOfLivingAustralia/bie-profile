@@ -175,6 +175,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 
 	@Inject
 	protected SpeciesGroupsUtil speciesGroupsUtil;
+	
+	public Boolean includePreviousGuids=false;
 
 	/* Final fields */
 	protected static final String SCI_NAME = "scientificName";
@@ -573,6 +575,18 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 				ColumnType.LINK_IDENTIFIER.getColumnName(), guid);
 		return linkIdentifier;
 	}
+	
+	public boolean setPreviousVersionGuid(String guid, String previous) throws Exception{
+	    return storeHelper.updateStringValue(TC_TABLE, TC_COL_FAMILY, 
+        ColumnType.PREVIOUS_VERSION_GUID.getColumnName(), guid, previous);
+	  
+	}
+  public String getPreviousVersionGuid(String guid) throws Exception{
+      return storeHelper.getStringValue(TC_TABLE,
+          TC_COL_FAMILY,
+          ColumnType.PREVIOUS_VERSION_GUID.getColumnName(), guid);
+  }
+	
 	
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#getDistributionImages(java.lang.String)
@@ -1134,6 +1148,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
            nsr = e.getChildResult();
      }
   	 return nsr; 
+	}
+	
+	public NameSearchResult getNameResultByGuid(String guid){
+	    return cbIdxSearcher.searchForRecordByLsid(guid);
 	}
 
     public void reportStats(java.io.OutputStream output, String prefix) throws Exception{
@@ -2834,6 +2852,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		etc.setClassification((Classification)getFirstItem((List<Classification>) getColumnValue(map, ColumnType.CLASSIFICATION_COL)));
 		etc.setIdentifiers((List<String>) getColumnValue(map,ColumnType.IDENTIFIER_COL));
 		
+		//add the previousGuid if necessary
+		if(includePreviousGuids)
+		  etc.setPreviousGuid((String)getColumnValue(map,ColumnType.PREVIOUS_VERSION_GUID));
+		
 		//add the same as concepts 
 		etc.setSameAsConcepts((List<TaxonConcept>)getColumnValue(map,ColumnType.SAME_AS_COL));
 		
@@ -3469,5 +3491,20 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			list.add(rankable);			
 		}
 		storeHelper.putList(TC_TABLE, TC_COL_FAMILY, columnType.getColumnName(), guid, (List)list, false);
-	}		
+	}
+
+  /**
+   * @return the includePreviousGuids
+   */
+  public Boolean getIncludePreviousGuids() {
+    return includePreviousGuids;
+  }
+
+  /**
+   * @param includePreviousGuids the includePreviousGuids to set
+   */
+  public void setIncludePreviousGuids(Boolean includePreviousGuids) {
+    this.includePreviousGuids = includePreviousGuids;
+  }
+	
 }
