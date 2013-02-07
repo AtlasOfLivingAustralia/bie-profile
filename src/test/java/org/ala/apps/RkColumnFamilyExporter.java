@@ -114,7 +114,8 @@ public class RkColumnFamilyExporter {
 							j++;
 							String key = itr.next();	
 							List rankingList = columnList.get(key);
-							csvOut.write((guid + "; " + sciName + "; "  + superColumnName + "; " + key + "; " + mapper.writeValueAsString(rankingList) + "\n").getBytes());
+							String type =guid.substring(guid.indexOf("|") + 1, guid.length());
+							csvOut.write((guid + "; " + sciName + "; "  + type + "; " + key + "; " + mapper.writeValueAsString(rankingList) + "\n").getBytes());
 							logger.debug("Indexed records: "+j+", current guid: "+guid);							
 						}
 					}
