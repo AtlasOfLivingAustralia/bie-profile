@@ -38,7 +38,7 @@ public class PreviousGuidsLoader {
   
   public void load() throws Exception{
       //go through the file and load it
-      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/ala-names/sample-old-guids.csv"), ',', '"', '\\');
+      CSVReader tr = new CSVReader(new FileReader("/data/bie-staging/ala-names/bie-old-guids.csv"), ',', '"', '\\');
       String[] cols = tr.readNext(); //first line contains headers - ignore
       int lineNumber = 1;
       int identical=0,exception=0,notfound=0,newguid=0;
