@@ -1,10 +1,12 @@
 package org.ala.hbase;
 
 import java.io.FileReader;
+import java.util.List;
 
 import javax.inject.Inject;
 
 import org.ala.dao.TaxonConceptDao;
+import org.ala.model.Triple;
 import org.ala.util.SpringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
@@ -34,7 +36,9 @@ public class PreviousGuidsLoader {
     PreviousGuidsLoader l = context.getBean(PreviousGuidsLoader.class);    
     long start = System.currentTimeMillis();
     l.load();
+   
   }
+  
   
   public void load() throws Exception{
       //go through the file and load it
@@ -61,7 +65,9 @@ public class PreviousGuidsLoader {
                       newguid++;
                       String guid = nsr.getAcceptedLsid() != null ? nsr.getAcceptedLsid():nsr.getLsid();
                       taxonConceptDao.addIdentifier(guid, cols[0]);
-                      taxonConceptDao.setPreviousVersionGuid(guid, cols[0]);
+                      //only add as the previosuGuid if it is not a synonym
+                      if(nsr.getAcceptedLsid() == null)
+                          taxonConceptDao.setPreviousVersionGuid(guid, cols[0]);
                   }
                   else
                       notfound++;
