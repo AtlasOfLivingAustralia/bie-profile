@@ -2826,10 +2826,16 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	public ExtendedTaxonConceptDTO getExtendedTaxonConceptByGuid(String guid, boolean checkPreferred, boolean checkSynonym)
 			throws Exception {
 		logger.debug("Retrieving concept for guid: " + guid);
-		if(checkPreferred){
+		
+		//Because a concept can be accepted and a synonym we need to check if the original guid exists before checking preferred
+		boolean hasAccepted =false;
+		NameSearchResult nsr = getNameResultByGuid(guid);
+		hasAccepted = nsr != null;
+		
+		if(checkPreferred && !hasAccepted){
 			guid = getPreferredGuid(guid);
 		}
-		if(checkSynonym){
+		if(checkSynonym && !hasAccepted){
 		  guid = getAcceptedGuid(guid);
 		}
 		Map<String, Object> map = storeHelper.getSubColumnsByGuid(TC_COL_FAMILY, guid);
