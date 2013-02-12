@@ -2267,14 +2267,15 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 					doc.addField("commonNameSingle", commonNames.get(0).getNameString().trim());
 				}
 				String lastNameLsid = null;
-				for (TaxonConcept synonym : synonyms) {
+				for (SynonymConcept synonym : synonyms) {
 					if (synonym.getNameString() != null &&(synonym.getNameGuid() != null && !synonym.getNameGuid().equals(lastNameLsid))) {
 					    lastNameLsid = synonym.getNameGuid();
 						logger.debug("adding synonym to index: "
 								+ synonym.getNameString());
 						// add a new document for each synonym
 						SolrInputDocument synonymDoc = new SolrInputDocument();
-						synonymDoc.addField("id", synonym.getGuid());
+						synonymDoc.addField("id", synonym.getGuid()+taxonConcept.getGuid());//combination of the 2 uniquely identifies a synonym
+						synonymDoc.addField("syn_guid", synonym.getGuid());
 						synonymDoc.addField("guid", taxonConcept.getGuid());
 						synonymDoc.addField("idxtype", IndexedTypes.TAXON);
 						addScientificNameToIndex(synonymDoc,synonym.getNameString(), null, -1);
@@ -2292,7 +2293,9 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		          synonymDoc.addField("australian_s", "recorded");
 		          synonymDoc.addField("aus_s", "yes");
 		        }
-						
+						//add the synonym type
+						synonymDoc.addField("synonymRelationship_s", synonym.getRelationship());
+						synonymDoc.addField("synonymDescription_s", synonym.getDescription());
 						
 						// add the synonym as a separate document
 						docsToAdd.add(synonymDoc);
