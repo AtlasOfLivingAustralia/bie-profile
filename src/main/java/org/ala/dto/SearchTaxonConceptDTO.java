@@ -49,6 +49,8 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
 	protected String commonNameSingle;
 	protected String acceptedConceptGuid;
 	protected String acceptedConceptName;
+	protected String synonymRelationship;
+	protected String synonymDescription;
 	protected boolean hasChildren;
     protected String rank;
     protected int rankId;
@@ -598,4 +600,33 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     public void setIsExcluded(Boolean isExcluded) {
         this.isExcluded = isExcluded;
     }
+
+    /**
+     * @return the synonymRelationship
+     */
+    public String getSynonymRelationship() {
+      return synonymRelationship;
+    }
+
+    /**
+     * @param synonymRelationship the synonymRelationship to set
+     */
+    public void setSynonymRelationship(String synonymRelationship) {
+      this.synonymRelationship = synonymRelationship;
+    }
+
+    /**
+     * @return the synonymDescription
+     */
+    public String getSynonymDescription() {
+      return synonymDescription;
+    }
+
+    /**
+     * @param synonymDescription the synonymDescription to set
+     */
+    public void setSynonymDescription(String synonymDescription) {
+      this.synonymDescription = synonymDescription;
+    }
+    
 }
