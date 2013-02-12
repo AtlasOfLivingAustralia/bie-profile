@@ -2840,7 +2840,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		//Because a concept can be accepted and a synonym we need to check if the original guid exists before checking preferred
 		boolean hasAccepted =false;
 		NameSearchResult nsr = getNameResultByGuid(guid);
-		hasAccepted = nsr != null;
+		hasAccepted = nsr != null && nsr.getAcceptedLsid() == null;
 		
 		if(checkPreferred && !hasAccepted){
 			guid = getPreferredGuid(guid);
