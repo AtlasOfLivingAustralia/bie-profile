@@ -1088,7 +1088,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
     public String findLsidForSearch(String scientificName, boolean useSoundEx){
         String lsid =null;
         try{
-            NameSearchResult nsr = findCBDataByName(scientificName, null, null);
+            NameSearchResult nsr = findCBDataByName(scientificName, null, null, useSoundEx);
             if(nsr != null)
                 lsid =  nsr.getLsid();
         }
@@ -1127,15 +1127,22 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         return lsid;
     }
 
+    @Override
+    public NameSearchResult findCBDataByName(String scientificName,
+        LinnaeanRankClassification classification, String rank)
+    throws SearchResultException{
+      return findCBDataByName(scientificName, classification, rank, false);
+    }
+    
 	@Override
 	public NameSearchResult findCBDataByName(String scientificName,
-			LinnaeanRankClassification classification, String rank)
+			LinnaeanRankClassification classification, String rank, boolean fuzzy)
 			throws SearchResultException {
 	  
 	    NameSearchResult nsr = null;
   	  try{
   	      nsr = cbIdxSearcher.searchForRecord(scientificName, classification,
-  	            RankType.getForName(rank));
+  	            RankType.getForName(rank), fuzzy);
   	  }
   	  catch(ExcludedNameException e){
          if(e.getNonExcludedName() != null)

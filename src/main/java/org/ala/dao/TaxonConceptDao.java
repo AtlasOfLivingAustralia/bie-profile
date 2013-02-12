@@ -622,6 +622,8 @@ public interface TaxonConceptDao {
 	 */
 	NameSearchResult findCBDataByName(String scientificName, LinnaeanRankClassification classification, String rank) throws Exception;
 	
+	NameSearchResult findCBDataByName(String scientificName, LinnaeanRankClassification classification, String rank, boolean fuzzy) throws Exception;
+	
 	NameSearchResult getNameResultByGuid(String guid);
 	
 	/**
