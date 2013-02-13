@@ -516,7 +516,8 @@ public class ALANamesLoader {
                         if(!success) logger.error("Failed to add classification to "+guid+", line number: "+lineNumber);
                         
                         //add the link identifier for the taxon
-                        lil.updateLinkIdentifier(guid,scientificName);
+                        if(!update)
+                            lil.updateLinkIdentifier(guid,scientificName);
                         //add the australian if necessary
                         if(isAustralian)
                             taxonConceptDao.setIsAustralian(guid);
