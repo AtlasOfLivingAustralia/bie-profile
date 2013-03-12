@@ -1570,23 +1570,9 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             SolrQuery solrQuery = null;
 			try {
 				SolrDocumentList sdl = null;
-				// do exact search
-				solrQuery = buildAutoExactMatchQuery(value,filterQuery, indexType, gsOnly, maxTerms);
-				qr = solrUtils.getSolrServer().query(solrQuery);				
-	            sdl = qr.getResults();
-	            if (sdl != null && !sdl.isEmpty()) {
-	                for (SolrDocument doc : sdl) {
-	                    if (IndexedTypes.TAXON.toString().equalsIgnoreCase((String) doc.getFieldValue("idxtype"))) {
-	                    	AutoCompleteDTO dto = createAutoCompleteFromIndex(qr, doc, value);
-	                    	if(dto != null && !dto.getMatchedNames().isEmpty()){
-	                    		items.add(createAutoCompleteFromIndex(qr, doc, value));
-	                    	}
-	                    }
-	                }
-	            }
-	            // no exact match found
-	            else{
-	            	// do wildcard search
+				
+				
+	      //attempt to find the autocomplete
 	            	solrQuery = buildAutoConcatMatchQuery(value, filterQuery, indexType, gsOnly, maxTerms);
 					qr = solrUtils.getSolrServer().query(solrQuery);					
 		            sdl = qr.getResults();
@@ -1600,7 +1586,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 		                    }
 		                }
 		            }	            	
-	            }
+	            
             } 
 			catch (Exception e) {
 				e.printStackTrace();
@@ -1688,7 +1674,19 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 		}
 	}  
 	
-
+	/**
+	 * NC 2013-03-13: This method is no longer being used.  This is because we never want to limit auto completes to 
+	 * exact matches as this would be confusing. This method should be deleted.
+	 * 
+	 * 
+	 * @param value
+	 * @param filterQuery
+	 * @param indexType
+	 * @param gsOnly
+	 * @param maxTerms
+	 * @return
+	 */
+	@Deprecated
 	private SolrQuery buildAutoExactMatchQuery(String value, String[] filterQuery, IndexedTypes indexType, boolean gsOnly, int maxTerms) {
         StringBuffer queryString = new StringBuffer();
         SolrQuery solrQuery = new SolrQuery();  
