@@ -14,6 +14,7 @@
  ***************************************************************************/
 package org.ala.harvester;
 
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,13 +71,16 @@ public class BiocacheHarvester implements Harvester {
 	
 	public static final String DATA_RESOURCE_URL ="http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0";
 	public static final String COLLECTORY_URL = "http://collections.ala.org.au/ws/dataResource/";
-	public static final String BIOCACHE_SEARCH_URL = "http://biocache.ala.org.au/ws/occurrences/search?q=*:*&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,collector,all_image_url&pageSize=100";
+	public static final String BIOCACHE_SEARCH_URL_TEMPLATE = "http://biocache.ala.org.au/ws/occurrences/search?q={0}&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,occurrence_details,collector,photographer,rights,all_image_url&pageSize=100";
 	public static final String BIOCACHE_OCCURRENCE_URL = "http://biocache.ala.org.au/occurrences/";
 	public static final String BIOCACHE_MEDIA_URL = "http://biocache.ala.org.au/biocache-media/";
+    public static final String COLLECTION_PUBLIC_PAGE_TEMPLATE = "http://collections.ala.org.au/public/showDataResource/{0}";
 	
 	private int ctr = 0;
 	private Date startDate = null;
 	private Date endDate = null;
+
+    private String biocacheSearchQuery;
 	
     public BiocacheHarvester(){
     	int timeout = 3000; //msec
@@ -95,7 +99,10 @@ public class BiocacheHarvester implements Harvester {
         params.setDefaultMaxConnectionsPerHost(100);
         params.setMaxTotalConnections(3000);
         m_connectionmgr.setParams(params);
-        httpClient = new HttpClient(m_connectionmgr);		
+        httpClient = new HttpClient(m_connectionmgr);
+
+        // Default is to search all records. The query can be modified using the -query argument to the main method.
+        biocacheSearchQuery = "*:*";
     }
     
     private DynaBean getJsonDynaBean(String url) throws Exception {
@@ -175,11 +182,27 @@ public class BiocacheHarvester implements Harvester {
     	    			
         	            dcs.put(Predicates.DC_TITLE.toString(), (String)occurrence.get("scientificName"));
         	            dcs.put(Predicates.DC_IDENTIFIER.toString(), identifier);
-        	            dcs.put(Predicates.DC_LICENSE.toString(), "CC-BY");
-        	            dcs.put(Predicates.COUNTRY.toString(), "Australia");
-        	            dcs.put(Predicates.DC_IS_PART_OF.toString(), imageUrl);
+
+                        String licence = (String)occurrence.get("rights");
+                        if (licence != null) {
+                            dcs.put(Predicates.DC_LICENSE.toString(), licence);
+                        }
+
+                        String dataResourceUid = (String)occurrence.get("dataResourceUid");
+                        String occurrenceDetails = (String) occurrence.get("occurrenceDetails");
+
+                        if (occurrenceDetails != null) {
+        	                dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
+                        } else {
+                            String collectionPageURL = MessageFormat.format(COLLECTION_PUBLIC_PAGE_TEMPLATE, dataResourceUid);
+                            dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
+                        }
+
+                        String photographer = (String) occurrence.get("photographer");
                         String collector = (String) occurrence.get("collector");
-                        if(collector!=null){
+                        if(photographer !=null){
+                            dcs.put(Predicates.DC_CREATOR.toString(), photographer);
+                        } else if (collector != null) {
                             dcs.put(Predicates.DC_CREATOR.toString(), collector);
                         }
         	                	            
@@ -194,8 +217,6 @@ public class BiocacheHarvester implements Harvester {
         	            //bie image link back to biocache occurrence
         	            triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_UID.toString(), (String)occurrence.get("uuid")));
         	            triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_ROW_KEY.toString(), (String)occurrence.get("rowKey")));
-        	            
-        	            String dataResourceUid = (String)occurrence.get("dataResourceUid");
         	            
         	            if (imageDoc != null && imageDoc.getGuid() != null) {
         	                debugParsedDoc(imageDoc);
@@ -226,7 +247,7 @@ public class BiocacheHarvester implements Harvester {
     		addMissingInfosources(list);
 	    	for(int i = 0; i <= ctr/100; i++){
 	    		try {
-	    			String url = BIOCACHE_SEARCH_URL + "&start=" + (i * 100);
+	    			String url = MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery) + "&start=" + (i * 100);
 		    		if(dateRangeQuery != null){
 		    			url = url + "&" + dateRangeQuery;
 		    		}
@@ -357,7 +378,9 @@ public class BiocacheHarvester implements Harvester {
         	} else if("-lastMonth".equals(args[0])){
             	h.setStartDate(DateUtils.addMonths(h.getEndDate(), -1));        			
         	} else if("-lastWeek".equals(args[0])){
-        		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));        	
+        		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));
+            } else if ("-query".equals(args[0])) {
+                h.setQuery(args[1]);
         	} else {
         	  //attempt to parse the date down to an acceptable date
         	  try{
@@ -386,7 +409,11 @@ public class BiocacheHarvester implements Harvester {
 
 	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
-	}    
+	}
+
+    public void setQuery(String query) {
+        this.biocacheSearchQuery = query;
+    }
 }
 
 
