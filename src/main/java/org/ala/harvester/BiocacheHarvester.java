@@ -195,7 +195,7 @@ public class BiocacheHarvester implements Harvester {
         	                dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
                         } else {
                             String collectionPageURL = MessageFormat.format(COLLECTION_PUBLIC_PAGE_TEMPLATE, dataResourceUid);
-                            dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
+                            dcs.put(Predicates.DC_IS_PART_OF.toString(), collectionPageURL);
                         }
 
                         String photographer = (String) occurrence.get("photographer");
