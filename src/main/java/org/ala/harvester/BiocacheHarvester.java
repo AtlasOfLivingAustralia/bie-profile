@@ -71,7 +71,7 @@ public class BiocacheHarvester implements Harvester {
 	
 	public static final String DATA_RESOURCE_URL ="http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0";
 	public static final String COLLECTORY_URL = "http://collections.ala.org.au/ws/dataResource/";
-	public static final String BIOCACHE_SEARCH_URL_TEMPLATE = "http://biocache.ala.org.au/ws/occurrences/search?q={0}&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,occurrence_details,collector,photographer,rights,all_image_url&pageSize=100";
+	public static final String BIOCACHE_SEARCH_URL_TEMPLATE = "http://biocache.ala.org.au/ws/occurrences/search?q={0}&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,occurrence_details,collector,photographer_s,rights,all_image_url&pageSize=100";
 	public static final String BIOCACHE_OCCURRENCE_URL = "http://biocache.ala.org.au/occurrences/";
 	public static final String BIOCACHE_MEDIA_URL = "http://biocache.ala.org.au/biocache-media/";
     public static final String COLLECTION_PUBLIC_PAGE_TEMPLATE = "http://collections.ala.org.au/public/showDataResource/{0}";
