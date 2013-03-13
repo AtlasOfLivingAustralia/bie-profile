@@ -368,7 +368,7 @@ public class BiocacheHarvester implements Harvester {
         String[] locations = {"classpath*:spring.xml"};
         ApplicationContext context = new ClassPathXmlApplicationContext(locations);
         BiocacheHarvester h = (BiocacheHarvester) context.getBean(BiocacheHarvester.class);
-        Repository r = (Repository) context.getBean("repository"); 
+        Repository r = (Repository) context.getBean("repository");
         h.setRepository(r);
         
         if(args.length==1){
@@ -379,9 +379,7 @@ public class BiocacheHarvester implements Harvester {
             	h.setStartDate(DateUtils.addMonths(h.getEndDate(), -1));        			
         	} else if("-lastWeek".equals(args[0])){
         		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));
-            } else if ("-query".equals(args[0])) {
-                h.setQuery(args[1]);
-        	} else {
+            } else {
         	  //attempt to parse the date down to an acceptable date
         	  try{
         	      Date startDate =DateUtils.parseDate(args[0], new String[]{"yyyy-MM-dd"});
@@ -391,6 +389,8 @@ public class BiocacheHarvester implements Harvester {
         	      h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));
         	  }
         	}
+        } else if (args.length==2 && "-query".equals(args[0])) {
+            h.setQuery(args[1]);
         }
         h.start(-1);
     }	
@@ -413,6 +413,7 @@ public class BiocacheHarvester implements Harvester {
 
     public void setQuery(String query) {
         this.biocacheSearchQuery = query;
+        logger.info("Query set to: " + query);
     }
 }
 
