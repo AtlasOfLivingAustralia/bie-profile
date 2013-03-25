@@ -28,17 +28,20 @@ import org.ala.dao.IndexedTypes;
 import org.ala.dao.SolrUtils;
 import org.ala.dao.TaxonConceptDao;
 import org.ala.util.SpringUtils;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.log4j.Logger;
 import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.common.SolrInputDocument;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import javax.inject.Inject;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
-/**
- * Takes a file of LSIDs and reindexes the resource.
- */
+import com.vividsolutions.jts.util.CollectionUtil;
+
 @Component("partialIndex")
 public class PartialIndex {
 	/** Logger initialisation */
@@ -49,9 +52,14 @@ public class PartialIndex {
 	@Inject
 	protected FulltextSearchDao searchDao;
 	@Inject
-	protected SolrUtils solrUtils;	
+	protected SolrUtils solrUtils;
+	
+	private String bieURL;
 	
 	private SolrServer solrServer =null;
+
+	private HttpClient httpClient = new HttpClient();
+	private ObjectMapper mapper = new ObjectMapper();
 
 	public static void main(String[] args) throws Exception {
 		ApplicationContext context = SpringUtils.getContext();
@@ -71,6 +79,15 @@ public class PartialIndex {
 		}
 		//System.exit(0);	
 	}
+	
+	private void postIndexUpdate(String[] guids) throws Exception{
+	    
+	     PostMethod  post = new PostMethod(bieURL+"/ws/admin/reindex");
+	    logger.info("Sending index list starting with " + guids[0] + " " + guids.length);
+	    String json = mapper.writeValueAsString(guids);
+	    post.setRequestEntity(new StringRequestEntity(json,"json", "utf-8"));
+      httpClient.executeMethod(post);
+	}
 
 	public void process(String args) throws Exception {
 		int ctr = 0;
@@ -79,106 +96,137 @@ public class PartialIndex {
 		// Get the object of DataInputStream
 		DataInputStream in = new DataInputStream(fstream);
 		BufferedReader br = new BufferedReader(new InputStreamReader(in));
-//			loader.cleanIndex();
-		ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<String>(100);
-		IndexingThread[] threads = new IndexingThread[20];
-		for(int i = 0; i<20;i++){
-		    IndexingThread t = new IndexingThread(i, queue);
-		    threads[i]=t;
-		    t.start();
-		}
-		String strLine;
-		if(solrServer == null){
-            solrServer = solrUtils.getSolrServer();
-        }
-		//Read File Line By Line
-		while ((strLine = br.readLine()) != null)   {
-			// Print the content on the console
-			strLine = strLine.trim();
-			if(strLine.length() > 0){
-				//doIndex(strLine);
-			    while(!queue.offer(strLine))
-			        Thread.currentThread().sleep(50);
-				ctr++;
-			}
-		}
-		for(IndexingThread t : threads){
-		    t.setCanStop();	
-		    t.join();
-		}
-		//Close the input stream
-		in.close();
 		
-		commitIndex();
-		solrUtils.shutdownSolr();
+		String strLine;
+		List<String> guidBatch = new java.util.ArrayList<String>(500);
+		while ((strLine = br.readLine()) != null)   {
+		    if(guidBatch.size()>=500){
+		        postIndexUpdate(guidBatch.toArray(new String[]{}));
+		        guidBatch.clear();
+		    }
+		    guidBatch.add(strLine);
+		}
+		if(guidBatch.size()>0)
+		    postIndexUpdate(guidBatch.toArray(new String[]{}));
+		
+//		BufferedReader br = new BufferedReader(new InputStreamReader(in));
+////			loader.cleanIndex();
+//		ArrayBlockingQueue<String> queue = new ArrayBlockingQueue<String>(100);
+//		IndexingThread[] threads = new IndexingThread[20];
+//		for(int i = 0; i<20;i++){
+//		    IndexingThread t = new IndexingThread(i, queue);
+//		    threads[i]=t;
+//		    t.start();
+//		}
+//		String strLine;
+//		if(solrServer == null){
+//            solrServer = solrUtils.getSolrServer();
+//        }
+//		//Read File Line By Line
+//		while ((strLine = br.readLine()) != null)   {
+//			// Print the content on the console
+//			strLine = strLine.trim();
+//			if(strLine.length() > 0){
+//				//doIndex(strLine);
+//			    while(!queue.offer(strLine))
+//			        Thread.currentThread().sleep(50);
+//				ctr++;
+//			}
+//		}
+//		for(IndexingThread t : threads){
+//		    t.setCanStop();	
+//		    t.join();
+//		}
+//		//Close the input stream
+//		in.close();
+//		
+//		commitIndex();
+//		solrUtils.shutdownSolr();
 		logger.info("**** total count: " + ctr);
 	}
-	
-	public void cleanIndex() throws Exception{
-		if(solrServer == null){
-			solrServer = solrUtils.getSolrServer();
-		}
-		logger.info("Clearing existing taxon entries in the search index...");
-		solrServer.deleteByQuery("idxtype:" + IndexedTypes.TAXON); // delete																		// everything!
-		solrServer.commit();		
-	}
 
-	public void commitIndex() throws Exception{
-		if(solrServer == null){
-			solrServer = solrUtils.getSolrServer();
-		}
-		solrServer.commit();		
-	}
+  /**
+   * @return the bieURL
+   */
+  public String getBieURL() {
+      return bieURL;
+  }
 
-	public void doIndex(String guid) throws Exception{
-		if(solrServer == null){
-			solrServer = solrUtils.getSolrServer();
-		}
-		logger.debug("***** doIndex guid: " + guid);
-		List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
-		if(docs.size()>0)
-		    solrServer.add(docs);		
-	}
+  /**
+   * @param bieURL the bieURL to set
+   */
+  public void setBieURL(String bieURL) {
+      this.bieURL = bieURL;
+  }
 	
-	private class IndexingThread extends Thread{
-	    private ArrayBlockingQueue<String> queue;
-	    private int id, total ;
-	    boolean stop = false;
-	    boolean canStop = false;
-	    IndexingThread(int id,ArrayBlockingQueue<String> queue){
-	        logger.info("Creating Index Thread " + id);
-	        this.queue = queue;
-	        this.id = id;
-	    }
-	    
-	    void setCanStop(){
-	        canStop=true;
-	    }
-	    
-	    public void run(){
-	        while(!stop){
-	            try{
-	                if(canStop && queue.size()==0){
-	                    stop = true;
-	                    logger.info("Index Thread: " + id + " is stopping" );
-	                }
-	                else{
-    	            String guid = queue.poll(500,TimeUnit.MILLISECONDS);
-    	            total++;
-    	            List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
-    	            if(docs.size()>0)
-    	                solrServer.add(docs);
-    	            if(total%100== 0){
-                        logger.info("Indexer " + id + " has indexed " + total + " last key: " + guid);
-                    }
-	                }
-	            
-	            }	           
-	            catch(Exception e){
-	                e.printStackTrace();
-	            }
-	        }
-	    }
-	}
+	
+	
+	
+//	public void cleanIndex() throws Exception{
+//		if(solrServer == null){
+//			solrServer = solrUtils.getSolrServer();
+//		}
+//		logger.info("Clearing existing taxon entries in the search index...");
+//		solrServer.deleteByQuery("idxtype:" + IndexedTypes.TAXON); // delete																		// everything!
+//		solrServer.commit();		
+//	}
+//
+//	public void commitIndex() throws Exception{
+//		if(solrServer == null){
+//			solrServer = solrUtils.getSolrServer();
+//		}
+//		solrServer.commit();		
+//	}
+//
+//	public void doIndex(String guid) throws Exception{
+//		if(solrServer == null){
+//			solrServer = solrUtils.getSolrServer();
+//		}
+//		logger.debug("***** doIndex guid: " + guid);
+//		List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
+//		if(docs.size()>0)
+//		    solrServer.add(docs);		
+//	}
+//	
+//	private class IndexingThread extends Thread{
+//	    private ArrayBlockingQueue<String> queue;
+//	    private int id, total ;
+//	    boolean stop = false;
+//	    boolean canStop = false;
+//	    IndexingThread(int id,ArrayBlockingQueue<String> queue){
+//	        logger.info("Creating Index Thread " + id);
+//	        this.queue = queue;
+//	        this.id = id;
+//	    }
+//	    
+//	    void setCanStop(){
+//	        canStop=true;
+//	    }
+//	    
+//	    public void run(){
+//	        while(!stop){
+//	            try{
+//	                if(canStop && queue.size()==0){
+//	                    stop = true;
+//	                    logger.info("Index Thread: " + id + " is stopping" );
+//	                }
+//	                else{
+//    	            String guid = queue.poll(500,TimeUnit.MILLISECONDS);
+//    	            total++;
+//    	            List<SolrInputDocument> docs = taxonConceptDao.indexTaxonConcept(guid);
+//    	            if(docs.size()>0)
+//    	                solrServer.add(docs);
+//    	            if(total%100== 0){
+//                        logger.info("Indexer " + id + " has indexed " + total + " last key: " + guid);
+//                    }
+//	                }
+//	            
+//	            }	           
+//	            catch(Exception e){
+//	                e.printStackTrace();
+//	            }
+//	        }
+//	    }
+//	}
 	
 }
