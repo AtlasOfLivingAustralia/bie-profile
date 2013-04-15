@@ -41,364 +41,405 @@ import org.ala.util.FileType;
 import org.ala.util.RepositoryFileUtils;
 import org.ala.util.SpringUtils;
 import org.ala.util.TurtleUtils;
+import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 /**
  * Data Loader that scans through a BIE repository, find triples
- * and adds them to concepts held in the profiler. 
- * 
+ * and adds them to concepts held in the profiler.
+ *
  * @author Dave Martin
  */
 @Component
 public class RepoDataLoader {
 
-	protected static Logger logger = Logger.getLogger(RepoDataLoader.class);
-	
-	protected static String repositoryDir = "/data/bie";
-	@Inject
-	protected TaxonConceptDao taxonConceptDao;
-	protected Map<Integer, InfoSource> infoSourceMap;
-	protected HashMap<String, Integer> uidInfoSourceMap;
+    protected static Logger logger = Logger.getLogger(RepoDataLoader.class);
 
-	@Inject
+    protected static String repositoryDir = "/data/bie";
+    @Inject
+    protected TaxonConceptDao taxonConceptDao;
+    protected Map<Integer, InfoSource> infoSourceMap;
+    protected HashMap<String, Integer> uidInfoSourceMap;
+    protected List<String> guidList;
+
+    @Value("reindex.url")
+    protected String reindexUrl;
+
+    @Inject
     protected InfoSourceDAO infoSourceDAO;
     @Inject
     protected RepositoryFileUtils repoFileUtils;
     @Inject
-	protected SolrUtils solrUtils;
+    protected SolrUtils solrUtils;
     private boolean statsOnly = false;
     private boolean reindex = false;
     private boolean gList = false;
-	private FileOutputStream guidOut = null;
+    private FileOutputStream guidOut = null;
 
-	int totalFilesRead = 0;
-	int totalPropertiesSynced = 0;
-	
-	/**
-	 * This takes a list of infosource ids...
-	 * 
-	 * Usage: -stats or -reindex or -gList and list of infosourceId
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) throws Exception {
-		//RepoDataLoader loader = new RepoDataLoader();
+    int totalFilesRead = 0;
+    int totalPropertiesSynced = 0;
+
+    /**
+     * This takes a list of infosource ids...
+     * <p/>
+     * Usage: -stats or -reindex or -gList and list of infosourceId
+     *
+     * @param args
+     */
+    public static void main(String[] args) throws Exception {
+        //RepoDataLoader loader = new RepoDataLoader();
         ApplicationContext context = SpringUtils.getContext();
         RepoDataLoader loader = (RepoDataLoader) context.getBean(RepoDataLoader.class);
-		long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         loader.loadInfoSources();
         String filePath = repositoryDir;
-        if(args.length>0){
-            if(args[0].equalsIgnoreCase("-stats")) {
+        if (args.length > 0) {
+            if (args[0].equalsIgnoreCase("-stats")) {
                 loader.statsOnly = true;
-                args = (String[])ArrayUtils.subarray(args, 1, args.length);
+                args = (String[]) ArrayUtils.subarray(args, 1, args.length);
             }
-            if(args[0].equalsIgnoreCase("-reindex")) {
+            if (args[0].equalsIgnoreCase("-reindex")) {
                 loader.reindex = true;
-                args = (String[])ArrayUtils.subarray(args, 1, args.length);
+                args = (String[]) ArrayUtils.subarray(args, 1, args.length);
                 logger.info("**** -reindex: " + loader.reindex);
             }
-            if(args[0].equalsIgnoreCase("-gList")) {
+            if (args[0].equalsIgnoreCase("-gList")) {
                 loader.gList = true;
-                args = (String[])ArrayUtils.subarray(args, 1, args.length);
+                args = (String[]) ArrayUtils.subarray(args, 1, args.length);
                 logger.info("**** -gList: " + loader.gList);
             }
-            if(args[0].equalsIgnoreCase("-biocache")) {
-            	Hashtable<String, String> hashTable = new Hashtable<String, String>();
-        		hashTable.put("accept", "application/json");
-            	ObjectMapper mapper = new ObjectMapper();
-        		mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            	RestfulClient restfulClient = new RestfulClient(0);
-            	Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0", hashTable);
-        		if((Integer)resp[0] == HttpStatus.SC_OK){
-        			String content = resp[1].toString();
-        			if(content != null && content.length() > "[]".length()){
-        				Map map = mapper.readValue(content, Map.class);
-        				try{
-        					List<java.util.LinkedHashMap<String,String>> list = ((List<java.util.LinkedHashMap<String,String>>)((java.util.LinkedHashMap)((java.util.ArrayList)map.get("facetResults")).get(0)).get("fieldResult"));
-        					Set<String> arg = new LinkedHashSet<String>();
-        					for(int i = 0; i < list.size(); i++){
-        						java.util.LinkedHashMap<String,String> value = list.get(i);
-        						Object provider = (loader.getUidInfoSourceMap().get(value.get("label")));
-        						if(provider != null){
-        							arg.add(provider.toString());
-        						}
-        					}
-        					args = new String[]{};
-        					args = arg.toArray(args);
-        					//handle the situation where biocache-service reports no data resources
-        					if(args.length<1){
-        					    logger.error("No biocache data resources found. Unable to load.");
-        					    System.exit(0);
-        					}
-        				}
-        				catch(Exception e){
-        					logger.error("ERROR: exit process....." + e);
-        					e.printStackTrace();
-        					System.exit(0);
-        				}
-        			}
-        		} 
-        		else {
-        			logger.warn("Unable to process url: ");
-        		}            	
-            }            
+            if (args[0].equalsIgnoreCase("-biocache")) {
+                Hashtable<String, String> hashTable = new Hashtable<String, String>();
+                hashTable.put("accept", "application/json");
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                RestfulClient restfulClient = new RestfulClient(0);
+                Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0", hashTable);
+                if ((Integer) resp[0] == HttpStatus.SC_OK) {
+                    String content = resp[1].toString();
+                    if (content != null && content.length() > "[]".length()) {
+                        Map map = mapper.readValue(content, Map.class);
+                        try {
+                            List<java.util.LinkedHashMap<String, String>> list = ((List<java.util.LinkedHashMap<String, String>>) ((java.util.LinkedHashMap) ((java.util.ArrayList) map.get("facetResults")).get(0)).get("fieldResult"));
+                            Set<String> arg = new LinkedHashSet<String>();
+                            for (int i = 0; i < list.size(); i++) {
+                                java.util.LinkedHashMap<String, String> value = list.get(i);
+                                Object provider = (loader.getUidInfoSourceMap().get(value.get("label")));
+                                if (provider != null) {
+                                    arg.add(provider.toString());
+                                }
+                            }
+                            args = new String[]{};
+                            args = arg.toArray(args);
+                            //handle the situation where biocache-service reports no data resources
+                            if (args.length < 1) {
+                                logger.error("No biocache data resources found. Unable to load.");
+                                System.exit(0);
+                            }
+                        } catch (Exception e) {
+                            logger.error("ERROR: exit process....." + e);
+                            e.printStackTrace();
+                            System.exit(0);
+                        }
+                    }
+                } else {
+                    logger.warn("Unable to process url: ");
+                }
+            }
         }
-		int filesRead = loader.load(filePath, args); //FIX ME - move to config
-    	long finish = System.currentTimeMillis();
-    	logger.info(filesRead+" files scanned/loaded in: "+((finish-start)/60000)+" minutes "+((finish-start)/1000)+" seconds.");
-    	System.exit(1);
-	}
+        int filesRead = loader.load(filePath, args); //FIX ME - move to config
+        long finish = System.currentTimeMillis();
+        logger.info(filesRead + " files scanned/loaded in: " + ((finish - start) / 60000) + " minutes " + ((finish - start) / 1000) + " seconds.");
+        System.exit(1);
+    }
 
-	public int load(String filePath, String[] repoDirs) throws Exception {
-		return load(filePath, repoDirs, true);
-	}
-	
-	/**
-	 * Scan through the single directory, retrieve triples and
-	 * add to taxon concepts. used by admin imageUpload
-	 * 
-	 * @param repoDir scan single directory
-	 * @throws Exception
-	 */
-	 public int singleImageUploadLoad(String repoDir) throws Exception {
-		// reset counts
+    public int load(String filePath, String[] repoDirs) throws Exception {
+        return load(filePath, repoDirs, true);
+    }
+
+    /**
+     * Scan through the single directory, retrieve triples and
+     * add to taxon concepts. used by admin imageUpload
+     *
+     * @param repoDir scan single directory
+     * @throws Exception
+     */
+    public int singleImageUploadLoad(String repoDir) throws Exception {
+        // reset counts
         totalFilesRead = 0;
         totalPropertiesSynced = 0;
-	        
-		//start scan
-		File dir = null;
-		dir = new File(repoDir);
-		logger.info("Processing directories..."+dir.getAbsolutePath());		
-		
-		if(dir.isDirectory()){
-			File[] dirsToScan = {dir};
-			scanDirectory(dirsToScan);			
-		}
-		logger.info("Files read: "+totalFilesRead+", files matched: "+totalPropertiesSynced);
-		return totalFilesRead;
-	}
 
-		/**
-		 * Scan through the repository, retrieve triples and
-		 * add to taxon concepts
-		 * 
-		 * @param filePath Root directory of harvested repository
-		 * @param repoDirs Optional array of Infosource directories to scan passed as program arguments
-		 * @throws Exception
-		 */
-		 public int load(String filePath, String[] repoDirs, boolean allowStats) throws Exception {
-			 FileOutputStream statsOut = null;
-			 
-			logger.info("Scanning directory: "+filePath);
+        //start scan
+        File dir = null;
+        dir = new File(repoDir);
+        logger.info("Processing directories..." + dir.getAbsolutePath());
 
-	                //open the statistics file
-			if(allowStats){
-	                statsOut = FileUtils.openOutputStream(new File("/data/bie/bie_name_matching_stats_"+System.currentTimeMillis() + ".csv"));
-	                statsOut.write("InfoSource ID, InfoSource Name, URL, ANBG matches, Other matches, Missing, Homonyms detected\n".getBytes());
-			}
-
-			if(gList){
-				guidOut = FileUtils.openOutputStream(new File("/data/bie/repoLoader_guid_"+System.currentTimeMillis() + ".csv"));
-			}
-			
-			// reset counts
-	        totalFilesRead = 0;
-	        totalPropertiesSynced = 0;
-	        
-			//start scan
-			File file = new File(filePath);
-			File [] dirs = null;
-
-			// See if array of infosource directories passed as program arguments
-			if (repoDirs.length > 0) {
-				dirs = new File [repoDirs.length];
-				for (int i = 0; i < repoDirs.length; i++) {
-					dirs[i] = new File(file.getAbsolutePath() + File.separator + repoDirs[i]);
-					logger.info("Processing directories..."+dirs[i].getAbsolutePath());
-				}
-			} else {
-				//list immediate directories - this will give the 
-				logger.info("Listing all directories...");
-				dirs = file.listFiles();
-			}
-			
-			//go through each infosource directory
-			for(File childFile: dirs){
-				logger.info("Listing directories for infosource directory: "+childFile.getAbsolutePath());
-				
-				if(childFile.isDirectory()){
-	                            taxonConceptDao.resetStats();
-					//  takes us to /data/bie/<infosource-id>/<section-id>
-					logger.info("Listing directories for the section: "+childFile.getAbsolutePath());
-					File[] infosourceSection = childFile.listFiles();
-					for(File sectionDirectory: infosourceSection){
-						//this will list all the files in the
-						if(sectionDirectory.isDirectory()){
-							File[] dirsToScan = sectionDirectory.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY);
-							scanDirectory(dirsToScan);
-						}
-					}
-					if(allowStats){
-	                                //report the stats
-	                                if(org.apache.commons.lang.StringUtils.isNumeric(childFile.getName())){
-	                                InfoSource infoSource = infoSourceMap.get(new Integer(childFile.getName()));
-	                                taxonConceptDao.reportStats(statsOut, infoSource.getId() + ","+infoSource.getName() + "," + infoSource.getWebsiteUrl());
-	                            }
-					}
-	                                
-				}
-
-			}
-
-			logger.info("Files read: "+totalFilesRead+", files matched: "+totalPropertiesSynced);
-			if(allowStats){
-	                statsOut.flush();
-	                statsOut.close();
-			}
-			if(reindex){
-				solrUtils.getSolrServer().commit();
-			}
-			if(gList){
-				guidOut.flush();
-                guidOut.close();
-			}
-			return totalFilesRead;
-		}
-	 
-	/**
-	 * Retrieve the scientific name from the list of triples.
-	 * 
-	 * @param triples
-	 * @return scientific name if found, null otherwise
-	 */
-	private String getScientificName(List<Triple> triples) {
-        for (Triple triple: triples) {
-        	if (triple.predicate.equalsIgnoreCase(Predicates.SCIENTIFIC_NAME.toString())) {
-        		return triple.object.toString();
-        	}
+        if (dir.isDirectory()) {
+            File[] dirsToScan = {dir};
+            scanDirectory(dirsToScan);
         }
-		return null;
-	}
+        logger.info("Files read: " + totalFilesRead + ", files matched: " + totalPropertiesSynced);
+        return totalFilesRead;
+    }
 
-	/**
-	 * Scan through the supplied directories.
-	 * 
-	 * @param dirs
-	 */
-	public void scanDirectory(File[] dirs){
-		
-		int filesRead = 0;
-		int propertiesSynced = 0;
-		
-		for (File currentDir : dirs) {
-			logger.info("Reading directory: " + currentDir.getAbsolutePath());
-			Iterator<File> fileIterator = FileUtils.iterateFiles(currentDir, null, true);
-			while (fileIterator.hasNext()) {
-				File currentFile = fileIterator.next();
-				if (currentFile.getName().equals(FileType.RDF.toString())) {
-					filesRead++;
-					String infosourceId = currentFile.getParentFile().getParentFile().getParentFile().getName();
-					String infoSourceUid = infoSourceDAO.getUidByInfosourceId(String.valueOf(infosourceId));
-					//read the dublin core in the same directory - determine if its an image
-					try {
-	                    logger.info("Reading file: " + currentFile.getAbsolutePath());
-						FileReader reader = new FileReader(currentFile);
-	                    List<Triple> triples = TurtleUtils.readTurtle(reader);
-	                    //close the reader
-	                    reader.close();
-	                    
-	                    String currentSubject = null;
-	                    List<Triple> splitBySubject = new ArrayList<Triple>();
-	                    
-	                    String guid = null;
-	                    //iterate through triple, splitting the triples by subject
-	                    for(Triple triple: triples){
-	                    
-							if (currentSubject == null) {
-	                    		currentSubject = triple.subject;
-							} else if (!currentSubject.equals(triple.subject)) {
-	                    		//sync these triples
+    /**
+     * Scan through the repository, retrieve triples and
+     * add to taxon concepts
+     *
+     * @param filePath Root directory of harvested repository
+     * @param repoDirs Optional array of Infosource directories to scan passed as program arguments
+     * @throws Exception
+     */
+    public int load(String filePath, String[] repoDirs, boolean allowStats) throws Exception {
+        guidList = new ArrayList<String>();
+
+        FileOutputStream statsOut = null;
+
+        logger.info("Scanning directory: " + filePath);
+
+        //open the statistics file
+        if (allowStats) {
+            statsOut = FileUtils.openOutputStream(new File("/data/bie/bie_name_matching_stats_" + System.currentTimeMillis() + ".csv"));
+            statsOut.write("InfoSource ID, InfoSource Name, URL, ANBG matches, Other matches, Missing, Homonyms detected\n".getBytes());
+        }
+
+        if (gList) {
+            guidOut = FileUtils.openOutputStream(new File("/data/bie/repoLoader_guid_" + System.currentTimeMillis() + ".csv"));
+        }
+
+        // reset counts
+        totalFilesRead = 0;
+        totalPropertiesSynced = 0;
+
+        //start scan
+        File file = new File(filePath);
+        File[] dirs = null;
+
+        // See if array of infosource directories passed as program arguments
+        if (repoDirs.length > 0) {
+            dirs = new File[repoDirs.length];
+            for (int i = 0; i < repoDirs.length; i++) {
+                dirs[i] = new File(file.getAbsolutePath() + File.separator + repoDirs[i]);
+                logger.info("Processing directories..." + dirs[i].getAbsolutePath());
+            }
+        } else {
+            //list immediate directories - this will give the
+            logger.info("Listing all directories...");
+            dirs = file.listFiles();
+        }
+
+        //go through each infosource directory
+        for (File childFile : dirs) {
+            logger.info("Listing directories for infosource directory: " + childFile.getAbsolutePath());
+
+            if (childFile.isDirectory()) {
+                taxonConceptDao.resetStats();
+                //  takes us to /data/bie/<infosource-id>/<section-id>
+                logger.info("Listing directories for the section: " + childFile.getAbsolutePath());
+                File[] infosourceSection = childFile.listFiles();
+                for (File sectionDirectory : infosourceSection) {
+                    //this will list all the files in the
+                    if (sectionDirectory.isDirectory()) {
+                        File[] dirsToScan = sectionDirectory.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY);
+                        scanDirectory(dirsToScan);
+                    }
+                }
+                if (allowStats) {
+                    //report the stats
+                    if (org.apache.commons.lang.StringUtils.isNumeric(childFile.getName())) {
+                        InfoSource infoSource = infoSourceMap.get(new Integer(childFile.getName()));
+                        taxonConceptDao.reportStats(statsOut, infoSource.getId() + "," + infoSource.getName() + "," + infoSource.getWebsiteUrl());
+                    }
+                }
+
+            }
+
+        }
+
+        logger.info("Files read: " + totalFilesRead + ", files matched: " + totalPropertiesSynced);
+        if (allowStats) {
+            statsOut.flush();
+            statsOut.close();
+        }
+        if (reindex) {
+            //This results in SOLR file locking problems.
+            //solrUtils.getSolrServer().commit();
+
+            // need to call http://bie.ala.org.au/ws/admin/reindex with a JSON array of GUIDS to reindex
+            logger.debug("Calling bie service to reindex");
+            HttpClient httpClient = new HttpClient();
+            PostMethod post = new PostMethod(reindexUrl);
+
+            StringBuilder jsonBuilder = new StringBuilder();
+            jsonBuilder.append("[");
+            for (int i = 0; i < guidList.size(); i++) {
+                jsonBuilder.append("\"" + guidList.get(i) + "\"");
+
+                if (i < guidList.size() - 1) {
+                    jsonBuilder.append(",");
+                }
+            }
+            jsonBuilder.append("]");
+
+            post.setRequestHeader("Content-Type", "application/json");
+            post.setRequestBody(jsonBuilder.toString());
+
+            try {
+                int returnCode = httpClient.executeMethod(post);
+                if (returnCode != 200) {
+                    logger.error("Error submitting reindex request: " + post.getResponseBodyAsString());
+                }
+            } catch (Exception ex) {
+                logger.error("Error submitting reindex request", ex);
+            }
+
+        }
+
+        if (gList) {
+            guidOut.flush();
+            guidOut.close();
+        }
+
+        return totalFilesRead;
+    }
+
+    /**
+     * Retrieve the scientific name from the list of triples.
+     *
+     * @param triples
+     * @return scientific name if found, null otherwise
+     */
+    private String getScientificName(List<Triple> triples) {
+        for (Triple triple : triples) {
+            if (triple.predicate.equalsIgnoreCase(Predicates.SCIENTIFIC_NAME.toString())) {
+                return triple.object.toString();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Scan through the supplied directories.
+     *
+     * @param dirs
+     */
+    public void scanDirectory(File[] dirs) {
+
+        int filesRead = 0;
+        int propertiesSynced = 0;
+
+        for (File currentDir : dirs) {
+            logger.info("Reading directory: " + currentDir.getAbsolutePath());
+            Iterator<File> fileIterator = FileUtils.iterateFiles(currentDir, null, true);
+            while (fileIterator.hasNext()) {
+                File currentFile = fileIterator.next();
+                if (currentFile.getName().equals(FileType.RDF.toString())) {
+                    filesRead++;
+                    String infosourceId = currentFile.getParentFile().getParentFile().getParentFile().getName();
+                    String infoSourceUid = infoSourceDAO.getUidByInfosourceId(String.valueOf(infosourceId));
+                    //read the dublin core in the same directory - determine if its an image
+                    try {
+                        logger.info("Reading file: " + currentFile.getAbsolutePath());
+                        FileReader reader = new FileReader(currentFile);
+                        List<Triple> triples = TurtleUtils.readTurtle(reader);
+                        //close the reader
+                        reader.close();
+
+                        String currentSubject = null;
+                        List<Triple> splitBySubject = new ArrayList<Triple>();
+
+                        String guid = null;
+                        //iterate through triple, splitting the triples by subject
+                        for (Triple triple : triples) {
+
+                            if (currentSubject == null) {
+                                currentSubject = triple.subject;
+                            } else if (!currentSubject.equals(triple.subject)) {
+                                //sync these triples
 //								/data/bie/1036/23/235332/rdf
-								
-								guid = sync(currentFile, splitBySubject, infosourceId, infoSourceUid);
-								if (guid != null && guid.trim().length() > 0) {
-									propertiesSynced++;
-								}
-	    	                    //clear list
-	    	                    splitBySubject.clear();
-	    	                    currentSubject = triple.subject;
-	                    	}
-	                    	splitBySubject.add(triple);
-	                    }
-	
-	                    //sort out the buffer
-						if (!splitBySubject.isEmpty()) {
-							guid = sync(currentFile, splitBySubject, infosourceId, infoSourceUid);
-							if (guid != null && guid.trim().length() > 0) {
-								propertiesSynced++;
-							}
-						}
-						
-						if(gList && guid != null){
-							guidOut.write((guid + "\n").getBytes());
-						}
-	                    
-	                } catch (Exception e) {
-	                    logger.error("Error reading triples from file: '"+currentFile.getAbsolutePath() +"', "+e.getMessage(), e);
-	                }
-				}
-			}
-			logger.info("InfosourceId: " + currentDir.getName() + " - Files read: " + filesRead + ", files matched: " + propertiesSynced);
-			totalFilesRead += filesRead;
-			totalPropertiesSynced += propertiesSynced;
-		}
-	}
-	
-	
-	/**
-	 * Synchronize triples to database.
-	 * 
-	 * @param currentFile
-	 * @param triples
-	 * @throws Exception
-	 */
-	private String sync(File currentFile, List<Triple> triples, String infosourceId, String infoSourceUid) throws Exception {
-		
-		String documentId = currentFile.getParentFile().getName();
-		 
-		// Read dublin core
-		// Added info source data to the Document via info source Map
-		InfoSource infoSource = infoSourceMap.get(new Integer(infosourceId));
-		Document document = readDcFile(currentFile);
-		document.setId(Integer.parseInt(documentId));
-		document.setInfoSourceId(infoSource.getId());
-		document.setInfoSourceName(infoSource.getName());
-		document.setInfoSourceUri(infoSource.getWebsiteUrl());
-		document.setFilePath(currentFile.getParentFile().getAbsolutePath());
-		
-		
-		
-		if (infoSourceUid != null && !"".equals(infoSourceUid)) {
-		    document.setInfoSourceUid(infoSourceUid);
-		}
-		
-		Map<String, String> dc = readDcFileAsMap(currentFile);
-		// Sync the triples and associated DC data
-		logger.info("Attempting to sync triple where Scientific Name = " + getScientificName(triples));
-		String guid = taxonConceptDao.syncTriples(document, triples, dc, statsOnly, reindex);
-//		boolean success = taxonConceptDao.syncTriples(document, triples, dc, statsOnly);
-		logger.info("Processed file: "+currentFile.getAbsolutePath() + ", Scientific Name = " + getScientificName(triples) + ", guid: "+guid);
-		return guid;
-	}
+
+                                guid = sync(currentFile, splitBySubject, infosourceId, infoSourceUid);
+                                if (guid != null && guid.trim().length() > 0) {
+                                    propertiesSynced++;
+                                }
+                                //clear list
+                                splitBySubject.clear();
+                                currentSubject = triple.subject;
+                            }
+                            splitBySubject.add(triple);
+                        }
+
+                        //sort out the buffer
+                        if (!splitBySubject.isEmpty()) {
+                            guid = sync(currentFile, splitBySubject, infosourceId, infoSourceUid);
+                            if (guid != null && guid.trim().length() > 0) {
+                                propertiesSynced++;
+                            }
+                        }
+
+                        if (gList && guid != null) {
+                            guidOut.write((guid + "\n").getBytes());
+                        }
+
+                        guidList.add(guid);
+
+                    } catch (Exception e) {
+                        logger.error("Error reading triples from file: '" + currentFile.getAbsolutePath() + "', " + e.getMessage(), e);
+                    }
+                }
+            }
+            logger.info("InfosourceId: " + currentDir.getName() + " - Files read: " + filesRead + ", files matched: " + propertiesSynced);
+            totalFilesRead += filesRead;
+            totalPropertiesSynced += propertiesSynced;
+        }
+    }
+
+
+    /**
+     * Synchronize triples to database.
+     *
+     * @param currentFile
+     * @param triples
+     * @throws Exception
+     */
+    private String sync(File currentFile, List<Triple> triples, String infosourceId, String infoSourceUid) throws Exception {
+
+        String documentId = currentFile.getParentFile().getName();
+
+        // Read dublin core
+        // Added info source data to the Document via info source Map
+        InfoSource infoSource = infoSourceMap.get(new Integer(infosourceId));
+        Document document = readDcFile(currentFile);
+        document.setId(Integer.parseInt(documentId));
+        document.setInfoSourceId(infoSource.getId());
+        document.setInfoSourceName(infoSource.getName());
+        document.setInfoSourceUri(infoSource.getWebsiteUrl());
+        document.setFilePath(currentFile.getParentFile().getAbsolutePath());
+
+
+        if (infoSourceUid != null && !"".equals(infoSourceUid)) {
+            document.setInfoSourceUid(infoSourceUid);
+        }
+
+        Map<String, String> dc = readDcFileAsMap(currentFile);
+        // Sync the triples and associated DC data
+        logger.info("Attempting to sync triple where Scientific Name = " + getScientificName(triples));
+
+        String guid = taxonConceptDao.syncTriples(document, triples, dc, statsOnly);
+//		boolean success = taxonConceptDao.syncTriplesReturnSuccess(document, triples, dc, statsOnly);
+        logger.info("Processed file: " + currentFile.getAbsolutePath() + ", Scientific Name = " + getScientificName(triples) + ", guid: " + guid);
+        return guid;
+    }
 
     /**
      * Initialise the info source map
@@ -408,17 +449,17 @@ public class RepoDataLoader {
     public void loadInfoSources() {
         this.infoSourceMap = new HashMap<Integer, InfoSource>();
         this.uidInfoSourceMap = new HashMap<String, Integer>();
-        if (infoSourceDAO!=null) {
+        if (infoSourceDAO != null) {
             List<Integer> allIds = infoSourceDAO.getIdsforAll();
             Map<String, String> allUids = infoSourceDAO.getInfosourceIdUidMap();
-            for (Integer id : allIds) {            	
+            for (Integer id : allIds) {
                 infoSourceMap.put(id, infoSourceDAO.getById(id));
-                if(allUids.get(id.toString()) != null && !"".equals(allUids.get(id.toString()))){
-                	uidInfoSourceMap.put(allUids.get(id.toString()), id);
+                if (allUids.get(id.toString()) != null && !"".equals(allUids.get(id.toString()))) {
+                    uidInfoSourceMap.put(allUids.get(id.toString()), id);
                 }
-            }            
+            }
         }
-        logger.info("loaded infoSource map: "+infoSourceMap.size());
+        logger.info("loaded infoSource map: " + infoSourceMap.size());
     }
 
     /**
@@ -433,7 +474,7 @@ public class RepoDataLoader {
         String dcFileName = rdfFileName.replaceFirst("rdf", "dc");
         File dcfile = new File(dcFileName);
         List<String[]> dcContents = new ArrayList<String[]>();
-        
+
         try {
             dcContents = repoFileUtils.readRepositoryFile(dcfile);
 
@@ -448,7 +489,7 @@ public class RepoDataLoader {
                 }
             }
         } catch (Exception ex) {
-            logger.error("Cannot open dc file: "+dcFileName+" - "+ex.getMessage());
+            logger.error("Cannot open dc file: " + dcFileName + " - " + ex.getMessage());
         }
         return doc;
     }
@@ -459,32 +500,32 @@ public class RepoDataLoader {
      * @param currentFile
      * @return doc the Docuement to return
      */
-    private Map<String,String> readDcFileAsMap(File currentFile) {
+    private Map<String, String> readDcFileAsMap(File currentFile) {
         String rdfFileName = currentFile.getAbsolutePath();
         String dcFileName = rdfFileName.replaceFirst("rdf", "dc");
         File dcfile = new File(dcFileName);
-        Map<String,String> dc = null;
+        Map<String, String> dc = null;
         try {
-        	dc = repoFileUtils.readDcFileAsMap(dcfile);
+            dc = repoFileUtils.readDcFileAsMap(dcfile);
         } catch (Exception ex) {
-            logger.error("Cannot open dc file: "+dcFileName+" - "+ex.getMessage());
+            logger.error("Cannot open dc file: " + dcFileName + " - " + ex.getMessage());
         }
         return dc;
     }
-    
+
     /**
-	 * @param taxonConceptDao the taxonConceptDao to set
-	 */
-	public void setTaxonConceptDao(TaxonConceptDao taxonConceptDao) {
-		this.taxonConceptDao = taxonConceptDao;
-	}
+     * @param taxonConceptDao the taxonConceptDao to set
+     */
+    public void setTaxonConceptDao(TaxonConceptDao taxonConceptDao) {
+        this.taxonConceptDao = taxonConceptDao;
+    }
 
     public static String getRepositoryDir() {
         return repositoryDir;
     }
 
     public HashMap<String, Integer> getUidInfoSourceMap() {
-		return uidInfoSourceMap;
-	}
+        return uidInfoSourceMap;
+    }
 }
 

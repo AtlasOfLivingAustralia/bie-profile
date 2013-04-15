@@ -1435,10 +1435,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	/**
 	 * @see org.ala.dao.TaxonConceptDao
 	 */
-	public boolean syncTriples(org.ala.model.Document document,
-			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly)
+	public boolean syncTriplesReturnSuccess(org.ala.model.Document document,
+                                            List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly)
 			throws Exception {
-		String guid = syncTriples(document, triples, dublinCore, statsOnly, false);
+		String guid = syncTriples(document, triples, dublinCore, statsOnly);
 		if(guid != null && guid.trim().length() > 0 ){
 			return true;
 		}
@@ -1449,7 +1449,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 * @see org.ala.dao.TaxonConceptDao
 	 */
 	public String syncTriples(org.ala.model.Document document,
-			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly, boolean reindex)
+			List<Triple> triples, Map<String, String> dublinCore, boolean statsOnly)
 			throws Exception {
 		List<String> scientificNames = new ArrayList<String>();
 		String specificEpithet = null;
@@ -1817,17 +1817,19 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// addLiteralValues(guid,
 			// infoSourceId,Integer.toString(document.getId()), properties);
 
-			if(reindex && guid != null){
-				List<SolrInputDocument> docList = indexTaxonConcept(guid, null);
-				SolrServer solrServer = solrUtils.getSolrServer();
-				if(solrServer != null){
-					solrServer.add(docList);
-//					solrServer.commit(true, true);
-				}
-				else{
-					logger.error("****** Can't connect to Solr server.....");
-				}
-			}
+            //THIS CAUSES SOLR FILE LOCK ERRORS.
+
+//			if(reindex && guid != null){
+//				List<SolrInputDocument> docList = indexTaxonConcept(guid, null);
+//				SolrServer solrServer = solrUtils.getSolrServer();
+//				if(solrServer != null){
+//					solrServer.add(docList);
+////					solrServer.commit(true, true);
+//				}
+//				else{
+//					logger.error("****** Can't connect to Solr server.....");
+//				}
+//			}
 //			return true;
 		} else {
 			logger.info("GUID null");
