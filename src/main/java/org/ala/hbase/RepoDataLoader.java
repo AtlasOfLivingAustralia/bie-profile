@@ -72,7 +72,6 @@ public class RepoDataLoader {
     protected HashMap<String, Integer> uidInfoSourceMap;
     protected List<String> guidList;
 
-    @Value("reindex.url")
     protected String reindexUrl;
 
     @Inject
@@ -112,6 +111,7 @@ public class RepoDataLoader {
                 loader.reindex = true;
                 args = (String[]) ArrayUtils.subarray(args, 1, args.length);
                 logger.info("**** -reindex: " + loader.reindex);
+                logger.debug("reindex url: " + loader.reindexUrl);
             }
             if (args[0].equalsIgnoreCase("-gList")) {
                 loader.gList = true;
@@ -526,6 +526,10 @@ public class RepoDataLoader {
 
     public HashMap<String, Integer> getUidInfoSourceMap() {
         return uidInfoSourceMap;
+    }
+
+    public void setReindexUrl(String reindexUrl) {
+        this.reindexUrl = reindexUrl;
     }
 }
 

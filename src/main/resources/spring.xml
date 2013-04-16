@@ -40,6 +40,10 @@
         <property name="dataSource" ref="dataSource"/>
     </bean>
 
+    <bean id="repoDataLoader" class="org.ala.hbase.RepoDataLoader" lazy-init="true">
+        <property name="reindexUrl" value="${repoDataLoader.reindexUrl}"/>
+    </bean>
+
     <!-- load properties file into the context -->
     <!-- Also load properties into a messageSource bean for access in Java code -->
     <bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
