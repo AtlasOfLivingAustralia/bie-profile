@@ -960,6 +960,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 		    //the child is the one we want
 		    lsid = e.getChildResult().getLsid();
 		}
+		catch(MisappliedException e){
+      if(e.getMisappliedResult() != null)
+          lsid = e.getMatchedResult().getLsid();
+    }
 		catch (SearchResultException e) {
 			logger.warn("Checklist Bank lookup exception (" + scientificName
 					+ ") - " + e.getMessage() + e.getResults());
@@ -1037,6 +1041,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         //the child is the one we want
         lsid = e.getChildResult().getLsid();
     }
+		catch(MisappliedException e){
+      if(e.getMisappliedResult() != null)
+          lsid = e.getMatchedResult().getLsid();
+    }
 		catch (SearchResultException e) {
 			logger.warn("Checklist Bank lookup exception - " + e.getMessage()
 					+ e.getResults());
@@ -1055,6 +1063,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         boolean homonym = false;
 		try {
 			lsid = cbIdxSearcher.searchForLSID(scientificName, useSoundEx);
+		}
+		catch(MisappliedException e){
+      if(e.getMisappliedResult() != null)
+          lsid = e.getMatchedResult().getLsid();
 		}
     catch(ExcludedNameException e){
         if(e.getNonExcludedName() != null)
@@ -1085,7 +1097,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 * @see org.ala.dao.TaxonConceptDao#findLsidForSearch(String, boolean)
 	 */
     @Override
-    public String findLsidForSearch(String scientificName, boolean useSoundEx){
+    public String findLsidForSearch(String scientificName, boolean useSoundEx){         
         String lsid =null;
         try{
             NameSearchResult nsr = findCBDataByName(scientificName, null, null, useSoundEx);
@@ -1101,6 +1113,10 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         catch(ParentSynonymChildException e){
             //the child is the one we want
             lsid = e.getChildResult().getLsid();
+        }
+        catch(MisappliedException e){
+          if(e.getMisappliedResult() != null)
+              lsid = e.getMatchedResult().getLsid();
         }
         catch(Exception e){
             if(e instanceof HomonymException){
