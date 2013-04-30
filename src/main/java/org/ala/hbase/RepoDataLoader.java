@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -38,6 +39,7 @@ import org.ala.model.InfoSource;
 import org.ala.model.Triple;
 import org.ala.repository.Predicates;
 import org.ala.util.FileType;
+import org.ala.util.PartialIndex;
 import org.ala.util.RepositoryFileUtils;
 import org.ala.util.SpringUtils;
 import org.ala.util.TurtleUtils;
@@ -47,6 +49,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -84,7 +87,7 @@ public class RepoDataLoader {
     private boolean reindex = false;
     private boolean gList = false;
     private FileOutputStream guidOut = null;
-
+    private PartialIndex indexer;
     int totalFilesRead = 0;
     int totalPropertiesSynced = 0;
 
@@ -109,6 +112,7 @@ public class RepoDataLoader {
             }
             if (args[0].equalsIgnoreCase("-reindex")) {
                 loader.reindex = true;
+                loader.indexer = context.getBean(PartialIndex.class);
                 args = (String[]) ArrayUtils.subarray(args, 1, args.length);
                 logger.info("**** -reindex: " + loader.reindex);
                 logger.debug("reindex url: " + loader.reindexUrl);
@@ -124,9 +128,32 @@ public class RepoDataLoader {
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 RestfulClient restfulClient = new RestfulClient(0);
-                Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0", hashTable);
+                String fq = "&fq=";
+                if(args.length>1){
+                    java.util.Date date = new java.util.Date();
+                    if(args[1].equals("-lastWeek")){
+                        date =DateUtils.addWeeks(date, -1);
+                    }
+                    else if(args[1].equals("-lastMonth")){
+                        date = DateUtils.addMonths(date, -1);
+                    }
+                    else if(args[1].equals("-lastYear")){
+                        date = DateUtils.addYears(date, -1);
+                    }
+                    else
+                        date = null;
+                    if(date != null){
+                        SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        
+                        fq += "last_load_date:%5B" + sfd.format(date) + "%20TO%20*%5D";
+                    }
+                }
+                  
+                Object[] resp = restfulClient.restGet("http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image"+fq+"&facets=data_resource_uid&pageSize=0", hashTable);
+                logger.info("The URL: " + "http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image"+fq+"&facets=data_resource_uid&pageSize=0");
                 if ((Integer) resp[0] == HttpStatus.SC_OK) {
                     String content = resp[1].toString();
+                    logger.debug(resp[1]);
                     if (content != null && content.length() > "[]".length()) {
                         Map map = mapper.readValue(content, Map.class);
                         try {
@@ -139,6 +166,7 @@ public class RepoDataLoader {
                                     arg.add(provider.toString());
                                 }
                             }
+                            logger.info("Set of biocache infosource ids to load: " + arg);
                             args = new String[]{};
                             args = arg.toArray(args);
                             //handle the situation where biocache-service reports no data resources
@@ -202,6 +230,7 @@ public class RepoDataLoader {
      */
     public int load(String filePath, String[] repoDirs, boolean allowStats) throws Exception {
         guidList = new ArrayList<String>();
+        String lsidFileName ="/data/bie/repoLoader_guid_" + System.currentTimeMillis() + ".csv";
 
         FileOutputStream statsOut = null;
 
@@ -214,7 +243,7 @@ public class RepoDataLoader {
         }
 
         if (gList) {
-            guidOut = FileUtils.openOutputStream(new File("/data/bie/repoLoader_guid_" + System.currentTimeMillis() + ".csv"));
+            guidOut = FileUtils.openOutputStream(new File(lsidFileName));
         }
 
         // reset counts
@@ -271,44 +300,52 @@ public class RepoDataLoader {
             statsOut.flush();
             statsOut.close();
         }
-        if (reindex) {
-            //This results in SOLR file locking problems.
-            //solrUtils.getSolrServer().commit();
-
-            // need to call http://bie.ala.org.au/ws/admin/reindex with a JSON array of GUIDS to reindex
-            logger.debug("Calling bie service to reindex");
-            HttpClient httpClient = new HttpClient();
-            PostMethod post = new PostMethod(reindexUrl);
-
-            StringBuilder jsonBuilder = new StringBuilder();
-            jsonBuilder.append("[");
-            for (int i = 0; i < guidList.size(); i++) {
-                jsonBuilder.append("\"" + guidList.get(i) + "\"");
-
-                if (i < guidList.size() - 1) {
-                    jsonBuilder.append(",");
-                }
-            }
-            jsonBuilder.append("]");
-
-            post.setRequestHeader("Content-Type", "application/json");
-            post.setRequestBody(jsonBuilder.toString());
-
-            try {
-                int returnCode = httpClient.executeMethod(post);
-                if (returnCode != 200) {
-                    logger.error("Error submitting reindex request: " + post.getResponseBodyAsString());
-                }
-            } catch (Exception ex) {
-                logger.error("Error submitting reindex request", ex);
-            }
-
-        }
-
         if (gList) {
-            guidOut.flush();
-            guidOut.close();
+          guidOut.flush();
+          guidOut.close();
         }
+        if (reindex) {
+          
+          //NC 2013-045-30: use the Partial Index to automatically reindex the values in the file. This batches them into manageable chunks          
+          indexer.process(lsidFileName);
+          
+//            //This results in SOLR file locking problems.
+//            //solrUtils.getSolrServer().commit();
+//
+//            // need to call http://bie.ala.org.au/ws/admin/reindex with a JSON array of GUIDS to reindex
+//            logger.debug("Calling bie service to reindex " + guidList.size());
+//            HttpClient httpClient = new HttpClient();
+//            PostMethod post = new PostMethod(reindexUrl);
+//            ObjectMapper mapper = new ObjectMapper();            
+//            
+//
+////            StringBuilder jsonBuilder = new StringBuilder();
+////            jsonBuilder.append("[");
+////            for (int i = 0; i < guidList.size(); i++) {
+////                jsonBuilder.append("\"" + guidList.get(i) + "\"");
+////
+////                if (i < guidList.size() - 1) {
+////                    jsonBuilder.append(",");
+////                }
+////            }
+////            jsonBuilder.append("]");
+//
+//            post.setRequestHeader("Content-Type", "application/json");
+//            post.setRequestBody(mapper.writeValueAsString(guidList));
+//
+//            try {
+//                int returnCode = httpClient.executeMethod(post);
+//                if (returnCode != 200) {
+//                    logger.error("Error submitting reindex request: " + post.getResponseBodyAsString());
+//                }
+//            } catch (Exception ex) {
+//                logger.error("Error submitting reindex request", ex);
+//                logger.info(guidList);
+//            }
+
+        }
+
+        
 
         return totalFilesRead;
     }
