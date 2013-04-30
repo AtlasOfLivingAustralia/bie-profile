@@ -242,7 +242,7 @@ public class RepoDataLoader {
             statsOut.write("InfoSource ID, InfoSource Name, URL, ANBG matches, Other matches, Missing, Homonyms detected\n".getBytes());
         }
 
-        if (gList) {
+        if (gList || reindex) {
             guidOut = FileUtils.openOutputStream(new File(lsidFileName));
         }
 
@@ -305,6 +305,15 @@ public class RepoDataLoader {
           guidOut.close();
         }
         if (reindex) {
+          
+          if(!gList){
+            //only want to include unique lsids
+              Set<String> guids = new java.util.HashSet<String>(guidList);
+              for(String guid:guids)
+                  guidOut.write((guid + "\n").getBytes());
+              guidOut.flush();
+              guidOut.close();
+          }
           
           //NC 2013-045-30: use the Partial Index to automatically reindex the values in the file. This batches them into manageable chunks          
           indexer.process(lsidFileName);
