@@ -218,6 +218,12 @@ public class GenerateThumbnails {
                     //if (mimeTypes.contains(mimeType)) {
                     if (MimeType.PNG.getMimeType().equals(mimeType) || MimeType.JPEG.getMimeType().equals(mimeType) || MimeType.GIF.getMimeType().equals(mimeType)) {
                         generateThumbnail(dir, FileType.RAW, mimeType, overwriteIfExists, overwriteRawThumbnailIfExists, overwriteLargeRawIfExists);
+                    } else if((new File(dir.getParentFile().getAbsolutePath()+File.separatorChar + "raw.jpg").exists())) {
+                        //default to JPEG if a file exists
+                        generateThumbnail(dir, FileType.RAW,  MimeType.JPEG.getMimeType(), overwriteIfExists, overwriteRawThumbnailIfExists, overwriteLargeRawIfExists);
+                    } else if((new File(dir.getParentFile().getAbsolutePath()+File.separatorChar + "raw.png").exists())) {
+                        //default to JPEG if a file exists
+                        generateThumbnail(dir, FileType.RAW,  MimeType.PNG.getMimeType(), overwriteIfExists, overwriteRawThumbnailIfExists, overwriteLargeRawIfExists);
                     }
                 }
             } catch (Exception e) {
