@@ -43,30 +43,41 @@ public class SolrUtils {
     
     private int numThreads = 4; 
 	
-	/**
-     * Initialise the SOLR server instance
+    /**
+     * Initialises the SOLR instance as per the config in in spring.xml
      */
-    public SolrServer getSolrServer() throws Exception {
+    public void init(){
+      try{
         if (this.server == null & solrHome != null) {
-	        System.setProperty("solr.solr.home", solrHome);
-	        logger.info("SOLR HOME : " + solrHome);
-	        coreContainer = null;
-	        try {
-		        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-		        coreContainer = initializer.initialize();
-	        } catch (Exception e) {
-	        	//FIXME this is a hack - there must be a better way of initialising SOLR here
-	        	IndexWriterConfig indexWriterConfig = new IndexWriterConfig(BIE_LUCENE_VERSION, new StandardAnalyzer(BIE_LUCENE_VERSION));
-	        	Directory dir = FSDirectory.open(new File(solrHome+"/index")); 
-	        	IndexWriter idxWriter = new IndexWriter(dir, indexWriterConfig);
-//	        	IndexWriter idxWriter = new IndexWriter(solrHome+"/index", new StandardAnalyzer());
-		        idxWriter.commit();
-		        idxWriter.close();
-		        CoreContainer.Initializer initializer = new CoreContainer.Initializer();
-		        coreContainer = initializer.initialize();		        
-	        }
-	        this.server = new EmbeddedSolrServer(coreContainer, "");
+          System.setProperty("solr.solr.home", solrHome);
+          logger.info("SOLR HOME : " + solrHome);
+          coreContainer = null;
+          try {
+            CoreContainer.Initializer initializer = new CoreContainer.Initializer();
+            coreContainer = initializer.initialize();
+          } catch (Exception e) {
+            //FIXME this is a hack - there must be a better way of initialising SOLR here
+            IndexWriterConfig indexWriterConfig = new IndexWriterConfig(BIE_LUCENE_VERSION, new StandardAnalyzer(BIE_LUCENE_VERSION));
+            Directory dir = FSDirectory.open(new File(solrHome+"/index")); 
+            IndexWriter idxWriter = new IndexWriter(dir, indexWriterConfig);
+//            IndexWriter idxWriter = new IndexWriter(solrHome+"/index", new StandardAnalyzer());
+            idxWriter.commit();
+            idxWriter.close();
+            CoreContainer.Initializer initializer = new CoreContainer.Initializer();
+            coreContainer = initializer.initialize();           
+          }
+          this.server = new EmbeddedSolrServer(coreContainer, "");
         }
+      }
+      catch(Exception e){
+        logger.error("Unable to initialise the SOLR server", e);
+      }
+    }
+    
+	/**
+     * Returns SOLR server instance
+     */
+    public SolrServer getSolrServer() {        
         return server;
     }
     public void shutdownSolr(){

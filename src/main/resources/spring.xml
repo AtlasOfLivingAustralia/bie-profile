@@ -23,6 +23,8 @@
     </bean>
 
     <bean id="storeHelper" class="org.ala.dao.CassandraPelopsHelper" init-method="init" lazy-init="true"/>
+    
+    <bean id="solrUtils" class="org.ala.dao.SolrUtils" init-method="init"/>
 
     <bean id="taxonConceptDao" class="org.ala.dao.TaxonConceptSHDaoImpl" init-method="init" lazy-init="true">
         <property name="storeHelper" ref="storeHelper"/>
