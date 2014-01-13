@@ -73,6 +73,11 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
     protected Integer left;
     protected Integer right;
     protected String kingdom;
+    protected String phylum;
+    protected String classs;
+    protected String order;
+    protected String family;
+    protected String genus;
     protected String author;
     protected String linkIdentifier;
     protected Integer occCount;
@@ -493,7 +498,78 @@ public class SearchTaxonConceptDTO extends SearchDTO implements Comparable<Searc
 	 */
     public void setKingdom(String kingdom) {
         this.kingdom = kingdom;
+    }   
+    
+    /**
+     * @return the phylum
+     */
+    public String getPhylum() {
+        return phylum;
     }
+
+    /**
+     * @param phylum the phylum to set
+     */
+    public void setPhylum(String phylum) {
+        this.phylum = phylum;
+    }
+
+    /**
+     * @return the classs
+     */
+    public String getClasss() {
+        return classs;
+    }
+
+    /**
+     * @param classs the classs to set
+     */
+    public void setClasss(String classs) {
+        this.classs = classs;
+    }
+
+    /**
+     * @return the order
+     */
+    public String getOrder() {
+        return order;
+    }
+
+    /**
+     * @param order the order to set
+     */
+    public void setOrder(String order) {
+        this.order = order;
+    }
+
+    /**
+     * @return the family
+     */
+    public String getFamily() {
+        return family;
+    }
+
+    /**
+     * @param family the family to set
+     */
+    public void setFamily(String family) {
+        this.family = family;
+    }
+
+    /**
+     * @return the genus
+     */
+    public String getGenus() {
+        return genus;
+    }
+
+    /**
+     * @param genus the genus to set
+     */
+    public void setGenus(String genus) {
+        this.genus = genus;
+    }
+
     /**
 	 * @return the author
 	 */
