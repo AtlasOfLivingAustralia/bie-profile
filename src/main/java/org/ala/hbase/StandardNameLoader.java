@@ -54,14 +54,14 @@ public class StandardNameLoader {
         System.exit(1);
     }
     public void loadBA() throws Exception{
-        CSVReader reader = CSVReader.buildReader(new File("/data/bie-staging/vernacular/birds_aust/Checklist_birds_2008.csv"), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File("/data/bie-staging/vernacular/birds_aust/Checklist_birds_2008.csv"), "UTF-8", ",", '"', 1);
         InfoSource is = new InfoSource();
         is.setName("Birds Australia");
         is.setWebsiteUrl("http://www.birdsaustralia.com.au/images/stories/birds/checklist2008_sm.pdf");
         is.setId(600);
         is.setUid("dr359");
         while(reader.hasNext()){
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if(values != null && values.length > 2){
                 String commonName = values[0].trim();
                 LinnaeanRankClassification cl = new LinnaeanRankClassification("Animalia", null);
@@ -74,10 +74,10 @@ public class StandardNameLoader {
         taxonConceptDao.reportStats(System.out, "Final BA name stats ");
     }
     public void loadCAAB() throws Exception{
-        CSVReader reader = CSVReader.buildReader(new File("/data/bie-staging/vernacular/caab/caab-fishes-standard-names-20101209.csv"), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File("/data/bie-staging/vernacular/caab/caab-fishes-standard-names-20101209.csv"), "UTF-8", ",", '"', 1);
         InfoSource is = infoSourceDAO.getById(1016);
         while(reader.hasNext()){
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if(values != null && values.length>=7){
                 //only want to handle the "australian" region for now
                 //Tony Rees comment:

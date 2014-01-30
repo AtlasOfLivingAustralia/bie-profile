@@ -65,8 +65,8 @@
             <!-- DwC Archive Reader -->
             <dependency>
                 <groupId>org.gbif</groupId>
-                <artifactId>dwc-archive</artifactId>
-                <version>1.2-SNAPSHOT</version>
+                <artifactId>dwca-reader</artifactId>
+                <version>1.14-SNAPSHOT</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xerces</groupId>
@@ -379,7 +379,7 @@
             <dependency>
                 <groupId>au.org.ala</groupId>
                 <artifactId>ala-name-matching</artifactId>
-                <version>1.2-SNAPSHOT</version>
+                <version>1.3-SNAPSHOT</version>
                  <exclusions>
                     <exclusion>
                         <groupId>dom4j</groupId>

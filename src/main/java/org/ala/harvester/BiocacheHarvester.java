@@ -240,7 +240,10 @@ public class BiocacheHarvester implements Harvester {
     	int ctr = 0;
     	String dateRangeQuery = formatDateRangeQuery();
 		logger.debug("Date query: " + dateRangeQuery);
-    	DynaBean dynaBean = this.getJsonDynaBean(DATA_RESOURCE_URL + '&' + dateRangeQuery);    	
+    	DynaBean dynaBean = this.getJsonDynaBean(DATA_RESOURCE_URL + '&' + dateRangeQuery); 
+    	logger.info("FIRST UTLS: " + DATA_RESOURCE_URL + '&' + dateRangeQuery);
+    	logger.info("FilterURL :: "+  MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery));
+    	//System.exit(0);
     	if("OK".equalsIgnoreCase(dynaBean.status)){
     		ctr = dynaBean.totalRecords;
     		List<Map<String,String>> list = ((List<Map<String,String>>)((Map)((List)dynaBean.get("facetResults")).get(0)).get("fieldResult"));
@@ -265,7 +268,7 @@ public class BiocacheHarvester implements Harvester {
 	String formatDateRangeQuery(){
 		if(this.endDate != null){
 			SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-			StringBuffer sb = new StringBuffer("fq=first_loaded_date:%5B");
+			StringBuffer sb = new StringBuffer("fq=last_load_date:%5B");
 			sb.append(sfd.format(this.getStartDate()));
 			sb.append("%20TO%20");
 			sb.append(sfd.format(this.getEndDate()));

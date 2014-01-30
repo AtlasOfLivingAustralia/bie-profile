@@ -654,10 +654,10 @@ public class RankingDaoImpl implements RankingDao {
 					logger.info("**** setLock-isReadOnly: " + ReadOnlyLock.getInstance().isReadOnly());
 					
 			    	File file = new File("/data/bie-staging/vernacular/caab/caab-fishes-standard-names-20101209.csv");
-			        CSVReader reader = CSVReader.buildReader(file, "UTF-8", ',', '"', 1);
+			        CSVReader reader = CSVReader.build(file, "UTF-8", ",", '"', 1);
 			        while(reader.hasNext()){
 			        	ctr++;
-			            String[] values = reader.readNext();
+			            String[] values = reader.next();
 			            if(values != null && values.length>=7){
 			                //only want to handle the "australian" region for now
 			                //Tony Rees comment:

@@ -675,6 +675,11 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
         storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
 				ColumnType.TEXT_PROPERTY_COL.getColumnName(), guid, (List) simpleProperties, false);
 	}
+	
+	public void setSynonymsFor(String guid, List<SynonymConcept> synonyms) throws Exception {
+	    storeHelper.putList(TC_TABLE, TC_COL_FAMILY,
+                ColumnType.SYNONYM_COL.getColumnName(), guid, (List) synonyms, false);
+	}
 
 	/**
 	 * @see org.ala.dao.TaxonConceptDao#create(java.util.List)
@@ -948,7 +953,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			// System.out.println("Get LSID for sci name: " + scientificName +
 			// ", and rank: " + taxonRank);
 			lsid = cbIdxSearcher.searchForLSID(scientificName, classification,
-					RankType.getForName(taxonRank), useSoundEx);
+					RankType.getForName(taxonRank), useSoundEx,false);
 		}
 		catch(ExcludedNameException e){
 		    if(e.getNonExcludedName() != null)

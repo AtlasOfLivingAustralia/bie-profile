@@ -52,6 +52,15 @@ import au.com.bytecode.opencsv.CSVReader;
  * Reads a Darwin Core CSV which contains a classification for a taxon, and add
  * this classification to the taxon profile.
  * 
+ * 
+ * INSERT INTO infosource (id, name, uri, dataset_type, description) VALUES
+(6, "AusMoss", "http://data.rbg.vic.gov.au/cat/mosscatalogue",
+ 1, "Catalogue of Australian mosses"),
+(7, "AusFungi", "http://data.rbg.vic.gov.au/cat/fungicatalogue",
+ 1, "Catalogue of Australian Fungi"),
+(8, "Index Fungorum", "http://www.indexfungorum.org/",
+ 1, "Index Fungorum")
+ * 
  * @author Natasha Carter
  * 
  */
@@ -78,10 +87,14 @@ public class ALANamesLoader {
     public static final String APC_HOME = "http://www.anbg.gov.au/chah/apc/";
     public static final String AFD_HOME = "http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/home";
     public static final String CAAB_HOME ="http://www.marine.csiro.au/caab/";
+    public static final String AUSMOSS_HOME="http://data.rbg.vic.gov.au/cat/mosscatalogue";
+    public static final String AUSFUNGI_HOME="http://data.rbg.vic.gov.au/cat/fungicatalogue";
+    public static final String INDEX_FUNGI_HOME="http://www.indexfungorum.org/";//names/NamesRecord.asp?RecordID=[RecordID]
     
   //lucene indexes
     private static final String NAMES_LOADING_IDX_DIR= "/data/lucene/alanames/tc";
     private static final String NAMES_LOADING_ID_IDX_DIR= "/data/lucene/alanames/id";
+    public static final String ALA_AC_INDEX_DIR ="/data/lucene/alanames/alatc";
     //protected IndexSearcher tcIdxSearcher;
     protected IndexSearcher identifierIdxSearcher;
 
@@ -98,6 +111,7 @@ public class ALANamesLoader {
         if (StringUtils.isEmpty(skipIndexes)) {
             l.createLoadingIndex();
             l.createIdentifierIndex();
+            l.loadAlaAcceptedIds();
         }
 
         logger.info("Initialise indexes....");
@@ -198,6 +212,9 @@ public class ALANamesLoader {
         InfoSource afd = infoSourceDAO.getByUri(AFD_HOME);
         InfoSource apc = infoSourceDAO.getByUri(APC_HOME);        
         InfoSource col = infoSourceDAO.getByUri(COL_HOME);
+        InfoSource ausmoss = infoSourceDAO.getByUri(AUSMOSS_HOME);
+        InfoSource ausfungi = infoSourceDAO.getByUri(AUSFUNGI_HOME);
+        InfoSource indexFungorum = infoSourceDAO.getByUri(INDEX_FUNGI_HOME);
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
@@ -315,6 +332,9 @@ public class ALANamesLoader {
         InfoSource apni = infoSourceDAO.getByUri(APNI_HOME);
         InfoSource col = infoSourceDAO.getByUri(COL_HOME);
         InfoSource caab = infoSourceDAO.getByUri(CAAB_HOME);
+        InfoSource ausmoss = infoSourceDAO.getByUri(AUSMOSS_HOME);
+        InfoSource ausfungi = infoSourceDAO.getByUri(AUSFUNGI_HOME);
+        InfoSource indexFungorum = infoSourceDAO.getByUri(INDEX_FUNGI_HOME);
         
         //names files to index
         //TabReader tr = new TabReader("/data/bie-staging/checklistbank/cb_name_usages.txt", true);
@@ -474,6 +494,27 @@ public class ALANamesLoader {
                             //tc.setInfoSourceURL("http://biodiversity.org.au/afd.taxon/"+internalId);
                             tc.setInfoSourceURL("http://www.environment.gov.au/biodiversity/abrs/online-resources/fauna/afd/taxa/"+sciFullName.replaceAll("\\+", "%20"));
 //                          }
+                        } else if("AUSMOSS".equalsIgnoreCase(dataset)){
+                            tc.setInfoSourceId(Integer.toString(ausmoss.getId()));
+                            tc.setInfoSourceName(ausmoss.getName());                            
+                            isAustralian = true;
+                        } else if("AUSFUNGI".equalsIgnoreCase(dataset)){
+                            isAustralian = true;
+                            //check to see if this concept represents an Index Fungorum
+                            if(guid.startsWith("urn:lsid:indexfungorum.org:names")){
+                                //we have an index fungorum concept
+                                tc.setInfoSourceId(Integer.toString(indexFungorum.getId()));
+                                tc.setInfoSourceName(indexFungorum.getName());
+                                //get the id component of the lsid and use it to generate the URL
+                                //urn:lsid:indexfungorum.org:names:90511
+                                String recordId=guid.substring(guid.lastIndexOf(":") +1);
+                                tc.setInfoSourceURL("http://www.indexfungorum.org/names/NamesRecord.asp?RecordID="+recordId);
+                                
+                            } else{
+                                //we have an ausfungi concept
+                                tc.setInfoSourceId(Integer.toString(ausfungi.getId()));
+                                tc.setInfoSourceName(ausfungi.getName());
+                            }
                         }
                         
                         if (taxonConceptDao.create(tc)) {
@@ -519,7 +560,7 @@ public class ALANamesLoader {
                         if(!update)
                             lil.updateLinkIdentifier(guid,scientificName);
                         //add the australian if necessary
-                        if(isAustralian)
+                        if(isAustralian && !tc.getIsExcluded())
                             taxonConceptDao.setIsAustralian(guid);
                         
                     } else {
@@ -535,6 +576,57 @@ public class ALANamesLoader {
                 logger.error("Error reading line " + lineNumber+", " + e.getMessage(), e);
             }
         }
+    }
+    
+    
+    public void loadAlaAcceptedIds() throws Exception {
+        logger.info("creating the ala accepted ids index");
+        long start = System.currentTimeMillis();
+        File file = new File(ALA_AC_INDEX_DIR);
+        if(file.exists()){
+            FileUtils.forceDelete(file);
+        }
+        FileUtils.forceMkdir(file);        
+        String[] keyValue;
+        
+        KeywordAnalyzer analyzer = new KeywordAnalyzer();
+        //initialise lucene
+        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_34, analyzer);
+        
+        IndexWriter iw = new IndexWriter(FSDirectory.open(file), config);
+        
+        int i = 0;
+        
+        CSVReader tr = new CSVReader(new FileReader(ALA_NAMES_FILE), '\t', '"', '\\');
+        
+        String[] cols = tr.readNext(); //first line contains headers - ignore
+        
+        while((cols=tr.readNext())!=null){
+            
+            if(cols.length==38){
+                Document doc = new Document();
+                doc.add(new Field("guid", cols[2], Store.YES, Index.ANALYZED));
+                doc.add(new Field("source", cols[30], Store.YES, Index.ANALYZED));
+                
+                //add to index
+                iw.addDocument(doc, analyzer);
+                i++;
+                
+                if(i%10000==0) {
+                    iw.commit();
+                    logger.info(i+"\t"+cols[0]+"\t"+cols[2]);
+                }
+            }
+        }
+        
+        //close taxonConcept stream
+        iw.commit();
+        tr.close();
+        iw.close();
+        
+        long finish = System.currentTimeMillis();
+        logger.info(i+" indexed identifiers in: "+(((finish-start)/1000)/60)+" minutes, "+(((finish-start)/1000) % 60)+" seconds.");
+        
     }
     
     

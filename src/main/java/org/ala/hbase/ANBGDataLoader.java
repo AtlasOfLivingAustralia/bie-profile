@@ -100,6 +100,10 @@ public class ANBGDataLoader {
     	loadPublications();
     	loadReferences();
 	}
+	private boolean isValidToLoad(LoadUtils loadUtils,String guid) throws Exception{
+	    //check to see if this guid exists in the name matching
+	    return loadUtils.getAlaAcceptedSource(guid)!=null;
+	}
 	
 	private void loadReferences() throws Exception {
 	    loadReferencesFile(AFD_REFERENCES);
@@ -135,9 +139,11 @@ public class ANBGDataLoader {
 	            String preferredGuid= loadUtils.getPreferredGuid(tcId);
 	                if(!preferredLsids.contains(preferredGuid)){
 	                    logger.debug("Adding reference to "+tcId+" record: "+r.getGuid());
-	                    boolean success = taxonConceptDao.addPublicationReference(tcId, r);
-	                    if(success)
-	                        j++;
+	                    if(isValidToLoad(loadUtils, preferredGuid)){
+	                        boolean success = taxonConceptDao.addPublicationReference(preferredGuid, r);
+    	                    if(success)
+    	                        j++;
+	                    }
 	                    preferredLsids.add(preferredGuid);
 	                }
 	          
@@ -191,9 +197,12 @@ public class ANBGDataLoader {
     		    String preferredGuid= loadUtils.getPreferredGuid(tcId);
                 if(!preferredLsids.contains(preferredGuid)){
                     logger.debug("Adding publication to "+tcId+" record: "+p.getGuid());
-                    boolean success = taxonConceptDao.addPublication(tcId, p);
-                    if(success)
-                        j++;
+                    if(isValidToLoad(loadUtils, preferredGuid)){
+                        boolean success = taxonConceptDao.addPublication(preferredGuid, p);
+                    
+                        if(success)
+                            j++;
+                    }
                     preferredLsids.add(preferredGuid);
                 }
     			
@@ -335,8 +344,9 @@ public class ANBGDataLoader {
     		    String preferredGuid= loadUtils.getPreferredGuid(tc.getGuid());
     		    if(!preferredLsids.contains(preferredGuid)){
     		        j++;
-    		        
-    		        taxonConceptDao.addTaxonName(preferredGuid, tn);
+    		        if(isValidToLoad(loadUtils, preferredGuid)){
+    		            taxonConceptDao.addTaxonName(preferredGuid, tn);
+    		        }
     		        preferredLsids.add(preferredGuid);
     		    }
 
@@ -410,7 +420,9 @@ public class ANBGDataLoader {
                               }
                               tc.setIsProtologue(protologue);
                               tc.setIsDraft(draft);
-                              taxonConceptDao.update(tc);
+                              if(isValidToLoad(loadUtils, tc.getGuid())){
+                                  taxonConceptDao.update(tc);
+                              }
                           }
                       }
                       
@@ -439,8 +451,10 @@ public class ANBGDataLoader {
                                 tc.setReferencedInGuid(reference.getGuid());
                             }
                       tc.setIsProtologue(protologue);
-                            tc.setIsDraft(draft);
-                            taxonConceptDao.addSameAsTaxonConcept(preferredGuid, tc);
+                      tc.setIsDraft(draft);
+                      if(isValidToLoad(loadUtils,preferredGuid)){
+                          taxonConceptDao.addSameAsTaxonConcept(preferredGuid, tc);
+                      }
                   }
               }
               else{
@@ -461,7 +475,9 @@ public class ANBGDataLoader {
                                           synonym.setReferencedIn(reference.getTitle());
                                           synonym.setReferencedInGuid(reference.getGuid());
                                       }
+                                  if(isValidToLoad(loadUtils, acceptedGuid)){
                                       taxonConceptDao.addSynonym(acceptedGuid, synonym);
+                                  }
                                       break;
                               }
                           }                          
@@ -488,7 +504,9 @@ public class ANBGDataLoader {
                                 synonym.setReferencedIn(reference.getTitle());
                                 synonym.setReferencedInGuid(reference.getGuid());
                             }
-                      taxonConceptDao.addSynonym(acceptedGuid, synonym);
+                      if(isValidToLoad(loadUtils,acceptedGuid)){
+                          taxonConceptDao.addSynonym(acceptedGuid, synonym);
+                      }
                   }
               }
               

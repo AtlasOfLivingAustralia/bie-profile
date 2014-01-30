@@ -76,6 +76,7 @@ public class LoadUtils {
 	public static final String REF_INDEX_DIR = BASE_DIR+"reference";
 	public static final String ID_INDEX_DIR = "/data/lucene/alanames/id";
 	public static final String ALA_NAMES_INDEX_DIR = "/data/lucene/alanames/tc";
+	public static final String ALA_AC_INDEX_DIR ="/data/lucene/alanames/alatc";
 	static Pattern p = Pattern.compile("\t");
 	
 	private IndexSearcher tcIdxSearcher;
@@ -86,6 +87,7 @@ public class LoadUtils {
 	private IndexSearcher refIdxSearcher;
 	private IndexSearcher idIdxSearcher;
 	private IndexSearcher alaNameIdxSearcher;
+	private IndexSearcher alaAcIdxSearcher;
 	
 	public LoadUtils() throws Exception {}
 	
@@ -381,6 +383,17 @@ public class LoadUtils {
         }
         return this.alaNameIdxSearcher;
     }
+    
+    private IndexSearcher getAlaAcceptedIdxSearcher() throws Exception {
+        if (this.alaAcIdxSearcher == null) {
+            File file = new File(ALA_AC_INDEX_DIR);
+            if (file.exists()) {
+                Directory dir = FSDirectory.open(file);
+                this.alaAcIdxSearcher = new IndexSearcher(DirectoryReader.open(dir));
+            }
+        }
+        return this.alaAcIdxSearcher;
+    }
 
 	/**
 	 * Returns the preferred lsid for the supplied lsid
@@ -413,6 +426,21 @@ public class LoadUtils {
 	    if(topDocs.scoreDocs.length>0){
             Document doc = alaNameIdxSearcher.doc(topDocs.scoreDocs[0].doc);
             return doc.get("acceptedGuid");
+        } else {
+            return null;
+        }
+	}
+	/**
+	 * Returns the source string when the supplied guid is accepted otherwise bnull;
+	 * @param guid
+	 * @return
+	 */
+	public String getAlaAcceptedSource(String guid) throws Exception{
+	    TermQuery tq = new TermQuery(new Term("guid", guid));
+        TopDocs topDocs = getAlaAcceptedIdxSearcher().search(tq, 1);
+        if(topDocs.scoreDocs.length>0){
+            Document doc = alaAcIdxSearcher.doc(topDocs.scoreDocs[0].doc);
+            return doc.get("source");
         } else {
             return null;
         }

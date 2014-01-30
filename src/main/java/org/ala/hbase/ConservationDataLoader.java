@@ -240,15 +240,16 @@ public class ConservationDataLoader {
      * @throws Exception
      */
     public void loadEpbc(char separator) throws Exception {
+        
         logger.info("Starting to load EPBC...");
-        CSVReader reader = CSVReader.buildReader(new File(epbcFile), "UTF-8", separator, '"', 1);
+        CSVReader reader = CSVReader.build(new File(epbcFile), "UTF-8", Character.toString(separator), '"', 1);
         NameParser parser = new NameParser();
         Pattern p = Pattern.compile(",");
         InfoSource is = infoSourceDAO.getById(500);
         int processed = 0, failed = 0, anbg=0, col=0;
         taxonConceptDao.resetStats();
         while (reader.hasNext()) {
-            String values[] = reader.readNext();
+            String values[] = reader.next();
             if (values != null && values.length > 10) {
                 String speciesName = values[0];
                 ParsedName pn = null;
@@ -357,13 +358,13 @@ public class ConservationDataLoader {
      */
     public void loadQueensland() throws Exception {
         logger.info("Starting to load Queensland ...");
-        CSVReader reader = CSVReader.buildReader(new File(qldFile), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File(qldFile), "UTF-8", ",", '"', 1);
         InfoSource is = infoSourceDAO.getById(501);
 
         int processed = 0, failed = 0, anbg=0, col =0;
         taxonConceptDao.resetStats();
         while (reader.hasNext()) {
-            String values[] = reader.readNext();
+            String values[] = reader.next();
             if (values != null && values.length > 8) {
                 String sciName = values[4];
                 //In this file the kingdom and class are common names thus
@@ -412,14 +413,14 @@ public class ConservationDataLoader {
      */
     public void loadWAFauna() throws Exception {
         logger.info("Loading the Western Australian Fauna Conservation Status ...");
-        CSVReader reader = CSVReader.buildReader(new File(waFaunaFile), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File(waFaunaFile), "UTF-8", ",", '"', 1);
         InfoSource is = infoSourceDAO.getById(502);
         NameParser parser = new NameParser();
         int processed = 0, failed = 0, anbg=0, col =0;
         taxonConceptDao.resetStats();
 
         while (reader.hasNext()) {
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if (values != null && values.length > 8) {
                 String sciName = values[3];
                 ParsedName pn = null;
@@ -480,13 +481,13 @@ public class ConservationDataLoader {
      */
     public void loadWAFlora() throws Exception {
         logger.info("Loading the Western Australian Flora Conservation Status ...");
-        CSVReader reader = CSVReader.buildReader(new File(waFloraFile), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File(waFloraFile), "UTF-8", ",", '"', 1);
         InfoSource is = infoSourceDAO.getById(503);
 
         int processed = 0, failed = 0, loaded = 0, anbg=0, col=0;
         taxonConceptDao.resetStats();
         while (reader.hasNext()) {
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if (values != null && values.length >= 3 ){//&& StringUtils.isNotBlank(values[2])) {
                 String sciName = values[0];
                 String guid = taxonConceptDao.findLsidByName(sciName,true);
@@ -527,12 +528,12 @@ public class ConservationDataLoader {
 
     public void loadNSW(String filename, String type, int sciIdx, int familyIdx, int genusId, int cnIdx, int statusIdx) throws Exception {
         logger.info("Loading the NSW " + type + " Conservation Status ...");
-        CSVReader reader = CSVReader.buildReader(new File(filename), "UTF-8", '\t', '\"', 1);
+        CSVReader reader = CSVReader.build(new File(filename), "UTF-8", "\t", '\"', 1);
         InfoSource is = infoSourceDAO.getById(506);
         int processed = 0, failed = 0, loaded = 0, anbg=0 ,col=0;
         taxonConceptDao.resetStats();
         while (reader.hasNext()) {
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if (values != null && values.length > statusIdx) {
                 String sciName = values[sciIdx];
                 LinnaeanRankClassification cl = new LinnaeanRankClassification(null, null, null, null, values[familyIdx], values[genusId], sciName);
@@ -601,13 +602,13 @@ public class ConservationDataLoader {
      */
     public void loadGenericStateOptionalClassification(String filename,char separator, String state, String type, int infosourceId, int sciIdx, int cnIdx, int kidx, int pidx, int cidx, int oidx, int fidx, int gidx, int statusIdx, int authorityIdx, int minCols) throws Exception{
         logger.info("Loading the " + state + " " + type + " Conservation Status...");
-        CSVReader reader = CSVReader.buildReader(new File(filename), "UTF-8", separator, '"', 1);
+        CSVReader reader = CSVReader.build(new File(filename), "UTF-8", Character.toString(separator), '"', 1);
         InfoSource is = infoSourceDAO.getById(infosourceId);
         int processed = 0, failed = 0, loaded = 0, anbg=0, col=0;
         taxonConceptDao.resetStats();
 
         while (reader.hasNext()) {
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if (values != null && values.length >= minCols&&StringUtils.isNotBlank(values[statusIdx])) {
                 String sciName = values[sciIdx];
                 String genus = (gidx>0)?values[gidx]:null;
@@ -736,13 +737,13 @@ public class ConservationDataLoader {
 
     private void loadIUCN() throws Exception {
         logger.info("Loading the IUCN Redlist...");
-        CSVReader reader = CSVReader.buildReader(new File(iucnFile), "UTF-8", ',', '"', 1);
+        CSVReader reader = CSVReader.build(new File(iucnFile), "UTF-8", ",", '"', 1);
         InfoSource is = infoSourceDAO.getById(510);
         int processed = 0, failed = 0, anbg=0, col=0;
         taxonConceptDao.resetStats();
 
         while(reader.hasNext()){
-            String[] values = reader.readNext();
+            String[] values = reader.next();
             if(values != null && values.length >= 24){
                 //check to see if we want to load this record
                 //We are only loading records that are not related to a specific population

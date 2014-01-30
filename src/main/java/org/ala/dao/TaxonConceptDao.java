@@ -67,6 +67,8 @@ public interface TaxonConceptDao {
 	 * @throws Exception
 	 */
 	List<SynonymConcept> getSynonymsFor(String guid) throws Exception;
+	
+	void setSynonymsFor(String guid, List<SynonymConcept> synonyms) throws Exception;
 
 	/**
 	 * Add an alternative identifier (GUID) for this taxon concept or 
