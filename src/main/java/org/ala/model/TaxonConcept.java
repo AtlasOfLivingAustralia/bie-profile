@@ -50,6 +50,7 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
 	protected boolean isProtologue=false;
 	/** Indicates that this concept is excluded.  These are concepts that are usually excluded from an Australian Context. */
 	protected boolean isExcluded=false;
+	protected String nomenclaturalStatus;
 	
 
 	/**
@@ -413,6 +414,20 @@ public class TaxonConcept extends AttributableObject implements Comparable<Taxon
      */
     public void setIsExcluded(boolean isExcluded) {
       this.isExcluded = isExcluded;
+    }
+
+    /**
+     * @return the nomenclaturalStatus
+     */
+    public String getNomenclaturalStatus() {
+        return nomenclaturalStatus;
+    }
+
+    /**
+     * @param nomenclaturalStatus the nomenclaturalStatus to set
+     */
+    public void setNomenclaturalStatus(String nomenclaturalStatus) {
+        this.nomenclaturalStatus = nomenclaturalStatus;
     }
 
     /**
