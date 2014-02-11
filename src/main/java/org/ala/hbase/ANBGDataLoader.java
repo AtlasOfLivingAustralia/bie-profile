@@ -120,7 +120,8 @@ public class ANBGDataLoader {
 	      int j = 0;
 	      while((record = reader.readNext())!=null){
 	        i++;
-	        if(record.length<10){
+	        //LSID,URI,Title,ContainedIn,cc_license,cc_attributionURL
+	        if(record.length<5){
 	          logger.warn("truncated at line "+i+" record: "+record);
 	          continue;
 	        }
@@ -313,6 +314,7 @@ public class ANBGDataLoader {
     		List<TaxonConcept> tcs = loadUtils.getByNameGuid(record[0], 100);
     		java.util.Set<String> preferredLsids = new java.util.HashSet<String>();
     		TaxonName tn = new TaxonName();
+    		
             tn.guid = record[0];
             tn.nameComplete = record[2];
             tn.authorship = record[5];
@@ -327,7 +329,7 @@ public class ANBGDataLoader {
             tn.hybridForm = record[15];
             tn.infragenericEpithet = record[17];
             tn.basionymAuthorship = record[18];
-            tn.microReference = record[9];
+            tn.microReference = record[9];            
 
             //load the publication information for the name
             if(record[8]!=null){
