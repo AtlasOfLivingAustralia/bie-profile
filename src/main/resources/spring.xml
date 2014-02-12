@@ -15,11 +15,11 @@
                                ignore-resource-not-found="false"/>
 
     <bean id="CBIndexSearch" class="org.ala.util.CBIndexBean">
-        <constructor-arg value="/data/lucene/namematching_v13"/>
+        <constructor-arg value="/data/lucene/namematching"/>
     </bean>
 
     <bean id="CBCreateLuceneIndex" class="org.ala.util.CBCreateIndexBean">
-        <property name="indexDirectory" value="/data/lucene/namematching_v13"/>
+        <property name="indexDirectory" value="/data/lucene/namematching"/>
     </bean>
 
     <bean id="storeHelper" class="org.ala.dao.CassandraPelopsHelper" init-method="init" lazy-init="true"/>
