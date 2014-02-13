@@ -19,6 +19,8 @@ import au.org.ala.checklist.lucene.model.NameSearchResult;
  * Loads the Rankings from a CSV file. Allows migration of rankings between OLD 
  * cassandra schema and new.
  * 
+ * Relies on a file to be generated using RkColumnFamilyExporter to export the ranks from the old cassandra first... 
+ * 
  * The lsid or scientific name need to be located in the new names.
  * 
  * @author Natasha Carter
@@ -55,7 +57,7 @@ public class LoadRankingColumnFamily {
         int i=0,lsidct=0,matched=0,homonym=0,unmatched=0;
         long startId=System.currentTimeMillis();
         while((values = tr.readNext()) != null){
-            String oldLsid = values[0];
+            String oldLsid = values[0].substring(0, values[0].indexOf("|"));
             String lsid = null;
             String scientificName = values[1];
             //attempt to find the lsid

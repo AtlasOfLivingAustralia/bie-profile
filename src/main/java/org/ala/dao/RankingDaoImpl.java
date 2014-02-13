@@ -480,8 +480,8 @@ public class RankingDaoImpl implements RankingDao {
         rankings = mapper.readValue(value, TypeFactory.collectionType(ArrayList.class, BaseRanking.class));
         return rankings;
 	}
-		
-	private void reloadRanks() throws Exception {
+	@Override	
+	public void reloadRanks() throws Exception {
 		SolrServer solrServer = solrUtils.getSolrServer();
 		long start = System.currentTimeMillis();
 		Map<String, String> compareFieldValue = new HashMap<String, String>();

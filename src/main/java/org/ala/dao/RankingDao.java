@@ -76,5 +76,6 @@ public interface RankingDao {
         public boolean rankingForTaxon(String guid, ColumnType columnType, BaseRanking baseRanking) throws Exception;
         public boolean loadCAAB() throws Exception;
         public boolean reloadAllRanks() throws Exception;
+        public void reloadRanks() throws Exception;
         public boolean optimiseIndex() throws Exception;
 }
