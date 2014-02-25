@@ -276,6 +276,7 @@ public class BiocacheDynamicLoader {
                 
                 CSVReader reader = new CSVReader(new InputStreamReader(gm.getResponseBodyAsStream(), gm.getResponseCharSet()));
                 String[] values = reader.readNext();
+                values = reader.readNext();
                 logger.info("values: " + values.length);
                 boolean lookup = !(values[0].contains("lsid") || values[0].contains("guid"));
                 while(values!= null){
