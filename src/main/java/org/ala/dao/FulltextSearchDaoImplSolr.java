@@ -410,8 +410,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
         }
     }
 	
-	private String replacePrefix(String field, String query){
-		query = query.trim().replaceAll("[()]", ""); //remove '(' and ')'
+	private String replacePrefix(String field, String query){	    
+		query = query.trim().replaceAll("\\\\[()]", "").replaceAll("[()]",""); //remove '(' and ')'
 		query = query.replaceAll("\\s+", " "); //replace multiple spaces to single space
 		return " (" +field +":" + query.replaceAll(" ", " AND "+field +":")+")";
 	}
