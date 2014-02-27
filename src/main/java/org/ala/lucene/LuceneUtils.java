@@ -85,9 +85,9 @@ public class LuceneUtils {
     	if(parsedName!=null){
     		if(parsedName.isBinomial()){
     		    useNormalised = false;
-    			//add multiple versions
-                sciNames.add(parsedName.buildName(true, false, false,false, true, true, false, false, false, false).toLowerCase());
-                sciNames.add(parsedName.buildName(true, false, true, false, true, true, false, false, false, false).toLowerCase());
+    			//add multiple versions    		    
+                sciNames.add(parsedName.buildName(true, false, false,false, true, true, false, false, false, false,false).toLowerCase());
+                sciNames.add(parsedName.buildName(true, false, true, false, true, true, false, false, false, false,false).toLowerCase());
     		}
 
             //add lowercased version

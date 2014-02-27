@@ -2509,7 +2509,7 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 			if (parsedName.isBinomial() && parsedName.authorsParsed  && !parsedName.isIndetermined()) {
 				// add multiple versions
 				sciNames.add(parsedName.canonicalName().toLowerCase());
-				sciNames.add(parsedName.buildName(true, false, true, false, true, true, false, false, false, false).toLowerCase());
+				sciNames.add(parsedName.buildName(true, false, true, false, true, true, false, false, false, false, false).toLowerCase());
 			}
 
 			// add lowercased version
