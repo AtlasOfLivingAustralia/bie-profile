@@ -2,6 +2,8 @@ package org.ala.postprocess;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -10,6 +12,7 @@ import org.ala.dao.TaxonConceptDao;
 import org.ala.dto.ExtendedTaxonConceptDTO;
 import org.ala.model.*;
 import org.ala.util.SpringUtils;
+import org.apache.commons.io.output.FileWriterWithEncoding;
 import org.apache.commons.lang.StringUtils;
 import org.gbif.file.CSVReader;
 import org.springframework.context.ApplicationContext;
@@ -46,7 +49,7 @@ public class NSLNameFix {
     @Inject
     protected TaxonConceptDao taxonConceptDao;
     
-    private static final String nslFile="/data/bie-staging/ala-names/nsl_superseded_accepted.csv";
+    private static final String nslFile="/data/bie-staging/ala-names/nsl_superseded_accepted-utf8.csv";
     private static final String biocacheFile="/data/bie-staging/ala-names/biocache-superseded-values.csv";
     
     public static void main(String[] args) throws Exception{
@@ -63,7 +66,7 @@ public class NSLNameFix {
             System.out.println("Performing a test load");
         }
         CSVReader reader = CSVReader.build(new File(nslFile), "UTF-8", ",", '"', 1);
-        CSVWriter writer = new CSVWriter(new FileWriter(biocacheFile));
+        CSVWriter writer = new CSVWriter(new FileWriterWithEncoding(biocacheFile, Charset.forName("UTF-8")));
         int count=0,delete=0,nosyn=0, noaccepted=0;
         while(reader.hasNext()){
             count++;
