@@ -151,6 +151,7 @@ public class NSLNameFix {
         System.out.println("Number of lines processed : " + count + " to be deleted: " + delete + " not a synonym of accepted: " + nosyn + " no accepted value: " + noaccepted);
         writer.flush();
         writer.close();
+        indexWriter.commit(true);
     }
     
     private boolean containsSynonym(String name, String nameLsid, List<SynonymConcept> synonyms){
