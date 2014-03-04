@@ -1423,12 +1423,8 @@ public class TaxonConceptSHDaoImpl implements TaxonConceptDao {
 	 */
 	public boolean delete(String guid) throws Exception {
 
-		// TODO add to interface
-		// if (getTable().exists(new Get(Bytes.toBytes(guid)))) {
-		// getTable().delete(new Delete(Bytes.toBytes(guid)));
-		// return true;
-		// }
-		return false;
+	    return storeHelper.deleteRecord(TC_COL_FAMILY, guid);	    
+		
 	}
 
 	/**
