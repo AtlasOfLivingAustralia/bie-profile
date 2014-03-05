@@ -56,9 +56,23 @@ public class NSLNameFix {
         ApplicationContext context = SpringUtils.getContext();
         NSLNameFix l = context.getBean(NSLNameFix.class);
         boolean test = args.length>0 && args[0].equals("-test");
-        
-        l.processNames(test);
+        boolean repair = args.length>0 && args[0].equals("-repair");
+        if(repair){
+            l.repairNameMatchingIndex();
+        } else {
+            l.processNames(test);
+        }
         System.exit(0);
+    }
+    
+    public void repairNameMatchingIndex() throws Exception{
+        CSVReader reader = CSVReader.build(new File(biocacheFile), "UTF-8", ",", '"', 1);
+        while(reader.hasNext()){
+            String[] values = reader.next();
+            String lsid = values[0];
+            indexWriter.deleteName(lsid);
+        }
+        indexWriter.commit(true, true);
     }
     
     public void processNames(boolean test) throws Exception{
@@ -151,7 +165,7 @@ public class NSLNameFix {
         System.out.println("Number of lines processed : " + count + " to be deleted: " + delete + " not a synonym of accepted: " + nosyn + " no accepted value: " + noaccepted);
         writer.flush();
         writer.close();
-        indexWriter.commit(true);
+        indexWriter.commit(true,true);
     }
     
     private boolean containsSynonym(String name, String nameLsid, List<SynonymConcept> synonyms){
