@@ -160,7 +160,7 @@ public interface FulltextSearchDao {
      * @throws Exception
      */
     List<SearchTaxonConceptDTO> findByScientificName(String input, int limit) throws Exception;
-    
+        
     /**
      * Generic Search with name.
      *
@@ -207,6 +207,22 @@ public interface FulltextSearchDao {
      */
     SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex,
             Integer pageSize, String sortField, String sortDirection) throws Exception;
+    
+    /**
+     * Search for a taxon concept with the supplied scientific name, optinally ensuring that we only return names that 
+     * contain all components of the scientific name.
+     * @param query
+     * @param filterQuery
+     * @param startIndex
+     * @param pageSize
+     * @param sortField
+     * @param sortDirection
+     * @param exactInput when true will ensure that all components of the name exist in the result
+     * @return
+     * @throws Exception
+     */
+    SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex,
+            Integer pageSize, String sortField, String sortDirection, boolean exactInput) throws Exception;
 
     /**
      * For every dataset (infoSource) get a count of the number of taxon concepts which contain indexed

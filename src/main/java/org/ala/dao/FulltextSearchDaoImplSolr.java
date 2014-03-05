@@ -268,7 +268,12 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
     @Override
     public SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
-        
+       return findByScientificName(query, filterQuery, startIndex, pageSize, sortField, sortDirection, false);
+    }
+    
+    @Override
+    public SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex,
+            Integer pageSize, String sortField, String sortDirection, boolean exactInput)  throws Exception {
         try {
             // set the query
             StringBuffer queryString = new StringBuffer();
@@ -278,8 +283,11 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 queryString.append(":");
                 queryString.append(ClientUtils.escapeQueryChars(bits[1]).toLowerCase());
             } else {
-            	
+                
                 String cleanQuery = ClientUtils.escapeQueryChars(query).toLowerCase();
+                if(exactInput){
+                    cleanQuery = "\"" + cleanQuery + "\"";
+                }
                 //queryString.append(ClientUtils.escapeQueryChars(query));
                 queryString.append("idxtype:"+IndexedTypes.TAXON);
                 queryString.append(" AND (");
@@ -287,10 +295,15 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 queryString.append(" OR commonName:"+cleanQuery);
                 queryString.append(" OR guid:"+cleanQuery);
                 
-        		String canonicalSciName = retrieveCanonicalForm(query);
+                String canonicalSciName = ClientUtils.escapeQueryChars(retrieveCanonicalForm(query)).toLowerCase();
                 if(canonicalSciName!=null){
-    	            queryString.append(" OR ");
-    	            queryString.append(" text:"+canonicalSciName);
+                    if(exactInput){
+                        canonicalSciName = "\"" + canonicalSciName + "\"";
+                        queryString.append(" OR scientificNameText:");
+                        queryString.append(canonicalSciName);
+                    }
+                    queryString.append(" OR ");
+                    queryString.append(" text:"+canonicalSciName);
                 }
                 
 //                queryString.append(" OR simpleText:"+cleanQuery);  //commented out for now as this gives confusing results to users
@@ -299,7 +312,7 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
             logger.info("search query: "+queryString.toString());
             return doSolrSearch(queryString.toString(), filterQuery, (String[]) null, pageSize, startIndex, sortField, sortDirection);
         } catch (SolrServerException ex) {
-        	SearchResultsDTO searchResults = new SearchResultsDTO();
+            SearchResultsDTO searchResults = new SearchResultsDTO();
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
             searchResults.setStatus("ERROR"); // TODO also set a message field on this bean with the error message(?)
             return searchResults;
