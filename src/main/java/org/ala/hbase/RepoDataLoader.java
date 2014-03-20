@@ -27,6 +27,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -90,6 +92,7 @@ public class RepoDataLoader {
     private PartialIndex indexer;
     int totalFilesRead = 0;
     int totalPropertiesSynced = 0;
+    protected static Pattern uidPattern = Pattern.compile("(?:[\"]*)?(?:[a-z_]*_uid:\")([a-z0-9]*)(?:[\"]*)?");
 
     /**
      * This takes a list of infosource ids...
@@ -161,7 +164,8 @@ public class RepoDataLoader {
                             Set<String> arg = new LinkedHashSet<String>();
                             for (int i = 0; i < list.size(); i++) {
                                 java.util.LinkedHashMap<String, String> value = list.get(i);
-                                Object provider = (loader.getUidInfoSourceMap().get(value.get("label")));
+                                String dataResource = getDataResource(value.get("fq"));
+                                Object provider = (loader.getUidInfoSourceMap().get(dataResource));
                                 if (provider != null) {
                                     arg.add(provider.toString());
                                 }
@@ -189,6 +193,14 @@ public class RepoDataLoader {
         long finish = System.currentTimeMillis();
         logger.info(filesRead + " files scanned/loaded in: " + ((finish - start) / 60000) + " minutes " + ((finish - start) / 1000) + " seconds.");
         System.exit(1);
+    }
+    
+    private static String getDataResource(String fq){
+        Matcher m = uidPattern.matcher(fq);
+        if(m.matches()){
+            return m.group(1);
+        }
+        return fq;
     }
 
     public int load(String filePath, String[] repoDirs) throws Exception {
