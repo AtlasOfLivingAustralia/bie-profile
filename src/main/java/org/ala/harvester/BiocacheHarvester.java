@@ -29,6 +29,7 @@ import org.ala.client.util.RestfulClient;
 import org.ala.dao.InfoSourceDAO;
 import org.ala.documentmapper.DocumentMapper;
 import org.ala.documentmapper.MappingUtils;
+import org.ala.hbase.RepoDataLoader;
 import org.ala.repository.ParsedDocument;
 import org.ala.repository.Predicates;
 import org.ala.repository.Repository;
@@ -287,7 +288,7 @@ public class BiocacheHarvester implements Harvester {
 	    Map<String,String> uidsToIds = infoSourceDAO.getUidInfosourceIdMap();
 	    ObjectMapper mapper = new ObjectMapper();
 	    for(Map<String,String> dataResource:dataResourceFacet){
-	        String dr = dataResource.get("label");
+	        String dr = RepoDataLoader.getDataResource(dataResource.get("fq"));
 	        if(!uidsToIds.containsKey(dr)){
 	            logger.warn("Dynamically adding an infosource for " + dr);
 	            try{
