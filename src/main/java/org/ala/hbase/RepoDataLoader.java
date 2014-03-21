@@ -195,7 +195,7 @@ public class RepoDataLoader {
         System.exit(1);
     }
     
-    private static String getDataResource(String fq){
+    public static String getDataResource(String fq){
         Matcher m = uidPattern.matcher(fq);
         if(m.matches()){
             return m.group(1);
