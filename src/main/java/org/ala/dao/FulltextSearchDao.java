@@ -222,7 +222,7 @@ public interface FulltextSearchDao {
      * @throws Exception
      */
     SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex,
-            Integer pageSize, String sortField, String sortDirection, boolean exactInput) throws Exception;
+            Integer pageSize, String sortField, String sortDirection, boolean exactInput, boolean includeVernacular) throws Exception;
 
     /**
      * For every dataset (infoSource) get a count of the number of taxon concepts which contain indexed

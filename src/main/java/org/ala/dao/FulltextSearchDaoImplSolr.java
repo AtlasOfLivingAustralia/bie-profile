@@ -268,12 +268,12 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	 */
     @Override
     public SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex, Integer pageSize, String sortField, String sortDirection) throws Exception {
-       return findByScientificName(query, filterQuery, startIndex, pageSize, sortField, sortDirection, false);
+       return findByScientificName(query, filterQuery, startIndex, pageSize, sortField, sortDirection, false, true);
     }
     
     @Override
     public SearchResultsDTO<SearchTaxonConceptDTO> findByScientificName(String query, String[] filterQuery, Integer startIndex,
-            Integer pageSize, String sortField, String sortDirection, boolean exactInput)  throws Exception {
+            Integer pageSize, String sortField, String sortDirection, boolean exactInput, boolean includeVernacular)  throws Exception {
         try {
             // set the query
             StringBuffer queryString = new StringBuffer();
@@ -291,19 +291,23 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 //queryString.append(ClientUtils.escapeQueryChars(query));
                 queryString.append("idxtype:"+IndexedTypes.TAXON);
                 queryString.append(" AND (");
-                queryString.append("scientificNameText:"+cleanQuery);
-                queryString.append(" OR commonName:"+cleanQuery);
+                queryString.append("scientificNameText:"+cleanQuery); 
+                if(includeVernacular){
+                    queryString.append(" OR commonName:"+cleanQuery);
+                }
                 queryString.append(" OR guid:"+cleanQuery);
                 
                 String canonicalSciName = ClientUtils.escapeQueryChars(retrieveCanonicalForm(query)).toLowerCase();
                 if(canonicalSciName!=null){
                     if(exactInput){
                         canonicalSciName = "\"" + canonicalSciName + "\"";
-                        queryString.append(" OR scientificNameText:");
+                        queryString.append(" OR scientificName:");
                         queryString.append(canonicalSciName);
                     }
-                    queryString.append(" OR ");
-                    queryString.append(" text:"+canonicalSciName);
+                    if(includeVernacular){
+                        queryString.append(" OR ");
+                        queryString.append(" text:"+canonicalSciName);
+                    }
                 }
                 
 //                queryString.append(" OR simpleText:"+cleanQuery);  //commented out for now as this gives confusing results to users
@@ -340,10 +344,15 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
 	}
     
     public SearchResultsDTO<SearchDTO> findByGuids(String[] guids) throws Exception{
-        String query = "idxtype:TAXON AND (id:\"" +StringUtils.join(guids, "\" OR id:\"") + "\")";        
+        StringBuilder sb = new StringBuilder("idxtype:TAXON AND (");
+        logger.debug("Starting find by guids: "+guids.length);
+        String query = "idxtype:TAXON AND (id:\"" +StringUtils.join(guids, "\" OR id:\"") + "\")";
         try{
             logger.debug("search query: "+query);
-            return doSolrSearch(query, null, (String[]) null, guids.length, 0, "score", "desc");
+            //order by score asc because this should keep them in the correct order
+            SearchResultsDTO<SearchDTO> results =doSolrSearch(query, null, (String[]) null, guids.length, 0, "score", "asc");
+            logger.debug("Finished find by guids");
+            return results;
         }
         catch(SolrServerException ex){
             logger.error("Problem communicating with SOLR server. " + ex.getMessage(), ex);
