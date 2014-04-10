@@ -123,7 +123,7 @@ public class BieImageCSVExporter {
                }
            }
            if(i%10000 ==0 ){
-               System.out.println(new java.util.Date() +" - Processed " + i + " taxon concepts");
+               System.out.println(new java.util.Date() +" - Processed " + i + " taxon concepts. Last processed " + new String(guidAsBytes));
                
            }
 
@@ -165,7 +165,10 @@ public class BieImageCSVExporter {
     private String[] getClassificationFromRDF(String rdfLocation){
         String file = rdfLocation + File.separator +"rdf";
         try{
-            List<Triple> triples = TurtleUtils.readTurtle(new FileReader(new File(file)));
+            FileReader reader = new FileReader(new File(file));
+            List<Triple> triples = TurtleUtils.readTurtle(reader);
+            //close the reader
+            reader.close();
             return getClassificationValuesFromTriples(triples);
         } catch (Exception e){
             System.err.println("Unable to read the RDF");
@@ -184,7 +187,10 @@ public class BieImageCSVExporter {
         
         try{
             URL url = new URL(fixRepoUrl(rdfLocation) + "/rdf");
-            List<Triple> triples=TurtleUtils.readTurtle(new BufferedReader(new InputStreamReader(url.openStream())));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            List<Triple> triples=TurtleUtils.readTurtle(reader);
+            //close the reader
+            reader.close();
             return getClassificationValuesFromTriples(triples);       
         } catch (Exception e){
             System.err.println("Unable to read the RDF");
