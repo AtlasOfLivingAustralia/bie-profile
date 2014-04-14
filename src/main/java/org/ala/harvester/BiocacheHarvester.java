@@ -27,6 +27,8 @@ import javax.inject.Inject;
 
 import org.ala.client.util.RestfulClient;
 import org.ala.dao.InfoSourceDAO;
+import org.ala.dao.SolrUtils;
+import org.ala.dao.StoreHelper;
 import org.ala.documentmapper.DocumentMapper;
 import org.ala.documentmapper.MappingUtils;
 import org.ala.hbase.RepoDataLoader;
@@ -62,7 +64,11 @@ public class BiocacheHarvester implements Harvester {
     protected Repository repository;
     protected int timeGap = 0;
     @Inject
-    protected InfoSourceDAO infoSourceDAO;
+    protected InfoSourceDAO infoSourceDAO;    
+    @Inject
+    protected StoreHelper storeHelper;
+    @Inject
+    protected SolrUtils solrUtils;
 
     protected Map<String, String> hashTable;
     protected ObjectMapper mapper;
@@ -325,8 +331,15 @@ public class BiocacheHarvester implements Harvester {
     @SuppressWarnings("unchecked")
     @Override
     public void start(int infosourceId) throws Exception {
+        start(infosourceId, false);
+    }
+    public void start(int infosourceId,boolean shutdown) throws Exception {
         Thread.sleep(timeGap);
         load();
+        if(shutdown) {
+            storeHelper.shutdown();
+            solrUtils.shutdownSolr();
+        }
     }
 
     public void debugParsedDoc(ParsedDocument parsedDoc){
@@ -396,7 +409,8 @@ public class BiocacheHarvester implements Harvester {
         } else if (args.length==2 && "-query".equals(args[0])) {
             h.setQuery(args[1]);
         }
-        h.start(-1);
+        h.start(-1, true);
+        
     }	
 
 	public Date getStartDate() {
