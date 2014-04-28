@@ -172,7 +172,8 @@ public class BiocacheHarvester implements Harvester {
     	    			if(imageUrl != null && imageUrl.trim().startsWith(mediaURL)){
     	    				imageUrl = imageUrl.trim().replaceFirst(mediaURL, BIOCACHE_MEDIA_URL);
     	    				String occurrenceID = (String)occurrence.get("occurrenceID");
-    	    				if(occurrenceID != null && occurrenceID.trim().startsWith("http://www.flickr.com")){
+    	    				//Fix so that if occurrenceId starts with http or https it is treated as the identifier for the image. This will allow the BIE images to retain the same identifiers thus rankings are preserved.
+    	    				if(occurrenceID != null && occurrenceID.trim().startsWith("http://") || occurrenceID.trim().startsWith("https://")){
     	    					identifier = occurrenceID.trim();	    					
     	    				}
     	    				else{
