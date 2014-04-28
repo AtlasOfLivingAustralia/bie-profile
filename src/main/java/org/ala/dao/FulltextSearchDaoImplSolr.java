@@ -297,18 +297,22 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 }
                 queryString.append(" OR guid:"+cleanQuery);
                 
-                String canonicalSciName = ClientUtils.escapeQueryChars(retrieveCanonicalForm(query)).toLowerCase();
+                String canonicalSciName = retrieveCanonicalForm(query);
                 if(canonicalSciName!=null){
-                    if(exactInput){
-                        canonicalSciName = "\"" + canonicalSciName + "\"";
-                        queryString.append(" OR scientificName:");
-                        queryString.append(canonicalSciName);
-                    }
-                    if(includeVernacular){
-                        queryString.append(" OR ");
-                        queryString.append(" text:"+canonicalSciName);
-                    }
+                    canonicalSciName = ClientUtils.escapeQueryChars(canonicalSciName).toLowerCase();
+                } else {
+                    canonicalSciName = ClientUtils.escapeQueryChars(query).toLowerCase();
                 }
+                if(exactInput){
+                    canonicalSciName = "\"" + canonicalSciName + "\"";
+                    queryString.append(" OR scientificName:");
+                    queryString.append(canonicalSciName);
+                }
+                if(includeVernacular){
+                    queryString.append(" OR ");
+                    queryString.append(" text:"+canonicalSciName);
+                }
+                
                 
 //                queryString.append(" OR simpleText:"+cleanQuery);  //commented out for now as this gives confusing results to users
                 queryString.append(")");
