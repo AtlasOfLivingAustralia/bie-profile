@@ -295,7 +295,8 @@ public class FulltextSearchDaoImplSolr implements FulltextSearchDao {
                 if(includeVernacular){
                     queryString.append(" OR commonName:"+cleanQuery);
                 }
-                queryString.append(" OR guid:"+cleanQuery);
+                //fix so that synonyms are not being included with a guid search
+                queryString.append(" OR (guid:"+cleanQuery).append(" AND -syn_guid:*) OR syn_guid:").append(cleanQuery);
                 
                 String canonicalSciName = retrieveCanonicalForm(query);
                 if(canonicalSciName!=null){
