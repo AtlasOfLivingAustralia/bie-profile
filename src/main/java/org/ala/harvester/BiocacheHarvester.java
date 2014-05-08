@@ -54,8 +54,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.stereotype.Component;
+
 /**
- * A Harvester class for Biocache 
+ * A Harvester class for Biocache
  */
 @Component("biocacheHarvester")
 public class BiocacheHarvester implements Harvester {
@@ -64,7 +65,7 @@ public class BiocacheHarvester implements Harvester {
     protected Repository repository;
     protected int timeGap = 0;
     @Inject
-    protected InfoSourceDAO infoSourceDAO;    
+    protected InfoSourceDAO infoSourceDAO;
     @Inject
     protected StoreHelper storeHelper;
     @Inject
@@ -72,35 +73,35 @@ public class BiocacheHarvester implements Harvester {
 
     protected Map<String, String> hashTable;
     protected ObjectMapper mapper;
-	//create restful client with no connection timeout.
-	protected RestfulClient restfulClient = new RestfulClient(0);
-	protected HttpClient httpClient;
-	
-	public static final String DATA_RESOURCE_URL ="http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0";
-	public static final String COLLECTORY_URL = "http://collections.ala.org.au/ws/dataResource/";
-	public static final String BIOCACHE_SEARCH_URL_TEMPLATE = "http://biocache.ala.org.au/ws/occurrences/search?q={0}&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,occurrence_details,collector,photographer_s,rights,all_image_url&pageSize=100";
-	public static final String BIOCACHE_OCCURRENCE_URL = "http://biocache.ala.org.au/occurrences/";
-	public static final String BIOCACHE_MEDIA_URL = "http://biocache.ala.org.au/biocache-media/";
+    //create restful client with no connection timeout.
+    protected RestfulClient restfulClient = new RestfulClient(0);
+    protected HttpClient httpClient;
+
+    public static final String DATA_RESOURCE_URL = "http://biocache.ala.org.au/ws/occurrences/search?q=multimedia:Image&facets=data_resource_uid&pageSize=0";
+    public static final String COLLECTORY_URL = "http://collections.ala.org.au/ws/dataResource/";
+    public static final String BIOCACHE_SEARCH_URL_TEMPLATE = "http://biocache.ala.org.au/ws/occurrences/search?q={0}&fq=multimedia:Image&facet=off&fl=taxon_name,raw_taxon_name,occurrence_id,image_url,id,row_key,data_resource_uid,occurrence_details,collector,photographer_s,rights,all_image_url&pageSize=100";
+    public static final String BIOCACHE_OCCURRENCE_URL = "http://biocache.ala.org.au/occurrences/";
+    public static final String BIOCACHE_MEDIA_URL = "http://biocache.ala.org.au/biocache-media/";
     public static final String COLLECTION_PUBLIC_PAGE_TEMPLATE = "http://collections.ala.org.au/public/showDataResource/{0}";
-	
-	private int ctr = 0;
-	private Date startDate = null;
-	private Date endDate = null;
+
+    private int ctr = 0;
+    private Date startDate = null;
+    private Date endDate = null;
 
     private String biocacheSearchQuery;
-	
-    public BiocacheHarvester(){
-    	int timeout = 3000; //msec
-    	
-		hashTable = new Hashtable<String, String>();
-		hashTable.put("accept", "application/json");
 
-		mapper = new ObjectMapper();
-		mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);    	
-		
-		HttpConnectionManagerParams params;
+    public BiocacheHarvester() {
+        int timeout = 3000; //msec
+
+        hashTable = new Hashtable<String, String>();
+        hashTable.put("accept", "application/json");
+
+        mapper = new ObjectMapper();
+        mapper.getDeserializationConfig().set(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        HttpConnectionManagerParams params;
         MultiThreadedHttpConnectionManager m_connectionmgr = new MultiThreadedHttpConnectionManager();
-        params=new HttpConnectionManagerParams();
+        params = new HttpConnectionManagerParams();
         params.setConnectionTimeout(timeout);
         params.setSoTimeout(timeout);
         params.setDefaultMaxConnectionsPerHost(100);
@@ -111,96 +112,93 @@ public class BiocacheHarvester implements Harvester {
         // Default is to search all records. The query can be modified using the -query argument to the main method.
         biocacheSearchQuery = "*:*";
     }
-    
+
     private DynaBean getJsonDynaBean(String url) throws Exception {
-    	DynaBean dynaBean = null;
-    	String content = "";
-		Object[] resp = restfulClient.restGet(url, hashTable);
-		if((Integer)resp[0] == HttpStatus.SC_OK){
-			content = resp[1].toString();
-			if(content != null && content.length() > "[]".length()){
-				dynaBean = mapper.readValue(content, DynaBean.class);
-			}
-		} 
-		else {
-			logger.warn("Unable to process url: " + url);
-		}
-    	return dynaBean;
+        DynaBean dynaBean = null;
+        String content = "";
+        Object[] resp = restfulClient.restGet(url, hashTable);
+        if ((Integer) resp[0] == HttpStatus.SC_OK) {
+            content = resp[1].toString();
+            if (content != null && content.length() > "[]".length()) {
+                dynaBean = mapper.readValue(content, DynaBean.class);
+            }
+        } else {
+            logger.warn("Unable to process url: " + url);
+        }
+        return dynaBean;
     }
 
     private byte[] getContent(String url) throws Exception {
-		GetMethod gm = new GetMethod(url);
-		httpClient.executeMethod(gm);
-		Response r = new Response();
-		r.setResponseAsBytes(gm.getResponseBody());
-		Header hdr = gm.getResponseHeader("Content-Type");
+        GetMethod gm = new GetMethod(url);
+        httpClient.executeMethod(gm);
+        Response r = new Response();
+        r.setResponseAsBytes(gm.getResponseBody());
+        Header hdr = gm.getResponseHeader("Content-Type");
 
-		if (hdr != null) {
-			String contentType = hdr.getValue();
-			if(contentType.contains(";")){
-				contentType = contentType.substring(0,contentType.indexOf(";"));
-				contentType = contentType.trim();
-			}
-			r.setContentType(contentType);
-		}
-    	return r.getResponseAsBytes();
+        if (hdr != null) {
+            String contentType = hdr.getValue();
+            if (contentType.contains(";")) {
+                contentType = contentType.substring(0, contentType.indexOf(";"));
+                contentType = contentType.trim();
+            }
+            r.setContentType(contentType);
+        }
+        return r.getResponseAsBytes();
     }
 
     private void processJsonDynaBean(DynaBean dynaBean) throws Exception {
-    	List<String> imageUrls = null;
-    	String identifier = null;
-    	String mediaURL = "/data/biocache-media/";
-    	
-    	if(dynaBean != null && dynaBean.getOther().get("occurrences") != null){
-    		List occurrences = (List)dynaBean.getOther().get("occurrences");
-    		for(int i = 0; i < occurrences.size(); i++){
-    			try{
-    				logger.debug("\n ------------------- \n*** record ctr: " + (ctr++) + "\n -------------------");
-    				ParsedDocument imageDoc = new ParsedDocument();
+        List<String> imageUrls = null;
+        String identifier = null;
+        String mediaURL = "/data/biocache-media/";
 
-    	            List<Triple<String,String,String>> triples = imageDoc.getTriples();
-    	            Map<String, String> dcs = imageDoc.getDublinCore();
-    	            
-	    			Map<String,Object> occurrence = (Map<String,Object>)occurrences.get(i);
-	    			imageUrls = (List<String>)occurrence.get("images");
-	    			//load all the images
-	    			for(String imageUrl : imageUrls){
-    	    			if(imageUrl.length() > 4){
-    	    				imageDoc.setContentType(new MimetypesFileTypeMap().getContentType(imageUrl));
-        				}	    			
-    
-    	    			if(imageUrl != null && imageUrl.trim().startsWith(mediaURL)){
-    	    				imageUrl = imageUrl.trim().replaceFirst(mediaURL, BIOCACHE_MEDIA_URL);
-    	    				String occurrenceID = (String)occurrence.get("occurrenceID");
-    	    				//Fix so that if occurrenceId starts with http or https it is treated as the identifier for the image. This will allow the BIE images to retain the same identifiers thus rankings are preserved.
-    	    				if(occurrenceID != null && occurrenceID.trim().startsWith("http://") || occurrenceID.trim().startsWith("https://")){
-    	    					identifier = occurrenceID.trim();	    					
-    	    				}
-    	    				else{
-    	    					identifier = imageUrl;
-    	    				}	    				
-    	    			}
-    	    			else{
-    	    				identifier = imageUrl;
-    	    			}	    			
-    	    			logger.debug("imageUrl: " + imageUrl + " ,occurrence: " + occurrence);
-    	    			
-    	    			imageDoc.setGuid(identifier);
-    	    			imageDoc.setContent(getContent(imageUrl));
-    	    			
-        	            dcs.put(Predicates.DC_TITLE.toString(), (String)occurrence.get("scientificName"));
-        	            dcs.put(Predicates.DC_IDENTIFIER.toString(), identifier);
+        if (dynaBean != null && dynaBean.getOther().get("occurrences") != null) {
+            List occurrences = (List) dynaBean.getOther().get("occurrences");
+            for (int i = 0; i < occurrences.size(); i++) {
+                try {
+                    logger.info("\n ------------------- \n*** record ctr: " + (ctr++) + "\n -------------------");
+                    ParsedDocument imageDoc = new ParsedDocument();
 
-                        String licence = (String)occurrence.get("rights");
+                    List<Triple<String, String, String>> triples = imageDoc.getTriples();
+                    Map<String, String> dcs = imageDoc.getDublinCore();
+
+                    Map<String, Object> occurrence = (Map<String, Object>) occurrences.get(i);
+                    imageUrls = (List<String>) occurrence.get("images");
+                    //load all the images
+                    for (String imageUrl : imageUrls) {
+                        if (imageUrl.length() > 4) {
+                            imageDoc.setContentType(new MimetypesFileTypeMap().getContentType(imageUrl));
+                        }
+
+                        if (imageUrl != null && imageUrl.trim().startsWith(mediaURL)) {
+                            imageUrl = imageUrl.trim().replaceFirst(mediaURL, BIOCACHE_MEDIA_URL);
+                            String occurrenceID = (String) occurrence.get("occurrenceID");
+                            //Fix so that if occurrenceId starts with http or https it is treated as the identifier for the image. This will allow the BIE images to retain the same identifiers thus rankings are preserved.
+                            if (occurrenceID != null && occurrenceID.trim().startsWith("http://") || occurrenceID.trim().startsWith("https://")) {
+                                identifier = occurrenceID.trim();
+                            } else {
+                                identifier = imageUrl;
+                            }
+                        } else {
+                            identifier = imageUrl;
+                        }
+                        logger.info("imageUrl: " + imageUrl + ", occurrence: " + occurrence);
+
+                        imageDoc.setGuid(identifier);
+                        imageDoc.setContent(getContent(imageUrl));
+
+                        dcs.put(Predicates.DC_TITLE.toString(), (String) occurrence.get("scientificName"));
+                        dcs.put(Predicates.DC_IDENTIFIER.toString(), identifier);
+
+                        String licence = (String) occurrence.get("rights");
                         if (licence != null) {
                             dcs.put(Predicates.DC_LICENSE.toString(), licence);
                         }
 
-                        String dataResourceUid = (String)occurrence.get("dataResourceUid");
+                        String dataResourceUid = (String) occurrence.get("dataResourceUid");
                         String occurrenceDetails = (String) occurrence.get("occurrenceDetails");
 
                         if (occurrenceDetails != null) {
-        	                dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
+                            dcs.put(Predicates.DC_IS_PART_OF.toString(), occurrenceDetails);
                         } else {
                             String collectionPageURL = MessageFormat.format(COLLECTION_PUBLIC_PAGE_TEMPLATE, dataResourceUid);
                             dcs.put(Predicates.DC_IS_PART_OF.toString(), collectionPageURL);
@@ -208,111 +206,111 @@ public class BiocacheHarvester implements Harvester {
 
                         String photographer = (String) occurrence.get("photographer");
                         String collector = (String) occurrence.get("collector");
-                        if(photographer !=null){
+                        if (photographer != null) {
                             dcs.put(Predicates.DC_CREATOR.toString(), photographer);
                         } else if (collector != null) {
                             dcs.put(Predicates.DC_CREATOR.toString(), collector);
                         }
-        	                	            
-        	            String subject = MappingUtils.getSubject();
-        	            String sname = (String)occurrence.get("scientificName");
-        	            if(sname == null){
-        	            	sname = (String)occurrence.get("raw_scientificName");
-        	            }
-        	            
-        	            triples.add(new Triple<String, String, String>(subject, Predicates.SCIENTIFIC_NAME.toString(), sname));
-    	                triples.add(new Triple<String, String, String>(subject, Predicates.IMAGE_URL.toString(), imageUrl));
-        	            //bie image link back to biocache occurrence
-        	            triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_UID.toString(), (String)occurrence.get("uuid")));
-        	            triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_ROW_KEY.toString(), (String)occurrence.get("rowKey")));
-        	            
-        	            if (imageDoc != null && imageDoc.getGuid() != null) {
-        	                debugParsedDoc(imageDoc);
-        	                this.repository.storeDocument(dataResourceUid, imageDoc);
-        	            }
-	    			}
-    			}
-    			catch(Exception ex){
-    				//do nothing...continue on next
-    				logger.error("processJsonDynaBean: " + ex);
-    			}    			
-    		}
-    	}
+
+                        String subject = MappingUtils.getSubject();
+                        String sname = (String) occurrence.get("scientificName");
+                        if (sname == null) {
+                            sname = (String) occurrence.get("raw_scientificName");
+                        }
+
+                        triples.add(new Triple<String, String, String>(subject, Predicates.SCIENTIFIC_NAME.toString(), sname));
+                        triples.add(new Triple<String, String, String>(subject, Predicates.IMAGE_URL.toString(), imageUrl));
+                        //bie image link back to biocache occurrence
+                        triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_UID.toString(), (String) occurrence.get("uuid")));
+                        triples.add(new Triple<String, String, String>(subject, Predicates.OCCURRENCE_ROW_KEY.toString(), (String) occurrence.get("rowKey")));
+
+                        if (imageDoc != null && imageDoc.getGuid() != null) {
+                            debugParsedDoc(imageDoc);
+                            this.repository.storeDocument(dataResourceUid, imageDoc);
+                        }
+                    }
+                } catch (Exception ex) {
+                    //do nothing...continue on next
+                    logger.error("processJsonDynaBean: " + ex);
+                }
+            }
+        }
     }
-    
-	/**
-	 * data load process
-	 * @throws Exception 
-	 */
-	private void load() throws Exception{
-    	int ctr = 0;
-    	String dateRangeQuery = formatDateRangeQuery();
-		logger.debug("Date query: " + dateRangeQuery);
-    	DynaBean dynaBean = this.getJsonDynaBean(DATA_RESOURCE_URL + '&' + dateRangeQuery); 
-    	logger.info("FIRST UTLS: " + DATA_RESOURCE_URL + '&' + dateRangeQuery);
-    	logger.info("FilterURL :: "+  MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery));
-    	//System.exit(0);
-    	if("OK".equalsIgnoreCase(dynaBean.status)){
-    		ctr = dynaBean.totalRecords;
-    		List<Map<String,String>> list = ((List<Map<String,String>>)((Map)((List)dynaBean.get("facetResults")).get(0)).get("fieldResult"));
-    		addMissingInfosources(list);
-	    	for(int i = 0; i <= ctr/100; i++){
-	    		try {
-	    			String url = MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery) + "&start=" + (i * 100);
-		    		if(dateRangeQuery != null){
-		    			url = url + "&" + dateRangeQuery;
-		    		}
-		    		logger.debug("*** loop url: " + url);
-		    		dynaBean = this.getJsonDynaBean(url);
-		    		processJsonDynaBean(dynaBean);
-	    		} catch(Exception ex) {
-	    			//log it and continue to next
-	    			logger.error(ex.getMessage(), ex);
-	    		}
-	    	}    	
-    	}    	
-	}
-	
-	String formatDateRangeQuery(){
-		if(this.endDate != null){
-			SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-			StringBuffer sb = new StringBuffer("fq=last_load_date:%5B");
-			sb.append(sfd.format(this.getStartDate()));
-			sb.append("%20TO%20");
-			sb.append(sfd.format(this.getEndDate()));
-			sb.append("%5D");
-			return sb.toString();
-		} else {
-			return null;
-		}
-	}
-	
-	/**
-	 * Dynamically add the missing infosources so we don't miss harvesting images for new data resources.
-	 * @param dataResourceFacet
-	 */
-	private void addMissingInfosources(List<Map<String,String>> dataResourceFacet) {
-	    Map<String,String> uidsToIds = infoSourceDAO.getUidInfosourceIdMap();
-	    ObjectMapper mapper = new ObjectMapper();
-	    for(Map<String,String> dataResource:dataResourceFacet){
-	        String dr = RepoDataLoader.getDataResource(dataResource.get("fq"));
-	        if(!uidsToIds.containsKey(dr)){
-	            logger.warn("Dynamically adding an infosource for " + dr);
-	            try{
-	            Object[] resp = restfulClient.restGet(COLLECTORY_URL+dr);
-	            Map map = mapper.readValue(resp[1].toString(),Map.class);
-	            Object url = map.get("websiteUrl");
-	            if(url == null) 
-	                url = map.get("alaPublicUrl");
-	            infoSourceDAO.addInfosource(dr, map.get("name").toString(),url.toString());
-	            }
-	            catch(Exception e){
-	                logger.error("Unable to add missing infosource "+dataResource, e);	                
-	            }
-	        }
-	    }
-	}
-	
+
+    /**
+     * data load process
+     *
+     * @throws Exception
+     */
+    private void load() throws Exception {
+        int ctr = 0;
+        String dateRangeQuery = formatDateRangeQuery();
+        logger.debug("Date query: " + dateRangeQuery);
+        DynaBean dynaBean = this.getJsonDynaBean(DATA_RESOURCE_URL + '&' + dateRangeQuery);
+        logger.info("FIRST url: " + DATA_RESOURCE_URL + '&' + dateRangeQuery);
+        logger.info("Filter url: " + MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery));
+        //System.exit(0);
+        if ("OK".equalsIgnoreCase(dynaBean.status)) {
+            ctr = dynaBean.totalRecords;
+            List<Map<String, String>> list = ((List<Map<String, String>>) ((Map) ((List) dynaBean.get("facetResults")).get(0)).get("fieldResult"));
+            addMissingInfosources(list);
+            for (int i = 0; i <= ctr / 100; i++) {
+                try {
+                    String url = MessageFormat.format(BIOCACHE_SEARCH_URL_TEMPLATE, biocacheSearchQuery) + "&start=" + (i * 100);
+                    if (dateRangeQuery != null) {
+                        url = url + "&" + dateRangeQuery;
+                    }
+                    logger.info("*** loop url: " + url);
+                    dynaBean = this.getJsonDynaBean(url);
+                    processJsonDynaBean(dynaBean);
+                } catch (Exception ex) {
+                    //log it and continue to next
+                    logger.error(ex.getMessage(), ex);
+                }
+            }
+        }
+    }
+
+    String formatDateRangeQuery() {
+        if (this.endDate != null) {
+            SimpleDateFormat sfd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            StringBuffer sb = new StringBuffer("fq=last_load_date:%5B");
+            sb.append(sfd.format(this.getStartDate()));
+            sb.append("%20TO%20");
+            sb.append(sfd.format(this.getEndDate()));
+            sb.append("%5D");
+            return sb.toString();
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Dynamically add the missing infosources so we don't miss harvesting images for new data resources.
+     *
+     * @param dataResourceFacet
+     */
+    private void addMissingInfosources(List<Map<String, String>> dataResourceFacet) {
+        Map<String, String> uidsToIds = infoSourceDAO.getUidInfosourceIdMap();
+        ObjectMapper mapper = new ObjectMapper();
+        for (Map<String, String> dataResource : dataResourceFacet) {
+            String dr = RepoDataLoader.getDataResource(dataResource.get("fq"));
+            if (!uidsToIds.containsKey(dr)) {
+                logger.warn("Dynamically adding an infosource for " + dr);
+                try {
+                    Object[] resp = restfulClient.restGet(COLLECTORY_URL + dr);
+                    Map map = mapper.readValue(resp[1].toString(), Map.class);
+                    Object url = map.get("websiteUrl");
+                    if (url == null)
+                        url = map.get("alaPublicUrl");
+                    infoSourceDAO.addInfosource(dr, map.get("name").toString(), url.toString());
+                } catch (Exception e) {
+                    logger.error("Unable to add missing infosource " + dataResource, e);
+                }
+            }
+        }
+    }
+
     /**
      * @see au.org.ala.bie.harvester.Harvester#setConnectionParams(java.util.Map)
      */
@@ -334,38 +332,38 @@ public class BiocacheHarvester implements Harvester {
     public void start(int infosourceId) throws Exception {
         start(infosourceId, false);
     }
-    public void start(int infosourceId,boolean shutdown) throws Exception {
+
+    public void start(int infosourceId, boolean shutdown) throws Exception {
         Thread.sleep(timeGap);
         load();
-        if(shutdown) {
+        if (shutdown) {
             storeHelper.shutdown();
             solrUtils.shutdownSolr();
         }
     }
 
-    public void debugParsedDoc(ParsedDocument parsedDoc){
+    public void debugParsedDoc(ParsedDocument parsedDoc) {
 
         logger.debug("===============================================================================");
 
-        logger.debug("GUID: "+parsedDoc.getGuid());
-        logger.debug("Content-Type: "+parsedDoc.getContentType());
+        logger.debug("GUID: " + parsedDoc.getGuid());
+        logger.debug("Content-Type: " + parsedDoc.getContentType());
 
-        Map<String,String> dublinCore = parsedDoc.getDublinCore();
-        for(String key: dublinCore.keySet()){
-            logger.debug("DC: "+key+"\t"+dublinCore.get(key));
+        Map<String, String> dublinCore = parsedDoc.getDublinCore();
+        for (String key : dublinCore.keySet()) {
+            logger.debug("DC: " + key + "\t" + dublinCore.get(key));
         }
 
-        List<Triple<String,String,String>> triples = parsedDoc.getTriples(); 
-        for(Triple<String,String,String> triple: triples){
-            logger.debug("RDF: "+triple.getSubject()+"\t"+triple.getPredicate()+"\t"+triple.getObject());
+        List<Triple<String, String, String>> triples = parsedDoc.getTriples();
+        for (Triple<String, String, String> triple : triples) {
+            logger.debug("RDF: " + triple.getSubject() + "\t" + triple.getPredicate() + "\t" + triple.getObject());
         }
 
         logger.debug("===============================================================================");
     }
 
     /**
-     * @see
-     * au.org.ala.bie.harvester.Harvester#setRepository(au.org.ala.bie.repository.Repository)
+     * @see au.org.ala.bie.harvester.Harvester#setRepository(au.org.ala.bie.repository.Repository)
      */
     public void setRepository(Repository repository) {
         this.repository = repository;
@@ -375,8 +373,9 @@ public class BiocacheHarvester implements Harvester {
     public void setDocumentMapper(DocumentMapper documentMapper) {
         // TODO Auto-generated method stub
     }
-    
+
     // ==================<main>============
+
     /**
      * Main method for testing this particular Harvester
      *
@@ -388,47 +387,50 @@ public class BiocacheHarvester implements Harvester {
         BiocacheHarvester h = (BiocacheHarvester) context.getBean(BiocacheHarvester.class);
         Repository r = (Repository) context.getBean("repository");
         h.setRepository(r);
-        
-        if(args.length==1){
-        	h.setEndDate(new Date());
-        	if("-lastYear".equals(args[0])){
-            	h.setStartDate(DateUtils.addYears(h.getEndDate(), -1));                	
-        	} else if("-lastMonth".equals(args[0])){
-            	h.setStartDate(DateUtils.addMonths(h.getEndDate(), -1));        			
-        	} else if("-lastWeek".equals(args[0])){
-        		h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));
+
+        if (args.length == 1) {
+            h.setEndDate(new Date());
+            if ("-lastYear".equals(args[0])) {
+                h.setStartDate(DateUtils.addYears(h.getEndDate(), -1));
+            } else if ("-lastMonth".equals(args[0])) {
+                h.setStartDate(DateUtils.addMonths(h.getEndDate(), -1));
+            } else if ("-lastWeek".equals(args[0])) {
+                h.setStartDate(DateUtils.addWeeks(h.getEndDate(), -1));
+            } else if ("-lastDay".equals(args[0])) {
+                h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));
+            } else if ("-lastHour".equals(args[0])) {
+                h.setStartDate(DateUtils.addHours(h.getEndDate(), -1));
             } else {
-        	  //attempt to parse the date down to an acceptable date
-        	  try{
-        	      Date startDate =DateUtils.parseDate(args[0], new String[]{"yyyy-MM-dd"});
-        	      h.setStartDate(startDate);
-        	  }
-        	  catch(java.text.ParseException e){
-        	      h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));
-        	  }
-        	}
-        } else if (args.length==2 && "-query".equals(args[0])) {
+                //attempt to parse the date down to an acceptable date
+                try {
+                    Date startDate = DateUtils.parseDate(args[0], new String[]{"yyyy-MM-dd"});
+                    h.setStartDate(startDate);
+                } catch (java.text.ParseException e) {
+                    h.setStartDate(DateUtils.addDays(h.getEndDate(), -1));
+                }
+            }
+        } else if (args.length == 2 && "-query".equals(args[0])) {
             h.setQuery(args[1]);
         }
         h.start(-1, true);
-        
-    }	
 
-	public Date getStartDate() {
-		return startDate;
-	}
+    }
 
-	public void setStartDate(Date startDate) {
-		this.startDate = startDate;
-	}
+    public Date getStartDate() {
+        return startDate;
+    }
 
-	public Date getEndDate() {
-		return endDate;
-	}
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
+    }
 
-	public void setEndDate(Date endDate) {
-		this.endDate = endDate;
-	}
+    public Date getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(Date endDate) {
+        this.endDate = endDate;
+    }
 
     public void setQuery(String query) {
         this.biocacheSearchQuery = query;
@@ -438,21 +440,19 @@ public class BiocacheHarvester implements Harvester {
 
 
 //================================================
-class DynaBean
-{
+class DynaBean {
     // Two mandatory properties
     protected String status;
     protected String query;
     protected int startIndex;
-	protected int totalRecords;
+    protected int totalRecords;
 
     // and then "other" stuff:
-    protected Map<String,Object> other = new HashMap<String,Object>();
+    protected Map<String, Object> other = new HashMap<String, Object>();
 
-	// Could alternatively add setters, but since these are mandatory
+    // Could alternatively add setters, but since these are mandatory
     @JsonCreator
-    public DynaBean(@JsonProperty("status") String status, @JsonProperty("query") String query, @JsonProperty("startIndex") int startIndex, @JsonProperty("totalRecords") int totalRecords)
-    {
+    public DynaBean(@JsonProperty("status") String status, @JsonProperty("query") String query, @JsonProperty("startIndex") int startIndex, @JsonProperty("totalRecords") int totalRecords) {
         this.status = status;
         this.query = query;
         this.startIndex = startIndex;
@@ -460,32 +460,32 @@ class DynaBean
     }
 
     public String getStatus() {
-		return status;
-	}
+        return status;
+    }
 
-	public String getQuery() {
-		return query;
-	}
+    public String getQuery() {
+        return query;
+    }
 
-	public int getStartIndex() {
-		return startIndex;
-	}
+    public int getStartIndex() {
+        return startIndex;
+    }
 
-	public int getTotalRecords() {
-		return totalRecords;
-	}
+    public int getTotalRecords() {
+        return totalRecords;
+    }
 
     public Object get(String name) {
         return other.get(name);
     }
 
     public Map<String, Object> getOther() {
-		return other;
-	}
-    
+        return other;
+    }
+
     // "any getter" needed for serialization    
     @JsonAnyGetter
-    public Map<String,Object> any() {
+    public Map<String, Object> any() {
         return other;
     }
 
@@ -493,5 +493,4 @@ class DynaBean
     public void set(String name, Object value) {
         other.put(name, value);
     }
-}    
-
+}
