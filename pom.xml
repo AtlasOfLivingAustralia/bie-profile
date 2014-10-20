@@ -379,7 +379,7 @@
             <dependency>
                 <groupId>au.org.ala</groupId>
                 <artifactId>ala-name-matching</artifactId>
-                <version>1.3-SNAPSHOT</version>
+                <version>1.3</version>
                  <exclusions>
                     <exclusion>
                         <groupId>dom4j</groupId>
@@ -521,13 +521,15 @@
       </pluginRepository>
     </pluginRepositories>
     <distributionManagement>
-      <downloadUrl>https://maven.ala.org.au/repository</downloadUrl>
-      <repository>
-        <uniqueVersion>false</uniqueVersion>
-        <id>ala-repository</id>
-        <name>ALA Maven Repository</name>
-        <url>scp://maven.ala.org.au/data/maven</url>
-        <layout>default</layout>
-      </repository>
+        <repository>
+            <id>ala-repo</id>
+            <name>Internal Releases</name>
+            <url>http://ala-wonder.it.csiro.au/nexus/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>ala-repo</id>
+            <name>Internal Releases</name>
+            <url>http://ala-wonder.it.csiro.au/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
 </project>
