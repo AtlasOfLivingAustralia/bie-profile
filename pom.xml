@@ -1,5 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <parent>
+        <groupId>au.org.ala</groupId>
+        <artifactId>ala-parent-pom</artifactId>
+        <version>1.0</version>
+    </parent>
+
     <modelVersion>4.0.0</modelVersion>
     <groupId>au.org.ala</groupId>
     <artifactId>bie-profile</artifactId>
@@ -425,51 +432,6 @@
                 <type>jar</type>
             </dependency>
     </dependencies>
-    <repositories>
-    <repository>
-        <id>maven.scale7.org</id>
-        <name>Scale7 Maven Repo</name>
-        <url>https://github.com/s7/mvnrepo/raw/master</url>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
-   
-        <!-- ALA repository  -->
-        <repository>
-            <id>ala-repository</id>
-            <name>ala-repository</name>
-            <url>http://maven.ala.org.au/repository</url>
-        </repository>
-        <!-- Spring 3.0 -->
-        <repository>
-            <id>springsource maven repo</id>
-            <name>Springsource Maven Repository</name>
-            <url>http://maven.springframework.org/milestone</url>
-        </repository>
-        <repository>
-            <id>com.springsource.repository.bundles.milestone</id>
-            <name>SpringSource Enterprise Bundle Repository - External Bundle Milestones</name>
-            <url>http://maven.springframework.org/milestone</url>
-        </repository>
-        <repository>
-            <id>com.springsource.repository.bundles.external</id>
-            <name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
-            <url>http://repository.springsource.com/maven/bundles/external</url>
-        </repository>
-        <repository>
-            <id>com.springsource.repository.maven.release</id>
-            <url>http://maven.springframework.org/release/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>com.springsource.repository.bundles.release</id>
-            <name>SpringSource Enterprise Bundle Repository - SpringSource Bundle Releases</name>
-            <url>http://repository.springsource.com/maven/bundles/release/</url>
-        </repository>
-    </repositories>
     <build>
         <finalName>bie-profile</finalName>
         <plugins>
@@ -513,23 +475,4 @@
             </plugin>
         </plugins>
     </build>
-    <pluginRepositories>
-      <pluginRepository>
-        <id>ala-repository</id>
-        <name>ala-repository</name>
-        <url>http://maven.ala.org.au/repository</url>
-      </pluginRepository>
-    </pluginRepositories>
-    <distributionManagement>
-        <repository>
-            <id>ala-repo</id>
-            <name>Internal Releases</name>
-            <url>http://ala-wonder.it.csiro.au/nexus/content/repositories/releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>ala-repo</id>
-            <name>Internal Releases</name>
-            <url>http://ala-wonder.it.csiro.au/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
 </project>
