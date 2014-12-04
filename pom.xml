@@ -21,46 +21,12 @@
         <!-- This project uses UTF8 for Regular Expressions -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <openrdf.sesame.version>2.2</openrdf.sesame.version>
-        <!-- <spring.version>3.0.0.RELEASE</spring.version> -->
         <spring.version>3.1.0.RELEASE</spring.version>
         <solr.version>4.1.0</solr.version>
      <netbeans.hint.deploy.server>Tomcat60</netbeans.hint.deploy.server>
     </properties>
     <dependencies>
-    
-            <!-- BIE Repository -->
-<!--             <dependency>
-                <groupId>au.org.ala</groupId>
-                <artifactId>bie-repository</artifactId>
-                <version>1.0-SNAPSHOT</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>xerces</groupId>
-                        <artifactId>xercesImpl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                    	<groupId>org.codehaus.jackson</groupId>
-                		<artifactId>jackson-core-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                		<artifactId>jackson-mapper-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>au.org.ala</groupId>
-                        <artifactId>ala-name-matching</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-dbcp</groupId>
-                        <artifactId>commons-dbcp</artifactId>
-                    </exclusion>                    
-                </exclusions>
-            </dependency> -->
-<!--             <dependency>
-                <groupId>commons-dbcp</groupId>
-                <artifactId>commons-dbcp</artifactId>
-                <version>1.4</version>
-            </dependency>     -->   
+
             
          <!-- ALA logging -->
 		<dependency>
@@ -73,7 +39,7 @@
             <dependency>
                 <groupId>org.gbif</groupId>
                 <artifactId>dwca-reader</artifactId>
-                <version>1.14-SNAPSHOT</version>
+                <version>1.14</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xerces</groupId>
@@ -103,44 +69,7 @@
                 <version>2.3.0</version>
                 <scope>test</scope>
             </dependency>
-<!--             AVRO - only here for running tests
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>avro</artifactId>
-                <version>1.2.0</version>
-                <scope>test</scope>
-            </dependency>
-            HBASE
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hbase</artifactId>
-                <version>0.20.4</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>3.2.2</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-core</artifactId>
-                <version>0.20.2</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-ant</artifactId>
-                <version>0.20.2</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-tools</artifactId>
-                <version>0.20.2</version>
-                <scope>compile</scope>
-            </dependency> -->
+
             <!-- SL4j -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -155,7 +84,7 @@
             <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>log4j</artifactId>
-                <version>1.2.15</version>
+                <version>1.2.17</version>
             </dependency>
             <!-- COMMONS -->
             <dependency>
@@ -254,42 +183,14 @@
 			<artifactId>jai-imageio</artifactId>
 			<version>1.1</version>
 		</dependency>						
-            <!-- CASSANDRA -->
-<!--             <dependency>
-                <groupId>org.apache.cassandra</groupId>
-                <artifactId>apache-cassandra</artifactId>
-                <version>0.6.1</version>
-                <scope>compile</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>thrift</artifactId>
-                <version>0.2.0</version>
-            </dependency> -->
+
             <!-- PELOPS -->
             <dependency>
         		<groupId>org.scale7</groupId>
         		<artifactId>scale7-pelops</artifactId>
         		<version>1.3-1.1.x</version>
-<!--         		<exclusions>
-        			<exclusion>
-        				<artifactId>commons-pool</artifactId>
-        				<groupId>commons-pool</groupId>
-        			</exclusion>
-        		</exclusions> -->
     		</dependency>
-<!--             <dependency>
-        		<groupId>commons-pool</groupId>
-        		<artifactId>commons-pool</artifactId>
-        		<version>1.6</version>
-    		</dependency>   -->          
-            
-            
-<!--             <dependency>
-                <groupId>pelops</groupId>
-                <artifactId>pelops</artifactId>
-                <version>0.804</version>
-            </dependency> -->
+
             <!-- GEOTOOLS -->
             <dependency>
                 <groupId>org.geotools</groupId>
