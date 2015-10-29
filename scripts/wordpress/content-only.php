@@ -1,11 +1,11 @@
 <?php
 /*
-Plugin Name: Show Content Only
-Plugin URI: http://www.seodenver.com/content-only/
+Plugin Name: (ALA-customised) Show Content Only
+Plugin URI: https://github.com/AtlasOfLivingAustralia/bie-profile/blob/master/scripts/wordpress/content-only.php
 Description: Display only the post's content, without a theme, scripts or stylesheets.
-Author: Katz Web Services, Inc.
-Author URI: http://www.katzwebservices.com
-Version: 1.1
+Author: ALA (modified from Katz Web Services version)
+Author URI: https://github.com/AtlasOfLivingAustralia/bie-profile/blob/master/scripts/wordpress/content-only.php
+Version: 99.0
 */
 
 /*  Copyright 2010  Katz Web Services, Inc.  (email : info@katzwebdesign.com)
