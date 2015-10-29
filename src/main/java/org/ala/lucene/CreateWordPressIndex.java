@@ -83,6 +83,7 @@ public class CreateWordPressIndex {
     protected void loadSitemap() throws IOException {
         Document doc = Jsoup.connect(WP_SITEMAP_URI).get();
         Elements pages = doc.select("loc");
+        this.pageUrls.clear(); // clear this list first
         logger.info("Sitemap file lists " + pages.size() + " pages.");
 
         for (Element page : pages) {
@@ -111,10 +112,16 @@ public class CreateWordPressIndex {
                 Document document = Jsoup.connect(pageUrl + CONTENT_ONLY_PARAM).get();
                 String title = document.select("head > title").text();
                 String id = document.select("head > meta[name=id]").attr("content");
+                String shortlink = document.select("head > link[rel=shortlink]").attr("href");
                 String bodyText = document.body().text();
                 Elements postCategories = document.select("ul[class=post-categories]");
                 List<String> categoriesOut = new ArrayList<String>();
                 Boolean excludePost = false;
+
+                if (StringUtils.isEmpty(id) && StringUtils.isNotBlank(shortlink)) {
+                    // e.g. http://www.ala.org.au/?p=24241
+                    id = StringUtils.split(shortlink, "=")[1];
+                }
 
                 if (!postCategories.isEmpty()) {
                     // Is a WP post (not page)
@@ -144,7 +151,16 @@ public class CreateWordPressIndex {
                 logger.debug(documentCount+ ". Indexing WP page - id: " + id + " | title: " + title + " | text: " + StringUtils.substring(bodyText, 0, 100) + "... ");
                 SolrInputDocument doc = new SolrInputDocument();
                 doc.addField("idxtype", IndexedTypes.WORDPRESS);
-                doc.addField("guid", WP_BASE_URI + id); // use page_id based URI instead of permalink in case permalink is too long for id field
+
+                if (StringUtils.isNotBlank(shortlink)) {
+                    doc.addField("guid", shortlink);
+                } else if (StringUtils.isNotEmpty(id)) {
+                    doc.addField("guid", WP_BASE_URI + id); // use page_id based URI instead of permalink in case permalink is too long for id field
+                } else {
+                    // fallback
+                    doc.addField("guid", pageUrl);
+                }
+
                 doc.addField("id", "wp" + id); // probably not needed but safer to leave in
                 doc.addField("name", title, 1.2f);
                 doc.addField("content", bodyText);
